@@ -2,8 +2,8 @@ import ConfigParser
 
 class Settings:
     def load(self, file):
-        config = ConfigParser.RawConfigParser()
-        config.read(file)
+        self.config = ConfigParser.RawConfigParser()
+        self.config.read(file)
 
     def get(self, section, key):
-        return config.get(section, key)
+        return self.config.get(section, key)

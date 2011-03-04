@@ -65,4 +65,4 @@ class TaxiParser(Parser):
         if not self.date in self.entries:
             self.entries[self.date] = []
 
-        self.entries[self.date].append(Entry(splitted_line[0], total_hours, splitted_line[2]))
+        self.entries[self.date].append(Entry(self.date, splitted_line[0], total_hours, splitted_line[2]))
