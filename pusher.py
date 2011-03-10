@@ -34,7 +34,7 @@ class Pusher:
         response = self._request(login_url, parameters)
         response_body = response.read()
 
-        return response.getheader('Location', None) is not None and response.status == 301
+        return response.info().getheader('Content-Type').startswith('application/json')
 
     def _send_entries(self, entries):
         post_url = '/timesheet/create/.json'
