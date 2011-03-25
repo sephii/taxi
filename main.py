@@ -13,9 +13,9 @@ def status(parser, settings):
 
     for date, entries in parser.entries.iteritems():
         subtotal_hours = 0
-        print '[%s]' % date
+        print '# %s #' % date.strftime('%A %d %B')
         for entry in entries:
-            print '%-30s %-5.2f %s' % (entry.project_id, entry.hours, entry.description)
+            print '%-30s %-5.2f %s' % (entry.project_name, entry.hours, entry.description)
             subtotal_hours += entry.hours
 
         print '%-29s %5.2f' % ('', subtotal_hours)
@@ -54,6 +54,11 @@ def main():
 
     s = Settings()
     s.load(options.config)
+
+    for date, entries in p.entries.iteritems():
+        for entry in entries:
+            if entry.project_name not in s.projects:
+                raise ValueError('Project `%s` is not mapped to any project number in your settings file' % entry.project_name)
 
     if action == 'stat' or action == 'status':
         status(p, s)

@@ -56,7 +56,7 @@ class Pusher:
 
                 print response_body
 
-    def push(self, entries):
+    def push(self, entries, settings):
         if not self._login():
             raise ValueError('Can\'t login')
 

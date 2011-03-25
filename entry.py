@@ -1,6 +1,6 @@
 class Entry:
-    def __init__(self, date, project_id, hours, description):
-        self.project_id = project_id
+    def __init__(self, date, project_name, hours, description):
+        self.project_name = project_name
         self.hours = hours
         self.description = description
         self.date = date

@@ -3,7 +3,6 @@ import string
 import datetime
 
 from entry import Entry
-from settings import Settings
 
 class ParseError(Exception):
     pass
