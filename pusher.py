@@ -58,7 +58,9 @@ class Pusher:
                 response = self._request(post_url, parameters)
                 response_body = response.read()
 
-                print response_body
+                entry.pushed = True
+
+                #print response_body
 
     def push(self, entries):
         if not self._login():

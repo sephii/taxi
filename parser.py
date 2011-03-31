@@ -17,6 +17,7 @@ class Parser:
 
         for line in file:
             line_number += 1
+            self.lines[line_number] = {'text': line, 'entry': None}
             self.process_line(line, line_number)
 
         file.close()
@@ -24,6 +25,7 @@ class Parser:
     def __init__(self, file):
         self.file = file
         self.entries = {}
+        self.lines = {}
 
 class TaxiParser(Parser):
     def process_date(self, date_matches):
@@ -70,4 +72,19 @@ class TaxiParser(Parser):
         if not self.date in self.entries:
             self.entries[self.date] = []
 
-        self.entries[self.date].append(Entry(self.date, splitted_line[0], total_hours, splitted_line[2]))
+        new_entry = Entry(self.date, splitted_line[0], total_hours, splitted_line[2])
+        self.entries[self.date].append(new_entry)
+        self.lines[line_number]['entry'] = new_entry
+
+    def update_file(self):
+        file = open(self.file, 'w')
+
+        for line in self.lines.itervalues():
+            text = line['text']
+
+            if line['entry'] is not None and line['entry'].pushed:
+                text = '# %s' % text
+
+            file.write(text)
+
+        file.close()

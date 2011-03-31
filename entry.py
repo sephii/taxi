@@ -6,6 +6,7 @@ class Entry:
         self.hours = hours
         self.description = description
         self.date = date
+        self.pushed = False
 
         if project_name in settings.projects:
             self.project_id = settings.projects[project_name][0]

@@ -37,6 +37,7 @@ def commit(parser):
     )
 
     pusher.push(parser.entries)
+    parser.update_file()
 
 def main():
     usage = "usage: %prog [options] action"
