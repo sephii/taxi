@@ -1,4 +1,5 @@
 import urllib, urllib2, urlparse, cookielib
+from settings import settings
 
 class Pusher:
     def __init__(self, base_url, username, password):
@@ -41,10 +42,13 @@ class Pusher:
 
         for date, entries in entries.iteritems():
             for entry in entries:
+                if entry.is_ignored():
+                    continue
+
                 parameters = urllib.urlencode({
                     'time':         entry.hours,
                     'project_id':   entry.project_id,
-                    'activity_id':  0,
+                    'activity_id':  entry.activity_id,
                     'day':          date.day,
                     'month':        date.month,
                     'year':         date.year,
@@ -56,7 +60,7 @@ class Pusher:
 
                 print response_body
 
-    def push(self, entries, settings):
+    def push(self, entries):
         if not self._login():
             raise ValueError('Can\'t login')
 

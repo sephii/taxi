@@ -50,16 +50,22 @@ class TaxiParser(Parser):
         elif len(splitted_line) != 3:
             raise ParseError('Line #%s is not correctly formatted' % line_number)
 
-        time = re.match('(\d{2}):(\d{2})-(\d{2}):(\d{2})', splitted_line[1])
+        time = re.match(r'(\d{2}):(\d{2})-(?:(?:(\d{2}):(\d{2}))|\?)', splitted_line[1])
 
         if time is not None:
             time_start = datetime.datetime(self.date.year, self.date.month, self.date.day, int(time.group(1)), int(time.group(2)))
-            time_end = datetime.datetime(self.date.year, self.date.month, self.date.day, int(time.group(3)), int(time.group(4)))
 
-            total_time = time_end - time_start
-            total_hours = total_time.seconds / 3600.0
+            if time.group(3) is not None and time.group(4) is not None:
+                time_end = datetime.datetime(self.date.year, self.date.month, self.date.day, int(time.group(3)), int(time.group(4)))
+                total_time = time_end - time_start
+                total_hours = total_time.seconds / 3600.0
+            else:
+                total_hours = 0
         else:
-            total_hours = float(splitted_line[1])
+            try:
+                total_hours = float(splitted_line[1])
+            except ValueError:
+                raise ParseError('Line #%s is not correctly formatted' % line_number)
 
         if not self.date in self.entries:
             self.entries[self.date] = []

@@ -1,21 +1,24 @@
+#!/usr/bin/python
 from optparse import OptionParser
 import sys
 import os
 
 from parser import TaxiParser
-from settings import Settings
+from settings import settings
 from pusher import Pusher
 
-def status(parser, settings):
+import locale
+
+def status(parser):
     total_hours = 0
 
     print 'Staging changes :\n'
 
     for date, entries in parser.entries.iteritems():
         subtotal_hours = 0
-        print '# %s #' % date.strftime('%A %d %B')
+        print '# %s #' % date.strftime('%A %d %B').capitalize()
         for entry in entries:
-            print '%-30s %-5.2f %s' % (entry.project_name, entry.hours, entry.description)
+            print entry
             subtotal_hours += entry.hours
 
         print '%-29s %5.2f' % ('', subtotal_hours)
@@ -26,7 +29,7 @@ def status(parser, settings):
     print '%-29s %5.2f' % ('Total', total_hours)
     print '\nUse `taxi ci` to commit staging changes to the server'
 
-def commit(parser, settings):
+def commit(parser):
     pusher = Pusher(
             settings.get('default', 'site'), 
             settings.get('default', 'username'),
@@ -37,6 +40,7 @@ def commit(parser, settings):
 
 def main():
     usage = "usage: %prog [options] action"
+    locale.setlocale(locale.LC_ALL, locale.getdefaultlocale())
 
     opt = OptionParser(usage=usage)
     opt.add_option('-f', '--file', dest='filename', help='parse FILENAME instead of ~/.zebra', default=os.path.join(os.path.expanduser('~'), '.zebra'))
@@ -49,21 +53,20 @@ def main():
         opt.print_help()
         exit()
 
+    settings.load(options.config)
+
     p = TaxiParser(options.filename)
     p.parse()
 
-    s = Settings()
-    s.load(options.config)
-
     for date, entries in p.entries.iteritems():
         for entry in entries:
-            if entry.project_name not in s.projects:
+            if entry.project_name[-1] != '?' and entry.project_name not in settings.projects:
                 raise ValueError('Project `%s` is not mapped to any project number in your settings file' % entry.project_name)
 
     if action == 'stat' or action == 'status':
-        status(p, s)
+        status(p)
     elif action == 'ci' or action == 'commit':
-        commit(p, s)
+        commit(p)
 
 if __name__ == '__main__':
     main()

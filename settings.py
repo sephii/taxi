@@ -1,10 +1,5 @@
 import ConfigParser
 
-class Project:
-    def __init__(self, project_id, activity_id):
-        self.project_id = project_id
-        self.activity_id = activity_id
-
 class Settings:
     def load(self, file):
         self.config = ConfigParser.RawConfigParser()
@@ -28,3 +23,5 @@ class Settings:
                 value = (parts[0], None)
 
             self.projects[project_name] = value
+
+settings = Settings()
