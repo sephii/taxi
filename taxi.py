@@ -6,8 +6,18 @@ import os
 from parser import TaxiParser
 from settings import settings
 from pusher import Pusher
+from projectsdb import ProjectsDb
 
 import locale
+
+def update():
+    db = ProjectsDb(
+            settings.get('default', 'site'), 
+            settings.get('default', 'username'),
+            settings.get('default', 'password')
+    )
+
+    db.update()
 
 def status(parser):
     total_hours = 0
@@ -68,6 +78,8 @@ def main():
         status(p)
     elif action == 'ci' or action == 'commit':
         commit(p)
+    elif action == 'up' or action == 'update':
+        update()
 
 if __name__ == '__main__':
     main()

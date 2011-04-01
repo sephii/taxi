@@ -1,9 +1,13 @@
-from settings import settings
+import json
+
 from remote import ZebraRemote
 
-class Pusher:
+class ProjectsDb:
     def __init__(self, base_url, username, password):
         self.remote = ZebraRemote(base_url, username, password)
 
-    def push(self, entries):
-        self.remote.send_entries(entries)
+    def update(self):
+        self.remote.get_projects()
+
+    def search(self):
+        pass
