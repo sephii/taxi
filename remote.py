@@ -98,9 +98,10 @@ class ZebraRemote(Remote):
                     continue
 
                 if 'exception' in json_response:
-                    print 'Unable to push entry "%s". Error was : %s' % (entry, json_response['exception']['message'])
                     entry.pushed = False
+                    print 'Unable to push entry "%s". Error was : %s' % (entry, json_response['exception']['message'])
                 else:
+                    entry.pushed = True
                     print entry
 
     def get_projects(self):
