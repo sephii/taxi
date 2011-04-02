@@ -29,7 +29,14 @@ class Parser:
 
 class TaxiParser(Parser):
     def process_date(self, date_matches):
-        self.date = datetime.date(int(date_matches.group(3)), int(date_matches.group(2)), int(date_matches.group(1)))
+        if len(date_matches.group(3)):
+            current_year = datetime.date.today().year
+            current_millennium = current_year - (current_year % 1000)
+            year = current_millennium + int(date_matches.group(3))
+        else:
+            year = int(date_matches.group(3))
+
+        self.date = datetime.date(year, int(date_matches.group(2)), int(date_matches.group(1)))
 
     def process_line(self, line, line_number):
         line = line.strip()
@@ -37,7 +44,7 @@ class TaxiParser(Parser):
         if len(line) == 0 or line[0] == '#':
             return
 
-        date_matches = re.match('(\d{1,2})\D(\d{1,2})\D(\d{4})', line)
+        date_matches = re.match('(\d{1,2})\D(\d{1,2})\D(\d{4}|\d{2})', line)
 
         if date_matches is not None:
             self.process_date(date_matches)

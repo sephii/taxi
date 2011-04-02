@@ -3,7 +3,10 @@ import ConfigParser
 class Settings:
     def load(self, file):
         self.config = ConfigParser.RawConfigParser()
-        self.config.read(file)
+        parsed = self.config.read(file)
+
+        if len(parsed) == 0:
+            raise Exception('The specified configuration file `%s` doesn\'t exist' % file)
 
         self.get_projects()
 
