@@ -1,6 +1,9 @@
 import ConfigParser
+import os
 
 class Settings:
+    TAXI_PATH = os.path.expanduser('~/.taxi')
+
     def load(self, file):
         self.config = ConfigParser.RawConfigParser()
         parsed = self.config.read(file)

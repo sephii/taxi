@@ -25,3 +25,21 @@ class Entry:
 
     def is_ignored(self):
         return self.project_name[-1] == '?'
+
+class Project:
+    def __init__(self, id, name, status = None, description = None, budget = None):
+        self.id = int(id)
+        self.name = name
+        self.activities = []
+        self.status = int(status)
+        self.description = description
+        self.budget = budget
+
+    def add_activity(self, activity):
+        self.activities.append(activity)
+
+class Activity:
+    def __init__(self, id, name, price):
+        self.id = int(id)
+        self.name = name
+        self.price = float(price)

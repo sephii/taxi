@@ -11,13 +11,46 @@ from projectsdb import ProjectsDb
 import locale
 
 def update():
-    db = ProjectsDb(
-            settings.get('default', 'site'), 
+    db = ProjectsDb()
+
+    db.update(
+            settings.get('default', 'site'),
             settings.get('default', 'username'),
             settings.get('default', 'password')
     )
 
-    db.update()
+def search(search):
+    db = ProjectsDb()
+
+    try:
+        projects = db.search(search)
+    except IOError:
+        print 'Error: the projects database file doesn\'t exist. Please run `taxi update` to create it'
+    else:
+        for project in projects:
+            print '%-4s %s' % (project.id, project.name)
+
+def show(id):
+    db = ProjectsDb()
+
+    try:
+        project = db.get(id)
+    except IOError:
+        print 'Error: the projects database file doesn\'t exist. Please run `taxi update` to create it'
+    else:
+        if project.status == 1:
+            active = 'yes'
+        else:
+            active = 'no'
+
+        print """Id:     %s
+Name:   %s
+Active: %s""" % (project.id, project.name, active)
+
+        if project.status == 1:
+            print "\nActivities:"
+            for activity in project.activities:
+                print '%-4s %s' % (activity.id, activity.name)
 
 def status(parser):
     total_hours = 0
@@ -41,7 +74,7 @@ def status(parser):
 
 def commit(parser):
     pusher = Pusher(
-            settings.get('default', 'site'), 
+            settings.get('default', 'site'),
             settings.get('default', 'username'),
             settings.get('default', 'password')
     )
@@ -49,37 +82,53 @@ def commit(parser):
     pusher.push(parser.entries)
     parser.update_file()
 
+def get_parser(filename):
+    p = TaxiParser(filename)
+    p.parse()
+
+    return p
+
+def check_entries_file(parser, settings):
+    for date, entries in p.entries.iteritems():
+        for entry in entries:
+            if entry.project_name[-1] != '?' and entry.project_name not in settings.projects:
+                raise ValueError('Project `%s` is not mapped to any project number in your settings file' % entry.project_name)
+
 def main():
     usage = "usage: %prog [options] action"
     locale.setlocale(locale.LC_ALL, locale.getdefaultlocale())
 
     opt = OptionParser(usage=usage)
-    opt.add_option('-f', '--file', dest='filename', help='parse FILENAME instead of ~/.zebra', default=os.path.join(os.path.expanduser('~'), '.zebra'))
     opt.add_option('-c', '--config', dest='config', help='use CONFIG file instead of ~/.tksrc', default=os.path.join(os.path.expanduser('~'), '.tksrc'))
     (options, args) = opt.parse_args()
 
     if len(args) > 0:
-        action = args[-1]
+        action = args[0]
     else:
         opt.print_help()
         exit()
 
     settings.load(options.config)
 
-    p = TaxiParser(options.filename)
-    p.parse()
-
-    for date, entries in p.entries.iteritems():
-        for entry in entries:
-            if entry.project_name[-1] != '?' and entry.project_name not in settings.projects:
-                raise ValueError('Project `%s` is not mapped to any project number in your settings file' % entry.project_name)
+    if not os.path.exists(settings.TAXI_PATH):
+        os.mkdir(settings.TAXI_PATH)
 
     if action == 'stat' or action == 'status':
+        p = get_parser(args[1])
+        check_entries_file(p, settings)
+        status(p)
+    elif action == 'ci' or action == 'commit':
+        p = get_parser(args[1])
+        check_entries_file(p, settings)
         status(p)
     elif action == 'ci' or action == 'commit':
         commit(p)
     elif action == 'up' or action == 'update':
         update()
+    elif action == 'search':
+        search(args[1])
+    elif action == 'show':
+        show(args[1])
 
 if __name__ == '__main__':
     main()

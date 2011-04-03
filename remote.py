@@ -1,6 +1,8 @@
 import urllib, urllib2, urlparse, cookielib
 import json
 
+from models import Project, Activity
+
 class Remote(object):
     def __init__(self, base_url):
         self.base_url = base_url
@@ -14,7 +16,7 @@ class Remote(object):
         response = opener.open(request)
 
         return response
-    
+
     def login(self):
         pass
 
@@ -32,7 +34,7 @@ class ZebraRemote(Remote):
         self.logged_in = False
         self.username = username
         self.password = password
-        
+
     def _get_request(self, url, body = None, headers = {}):
         if 'User-Agent' not in headers:
             headers['User-Agent'] = 'Taxi Zebra Client';
@@ -105,11 +107,44 @@ class ZebraRemote(Remote):
                     print entry
 
     def get_projects(self):
-        projects_url = 'timesheet/create/.json'
+        projects_url = 'project/.json'
 
         self._login()
 
         response = self._request(projects_url)
         response_body = response.read()
 
-        print json.loads(response_body)
+        response_json = json.loads(response_body)
+        projects = response_json['command']['projects']['project']
+
+        projects_list = []
+        i = 0
+        print '%d projects found' % len(projects)
+
+        for project in projects:
+            p = Project(project['id'], project['name'], project['status'], project['description'], project['budget'])
+            i += 1
+
+            if i % 50 == 0:
+                print '%d%% projects processed' % (int(i / float(len(projects)) * 100))
+
+            if p.status == 1:
+                activities_url = 'project/%d/activities.json' % int(project['id'])
+                response = self._request(activities_url)
+                response_body = response.read()
+                response_json = json.loads(response_body)
+                used = response_json['command']['activities']['used']
+
+                if 'activity' in used:
+                    activities = used['activity']
+
+                    if not isinstance(activities, list):
+                        activities = [activities];
+
+                    for activity in activities:
+                        a = Activity(activity['id'], activity['name'], activity['price'])
+                        p.add_activity(a)
+
+            projects_list.append(p)
+
+        return projects_list

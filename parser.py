@@ -2,7 +2,7 @@ import re
 import string
 import datetime
 
-from entry import Entry
+from models import Entry
 
 class ParseError(Exception):
     pass
