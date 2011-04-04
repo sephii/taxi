@@ -1,0 +1,4 @@
+#!/usr/bin/env python
+import taxi
+
+taxi.main()

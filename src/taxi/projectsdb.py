@@ -23,10 +23,18 @@ class ProjectsDb:
     def search(self, search):
         projects = self._get_projects()
         found_list = []
-        search = search.lower()
 
         for project in projects:
-            if project.name.lower().find(search) > -1:
+            found = True
+
+            for s in search:
+                s = s.lower()
+                found = project.name.lower().find(s) > -1
+
+                if not found:
+                    break
+
+            if found:
                 found_list.append(project)
 
         return found_list

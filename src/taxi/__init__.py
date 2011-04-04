@@ -10,7 +10,9 @@ from projectsdb import ProjectsDb
 
 import locale
 
-def update():
+VERSION = '1.0'
+
+def update(args):
     db = ProjectsDb()
 
     db.update(
@@ -19,10 +21,15 @@ def update():
             settings.get('default', 'password')
     )
 
-def search(search):
+def search(args):
     db = ProjectsDb()
 
+    if len(args) < 2:
+        raise Exception('Error: you must specify a search string')
+
     try:
+        search = args
+        search = search[1:]
         projects = db.search(search)
     except IOError:
         print 'Error: the projects database file doesn\'t exist. Please run `taxi update` to create it'
@@ -30,30 +37,43 @@ def search(search):
         for project in projects:
             print '%-4s %s' % (project.id, project.name)
 
-def show(id):
+def show(args):
     db = ProjectsDb()
 
+    if len(args) < 2:
+        raise Exception('Error: you must specify a project id')
+
     try:
-        project = db.get(id)
+        project = db.get(int(id()))
     except IOError:
         print 'Error: the projects database file doesn\'t exist. Please run `taxi update` to create it'
+    except ValueError:
+        print 'Error: the project id must be a number'
     else:
         if project.status == 1:
             active = 'yes'
         else:
             active = 'no'
 
-        print """Id:     %s
-Name:   %s
-Active: %s""" % (project.id, project.name, active)
+        print """Id: %s
+Name: %s
+Active: %s
+Budget: %s
+Description: %s""" % (project.id, project.name, active, project.budget, project.description)
 
         if project.status == 1:
             print "\nActivities:"
             for activity in project.activities:
                 print '%-4s %s' % (activity.id, activity.name)
 
-def status(parser):
+def status(args):
     total_hours = 0
+
+    if len(args) < 2:
+        raise Exception('Error: you must specify a filename to parse')
+
+    parser = get_parser(args[1])
+    check_entries_file(parser, settings)
 
     print 'Staging changes :\n'
 
@@ -72,7 +92,13 @@ def status(parser):
     print '%-29s %5.2f' % ('Total', total_hours)
     print '\nUse `taxi ci` to commit staging changes to the server'
 
-def commit(parser):
+def commit(args):
+    if len(args) < 2:
+        raise Exception('Error: you must specify a filename to parse')
+
+    parser = get_parser(args[1])
+    check_entries_file(parser, settings)
+
     pusher = Pusher(
             settings.get('default', 'site'),
             settings.get('default', 'username'),
@@ -89,22 +115,40 @@ def get_parser(filename):
     return p
 
 def check_entries_file(parser, settings):
-    for date, entries in p.entries.iteritems():
+    for date, entries in parser.entries.iteritems():
         for entry in entries:
             if entry.project_name[-1] != '?' and entry.project_name not in settings.projects:
-                raise ValueError('Project `%s` is not mapped to any project number in your settings file' % entry.project_name)
+                raise ValueError('Error: project `%s` is not mapped to any project number in your settings file' % entry.project_name)
+
+def call_action(actions, args):
+    user_action = args[0]
+
+    for action in actions:
+        for action_name in action[0]:
+            if action_name == user_action:
+                action[1](args)
+
+                return
+
+    raise Exception('Error: action not found')
 
 def main():
-    usage = "usage: %prog [options] action"
+    usage = "usage: %prog [options] status|commit|update|search|show"
     locale.setlocale(locale.LC_ALL, locale.getdefaultlocale())
 
-    opt = OptionParser(usage=usage)
+    opt = OptionParser(usage=usage, version='%prog ' + VERSION)
     opt.add_option('-c', '--config', dest='config', help='use CONFIG file instead of ~/.tksrc', default=os.path.join(os.path.expanduser('~'), '.tksrc'))
     (options, args) = opt.parse_args()
 
-    if len(args) > 0:
-        action = args[0]
-    else:
+    actions = [
+            (['stat', 'status'], status),
+            (['ci', 'commit'], commit),
+            (['up', 'update'], update),
+            (['search'], search),
+            (['show'], show),
+    ]
+
+    if len(args) == 0:
         opt.print_help()
         exit()
 
@@ -113,22 +157,4 @@ def main():
     if not os.path.exists(settings.TAXI_PATH):
         os.mkdir(settings.TAXI_PATH)
 
-    if action == 'stat' or action == 'status':
-        p = get_parser(args[1])
-        check_entries_file(p, settings)
-        status(p)
-    elif action == 'ci' or action == 'commit':
-        p = get_parser(args[1])
-        check_entries_file(p, settings)
-        status(p)
-    elif action == 'ci' or action == 'commit':
-        commit(p)
-    elif action == 'up' or action == 'update':
-        update()
-    elif action == 'search':
-        search(args[1])
-    elif action == 'show':
-        show(args[1])
-
-if __name__ == '__main__':
-    main()
+    call_action(actions, args)
