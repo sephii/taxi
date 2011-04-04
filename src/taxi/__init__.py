@@ -44,7 +44,7 @@ def show(args):
         raise Exception('Error: you must specify a project id')
 
     try:
-        project = db.get(int(id()))
+        project = db.get(int(args[1]))
     except IOError:
         print 'Error: the projects database file doesn\'t exist. Please run `taxi update` to create it'
     except ValueError:
