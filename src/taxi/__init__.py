@@ -158,3 +158,6 @@ def main():
         os.mkdir(settings.TAXI_PATH)
 
     call_action(actions, args)
+
+if __name__ == '__main__':
+    main()

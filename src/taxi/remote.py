@@ -102,6 +102,9 @@ class ZebraRemote(Remote):
                 if 'exception' in json_response:
                     entry.pushed = False
                     print 'Unable to push entry "%s". Error was : %s' % (entry, json_response['exception']['message'])
+                elif 'error' in json_response['command']:
+                    entry.pushed = False
+                    print 'Unable to push entry "%s". Unknown error message.  (sorry that\'s not very useful !)' % (entry)
                 else:
                     entry.pushed = True
                     print entry

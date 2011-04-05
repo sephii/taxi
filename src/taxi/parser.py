@@ -29,7 +29,7 @@ class Parser:
 
 class TaxiParser(Parser):
     def process_date(self, date_matches):
-        if len(date_matches.group(3)):
+        if len(date_matches.group(3)) == 2:
             current_year = datetime.date.today().year
             current_millennium = current_year - (current_year % 1000)
             year = current_millennium + int(date_matches.group(3))
