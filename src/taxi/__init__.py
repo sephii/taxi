@@ -106,6 +106,15 @@ def commit(args):
     )
 
     pusher.push(parser.entries)
+
+    total_hours = 0
+    for date, entries in parser.entries.iteritems():
+        for entry in entries:
+            if entry.pushed:
+                total_hours += entry.hours
+
+    print '\n%-29s %5.2f' % ('Total', total_hours)
+
     parser.update_file()
 
 def get_parser(filename):
