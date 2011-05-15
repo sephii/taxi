@@ -138,6 +138,7 @@ def main():
 
     opt = OptionParser(usage=usage, version='%prog ' + VERSION)
     opt.add_option('-c', '--config', dest='config', help='use CONFIG file instead of ~/.tksrc', default=os.path.join(os.path.expanduser('~'), '.tksrc'))
+    opt.add_option('-v', '--verbose', dest='verbose', action='store_true', help='make taxi verbose', default=False)
     (options, args) = opt.parse_args()
 
     actions = [
@@ -157,7 +158,13 @@ def main():
     if not os.path.exists(settings.TAXI_PATH):
         os.mkdir(settings.TAXI_PATH)
 
-    call_action(actions, args)
+    try:
+        call_action(actions, args)
+    except Exception as e:
+        if options.verbose:
+            raise
+
+        print e
 
 if __name__ == '__main__':
     main()
