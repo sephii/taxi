@@ -45,7 +45,10 @@ class ZebraRemote(Remote):
         request = self._get_request(url, body, headers)
         opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.cookiejar))
 
-        response = opener.open(request)
+        try:
+            response = opener.open(request)
+        except urllib2.URLError:
+            raise Exception('Unable to connect to Zebra. Check your connection status and try again.')
 
         self.cookiejar.extract_cookies(response, request)
 
