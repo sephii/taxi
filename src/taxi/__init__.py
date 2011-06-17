@@ -2,6 +2,7 @@
 from optparse import OptionParser
 import sys
 import os
+import datetime
 
 from parser import TaxiParser
 from settings import settings
@@ -12,7 +13,7 @@ import locale
 
 VERSION = '1.0'
 
-def update(args):
+def update(options, args):
     db = ProjectsDb()
 
     db.update(
@@ -21,7 +22,7 @@ def update(args):
             settings.get('default', 'password')
     )
 
-def search(args):
+def search(options, args):
     db = ProjectsDb()
 
     if len(args) < 2:
@@ -37,7 +38,7 @@ def search(args):
         for project in projects:
             print '%-4s %s' % (project.id, project.name)
 
-def show(args):
+def show(options, args):
     db = ProjectsDb()
 
     if len(args) < 2:
@@ -66,7 +67,7 @@ Description: %s""" % (project.id, project.name, active, project.budget, project.
             for activity in project.activities:
                 print '%-4s %s' % (activity.id, activity.name)
 
-def status(args):
+def status(options, args):
     total_hours = 0
 
     if len(args) < 2:
@@ -77,7 +78,7 @@ def status(args):
 
     print 'Staging changes :\n'
 
-    for date, entries in parser.entries.iteritems():
+    for date, entries in parser.get_entries(date=options.date):
         subtotal_hours = 0
         print '# %s #' % date.strftime('%A %d %B').capitalize()
         for entry in entries:
@@ -92,7 +93,7 @@ def status(args):
     print '%-29s %5.2f' % ('Total', total_hours)
     print '\nUse `taxi ci` to commit staging changes to the server'
 
-def commit(args):
+def commit(options, args):
     if len(args) < 2:
         raise Exception('Error: you must specify a filename to parse')
 
@@ -105,7 +106,7 @@ def commit(args):
             settings.get('default', 'password')
     )
 
-    pusher.push(parser.entries)
+    pusher.push(parser.get_entries(date=options.date))
 
     total_hours = 0
     for date, entries in parser.entries.iteritems():
@@ -129,13 +130,13 @@ def check_entries_file(parser, settings):
             if entry.project_name[-1] != '?' and entry.project_name not in settings.projects:
                 raise ValueError('Error: project `%s` is not mapped to any project number in your settings file' % entry.project_name)
 
-def call_action(actions, args):
+def call_action(actions, options, args):
     user_action = args[0]
 
     for action in actions:
         for action_name in action[0]:
             if action_name == user_action:
-                action[1](args)
+                action[1](options=options, args=args)
 
                 return
 
@@ -148,6 +149,8 @@ def main():
     opt = OptionParser(usage=usage, version='%prog ' + VERSION)
     opt.add_option('-c', '--config', dest='config', help='use CONFIG file instead of ~/.tksrc', default=os.path.join(os.path.expanduser('~'), '.tksrc'))
     opt.add_option('-v', '--verbose', dest='verbose', action='store_true', help='make taxi verbose', default=False)
+    opt.add_option('-d', '--date', dest='date', help='only process entries for date '\
+            'DATE (eg. 31.01.2011, 31.01.2011-05.02.2011)')
     (options, args) = opt.parse_args()
 
     actions = [
@@ -162,13 +165,31 @@ def main():
         opt.print_help()
         exit()
 
+    if options.date is not None:
+        date_format = '%d.%m.%Y'
+
+        try:
+            if '-' in options.date:
+                splitted_date = options.date.split('-', 1)
+
+                options.date = (datetime.datetime.strptime(splitted_date[0],\
+                        date_format).date(),
+                        datetime.datetime.strptime(splitted_date[1],
+                            date_format).date())
+            else:
+                options.date = datetime.datetime.strptime(options.date,\
+                        date_format).date()
+        except ValueError:
+            opt.print_help()
+            exit()
+
     settings.load(options.config)
 
     if not os.path.exists(settings.TAXI_PATH):
         os.mkdir(settings.TAXI_PATH)
 
     try:
-        call_action(actions, args)
+        call_action(actions, options, args)
     except Exception as e:
         if options.verbose:
             raise

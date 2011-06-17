@@ -95,3 +95,15 @@ class TaxiParser(Parser):
             file.write(text)
 
         file.close()
+
+    def get_entries(self, date=None):
+        if date is None:
+            return self.entries
+
+        if not isinstance(date, tuple):
+            date = (date, date)
+
+        entries = [(entrydate, entry) for entrydate, entry in self.entries.iteritems() if \
+                entrydate >= date[0] and entrydate <= date[1]]
+
+        return entries
