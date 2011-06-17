@@ -98,7 +98,7 @@ class TaxiParser(Parser):
 
     def get_entries(self, date=None):
         if date is None:
-            return self.entries
+            return self.entries.iteritems()
 
         if not isinstance(date, tuple):
             date = (date, date)
