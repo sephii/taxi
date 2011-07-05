@@ -30,9 +30,9 @@ def cmd_continue(options, args):
     if projid not in settings.projects:
         raise Exception('Error: the project \'%s\' doesn\'t exist' % projid)
 
-    parser = get_parser(args[2])
+    parser = get_parser(args[3])
     parser.continue_entry(datetime.date.today(), projid,\
-            datetime.datetime.now().time(), 'Hello world')
+            datetime.datetime.now().time(), args[2])
     parser.update_file()
 
 def update(options, args):
@@ -78,7 +78,7 @@ def show(options, args):
         else:
             active = 'no'
 
-        print """Id: %s
+        print u"""Id: %s
 Name: %s
 Active: %s
 Budget: %s

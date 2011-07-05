@@ -139,8 +139,10 @@ class TaxiParser(Parser):
             elif current_date == date:
                 latest_entry = lineno
 
+        # There's already an entry for this date: append the new one
         if latest_entry is not None:
             self.lines.insert(lineno, new_line)
+        # No date in the file, we need to add it
         else:
             new_line['text'] += '\n'
             self.lines.insert(0, {'text': '%s\n' % date.strftime('%d/%m/%Y'),\
