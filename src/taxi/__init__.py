@@ -13,6 +13,28 @@ import locale
 
 VERSION = '1.0'
 
+def start(options, args):
+    projid = args[1]
+
+    if projid not in settings.projects:
+        raise Exception('Error: the project \'%s\' doesn\'t exist' % projid)
+
+    parser = get_parser(args[2])
+    parser.add_entry(datetime.date.today(), projid,\
+            (datetime.datetime.now().time(), None))
+    parser.update_file()
+
+def cmd_continue(options, args):
+    projid = args[1]
+
+    if projid not in settings.projects:
+        raise Exception('Error: the project \'%s\' doesn\'t exist' % projid)
+
+    parser = get_parser(args[2])
+    parser.continue_entry(datetime.date.today(), projid,\
+            datetime.datetime.now().time(), 'Hello world')
+    parser.update_file()
+
 def update(options, args):
     db = ProjectsDb()
 
@@ -83,7 +105,7 @@ def status(options, args):
         print '# %s #' % date.strftime('%A %d %B').capitalize()
         for entry in entries:
             print entry
-            subtotal_hours += entry.hours
+            subtotal_hours += entry.get_duration()
 
         print '%-29s %5.2f' % ('', subtotal_hours)
         print ''
@@ -109,10 +131,10 @@ def commit(options, args):
     pusher.push(parser.get_entries(date=options.date))
 
     total_hours = 0
-    for date, entries in parser.entries.iteritems():
+    for date, entries in parser.get_entries(date=options.date):
         for entry in entries:
             if entry.pushed:
-                total_hours += entry.hours
+                total_hours += entry.get_duration()
 
     print '\n%-29s %5.2f' % ('Total', total_hours)
 
@@ -159,6 +181,8 @@ def main():
             (['up', 'update'], update),
             (['search'], search),
             (['show'], show),
+            (['start'], start),
+            (['continue'], cmd_continue),
     ]
 
     if len(args) == 0:

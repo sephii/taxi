@@ -1,9 +1,10 @@
+import datetime
 from settings import settings
 
 class Entry:
     def __init__(self, date, project_name, hours, description):
         self.project_name = project_name
-        self.hours = hours
+        self.duration = hours
         self.description = description
         self.date = date
         self.pushed = False
@@ -21,10 +22,27 @@ class Entry:
         else:
             project_name = '%s (%s/%s)' % (self.project_name, self.project_id, self.activity_id)
 
-        return '%-30s %-5.2f %s' % (project_name, self.hours, self.description)
+        return '%-30s %-5.2f %s' % (project_name, self.get_duration(), self.description)
 
     def is_ignored(self):
         return self.project_name[-1] == '?'
+
+    def get_duration(self):
+        if isinstance(self.duration, tuple):
+            if None in self.duration:
+                return None
+
+            now = datetime.datetime.now()
+            time_start = now.replace(hour=self.duration[0].hour,\
+                    minute=self.duration[0].minute, second=0)
+            time_end = now.replace(hour=self.duration[1].hour,\
+                    minute=self.duration[1].minute, second=0)
+            total_time = time_end - time_start
+            total_hours = total_time.seconds / 3600.0
+
+            return total_hours
+
+        return self.duration
 
 class Project:
     def __init__(self, id, name, status = None, description = None, budget = None):

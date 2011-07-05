@@ -78,13 +78,13 @@ class ZebraRemote(Remote):
 
         self._login()
 
-        for date, entries in entries.iteritems():
+        for date, entries in entries:
             for entry in entries:
                 if entry.is_ignored():
                     continue
 
                 parameters = urllib.urlencode({
-                    'time':         entry.hours,
+                    'time':         entry.get_duration(),
                     'project_id':   entry.project_id,
                     'activity_id':  entry.activity_id,
                     'day':          date.day,
@@ -128,7 +128,8 @@ class ZebraRemote(Remote):
         print '%d projects found' % len(projects)
 
         for project in projects:
-            p = Project(project['id'], project['name'], project['status'], project['description'], project['budget'])
+            p = Project(project['id'], project['name'].encode('utf-8'),\
+                    project['status'], project['description'].encode('utf-8'), project['budget'])
             i += 1
 
             if i % 50 == 0:
@@ -148,7 +149,8 @@ class ZebraRemote(Remote):
                         activities = [activities];
 
                     for activity in activities:
-                        a = Activity(activity['id'], activity['name'], activity['price'])
+                        a = Activity(activity['id'],\
+                            activity['name'].encode('utf-8'), activity['price'])
                         p.add_activity(a)
 
             projects_list.append(p)
