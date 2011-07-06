@@ -1,5 +1,6 @@
 #!/usr/bin/python
 from optparse import OptionParser
+import ConfigParser
 import sys
 import os
 import datetime
@@ -14,25 +15,43 @@ import locale
 VERSION = '1.0'
 
 def start(options, args):
-    projid = args[1]
+    if len(args) < 2:
+        raise Exception('Usage: start project_name')
 
-    if projid not in settings.projects:
-        raise Exception('Error: the project \'%s\' doesn\'t exist' % projid)
+    project_name = args[1]
 
-    parser = get_parser(args[2])
-    parser.add_entry(datetime.date.today(), projid,\
+    if not settings.project_exists(project_name):
+        raise Exception('Error: the project \'%s\' doesn\'t exist' %\
+                project_name)
+
+    if not os.path.exists(options.file):
+        os.makedirs(os.path.dirname(options.file))
+        myfile = open(options.file, 'w')
+        myfile.close()
+
+    parser = get_parser(options.file)
+    parser.add_entry(datetime.date.today(), project_name,\
             (datetime.datetime.now().time(), None))
     parser.update_file()
 
-def cmd_continue(options, args):
-    projid = args[1]
+def stop(options, args):
+    if len(args) < 2:
+        raise Exception('Usage: stop project_name [description]')
 
-    if projid not in settings.projects:
-        raise Exception('Error: the project \'%s\' doesn\'t exist' % projid)
+    project_name = args[1]
 
-    parser = get_parser(args[3])
-    parser.continue_entry(datetime.date.today(), projid,\
-            datetime.datetime.now().time(), args[2])
+    if len(args) > 2:
+        description = args[2]
+    else:
+        description = None
+
+    if not settings.project_exists(project_name):
+        raise Exception('Error: the project \'%s\' doesn\'t exist' %\
+                project_name)
+
+    parser = get_parser(options.file)
+    parser.continue_entry(datetime.date.today(), project_name,\
+            datetime.datetime.now().time(), description)
     parser.update_file()
 
 def update(options, args):
@@ -48,7 +67,7 @@ def search(options, args):
     db = ProjectsDb()
 
     if len(args) < 2:
-        raise Exception('Error: you must specify a search string')
+        raise Exception('Usage: search search_string')
 
     try:
         search = args
@@ -64,7 +83,7 @@ def show(options, args):
     db = ProjectsDb()
 
     if len(args) < 2:
-        raise Exception('Error: you must specify a project id')
+        raise Exception('Usage: show project_id')
 
     try:
         project = db.get(int(args[1]))
@@ -92,10 +111,7 @@ Description: %s""" % (project.id, project.name, active, project.budget, project.
 def status(options, args):
     total_hours = 0
 
-    if len(args) < 2:
-        raise Exception('Error: you must specify a filename to parse')
-
-    parser = get_parser(args[1])
+    parser = get_parser(options.file)
     check_entries_file(parser, settings)
 
     print 'Staging changes :\n'
@@ -105,7 +121,7 @@ def status(options, args):
         print '# %s #' % date.strftime('%A %d %B').capitalize()
         for entry in entries:
             print entry
-            subtotal_hours += entry.get_duration()
+            subtotal_hours += entry.get_duration() or 0
 
         print '%-29s %5.2f' % ('', subtotal_hours)
         print ''
@@ -116,10 +132,7 @@ def status(options, args):
     print '\nUse `taxi ci` to commit staging changes to the server'
 
 def commit(options, args):
-    if len(args) < 2:
-        raise Exception('Error: you must specify a filename to parse')
-
-    parser = get_parser(args[1])
+    parser = get_parser(options.file)
     check_entries_file(parser, settings)
 
     pusher = Pusher(
@@ -149,7 +162,7 @@ def get_parser(filename):
 def check_entries_file(parser, settings):
     for date, entries in parser.entries.iteritems():
         for entry in entries:
-            if entry.project_name[-1] != '?' and entry.project_name not in settings.projects:
+            if not settings.project_exists(entry.project_name):
                 raise ValueError('Error: project `%s` is not mapped to any project number in your settings file' % entry.project_name)
 
 def call_action(actions, options, args):
@@ -171,6 +184,8 @@ def main():
     opt = OptionParser(usage=usage, version='%prog ' + VERSION)
     opt.add_option('-c', '--config', dest='config', help='use CONFIG file instead of ~/.tksrc', default=os.path.join(os.path.expanduser('~'), '.tksrc'))
     opt.add_option('-v', '--verbose', dest='verbose', action='store_true', help='make taxi verbose', default=False)
+    opt.add_option('-f', '--file', dest='file', help='parse FILE instead of the '\
+            'one defined in your CONFIG file')
     opt.add_option('-d', '--date', dest='date', help='only process entries for date '\
             'DATE (eg. 31.01.2011, 31.01.2011-05.02.2011)')
     (options, args) = opt.parse_args()
@@ -182,12 +197,25 @@ def main():
             (['search'], search),
             (['show'], show),
             (['start'], start),
-            (['continue'], cmd_continue),
+            (['stop'], stop),
     ]
 
     if len(args) == 0:
         opt.print_help()
         exit()
+
+    settings.load(options.config)
+    if not os.path.exists(settings.TAXI_PATH):
+        os.mkdir(settings.TAXI_PATH)
+
+    if options.file is None:
+        try:
+            options.file = settings.get('default', 'file')
+        except ConfigParser.NoOptionError:
+            raise Exception("""Error: no file to parse. You must either define \
+one in your config file with the 'file' setting, or use the -f option""")
+
+    options.file = datetime.date.today().strftime(os.path.expanduser(options.file))
 
     if options.date is not None:
         date_format = '%d.%m.%Y'
@@ -207,10 +235,6 @@ def main():
             opt.print_help()
             exit()
 
-    settings.load(options.config)
-
-    if not os.path.exists(settings.TAXI_PATH):
-        os.mkdir(settings.TAXI_PATH)
 
     try:
         call_action(actions, options, args)

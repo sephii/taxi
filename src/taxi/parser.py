@@ -164,6 +164,7 @@ class TaxiParser(Parser):
             if line['entry'] == found_entry:
                 found_entry.duration = (found_entry.duration[0],\
                         datetime.datetime.now().time())
+                found_entry.description = description or '?'
                 self.lines[lineno]['text'] = self.get_line_text(found_entry)
 
     def get_line_text(self, entry):

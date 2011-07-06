@@ -22,7 +22,7 @@ class Entry:
         else:
             project_name = '%s (%s/%s)' % (self.project_name, self.project_id, self.activity_id)
 
-        return '%-30s %-5.2f %s' % (project_name, self.get_duration(), self.description)
+        return '%-30s %-5.2f %s' % (project_name, self.get_duration() or 0, self.description)
 
     def is_ignored(self):
         return self.project_name[-1] == '?'

@@ -30,4 +30,7 @@ class Settings:
 
             self.projects[project_name] = value
 
+    def project_exists(self, project_name):
+        return project_name[-1] == '?' or project_name in self.projects
+
 settings = Settings()
