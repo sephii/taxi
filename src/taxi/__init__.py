@@ -12,7 +12,7 @@ from projectsdb import ProjectsDb
 
 import locale
 
-VERSION = '1.0'
+VERSION = '2.0'
 
 def term_unicode(string):
     return unicode(string, sys.stdin.encoding)
@@ -25,7 +25,7 @@ def start(options, args):
     finished, use the stop command."""
 
     if len(args) < 2:
-        raise Exception(__name__.__doc__)
+        raise Exception(start.__doc__)
 
     project_name = args[1]
 
@@ -49,20 +49,13 @@ def stop(options, args):
     Use it when you stop working on the current task. You can add a description
     to what you've done."""
 
-    if len(args) < 1:
-        raise Exception(__name__.__doc__)
-
-    if len(args) > 2:
-        description = args[2]
+    if len(args) == 2:
+        description = args[1]
     else:
         description = None
 
-    if not settings.project_exists(project_name):
-        raise Exception('Error: the project \'%s\' doesn\'t exist' %\
-                project_name)
-
     parser = get_parser(options.file)
-    parser.continue_entry(datetime.date.today(), project_name,\
+    parser.continue_entry(datetime.date.today(), \
             datetime.datetime.now().time(), description)
     parser.update_file()
 
@@ -88,7 +81,7 @@ def search(options, args):
     db = ProjectsDb()
 
     if len(args) < 2:
-        raise Exception(__name__.__doc__)
+        raise Exception(search.__doc__)
 
     try:
         search = args
@@ -109,7 +102,7 @@ def show(options, args):
     db = ProjectsDb()
 
     if len(args) < 2:
-        raise Exception(__name__.__doc__)
+        raise Exception(show.__doc__)
 
     try:
         project = db.get(int(args[1]))
@@ -226,14 +219,14 @@ def main():
     """Usage: %prog [options] command
 
 Available commands:
-  commit \t\tCommits the changes to the server
-  help   \t\tPrints this help or the one of the given command
-  search \t\tSearches for a project
-  show   \t\tShows the activities and other details of a project
-  start  \t\tStarts the counter on a given project
-  status \t\tShows the status of your zebra file
-  stop   \t\tStops the counter and record the elapsed time
-  update \t\tUpdates your project database with the one on the server"""
+  commit \t\tcommits the changes to the server
+  help   \t\tprints this help or the one of the given command
+  search \t\tsearches for a project
+  show   \t\tshows the activities and other details of a project
+  start  \t\tstarts the counter on a given project
+  status \t\tshows the status of your zebra file
+  stop   \t\tstops the counter and record the elapsed time
+  update \t\tupdates your project database with the one on the server"""
 
     usage = main.__doc__
     locale.setlocale(locale.LC_ALL, locale.getdefaultlocale())

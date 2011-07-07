@@ -150,10 +150,10 @@ class TaxiParser(Parser):
             self.lines.insert(1, {'text': '\n', 'entry': None})
             self.lines.insert(2, new_line)
 
-    def continue_entry(self, date, project, end, description=None):
+    def continue_entry(self, date, end, description=None):
         found_entry = None
         for entry in self.entries[date]:
-            if entry.get_duration() is None and entry.project_name == project:
+            if isinstance(entry.duration, tuple) and entry.duration[1] is None:
                 found_entry = entry
                 break
 
