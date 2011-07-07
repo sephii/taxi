@@ -14,9 +14,18 @@ import locale
 
 VERSION = '1.0'
 
+def term_unicode(string):
+    return unicode(string, sys.stdin.encoding)
+
 def start(options, args):
+    """Usage: start project_name
+
+    Use it when you start working on the project project_name. This will add the
+    project name and the current time to your entries file. When you're
+    finished, use the stop command."""
+
     if len(args) < 2:
-        raise Exception('Usage: start project_name')
+        raise Exception(__name__.__doc__)
 
     project_name = args[1]
 
@@ -35,10 +44,13 @@ def start(options, args):
     parser.update_file()
 
 def stop(options, args):
-    if len(args) < 2:
-        raise Exception('Usage: stop project_name [description]')
+    """Usage: stop [description]
 
-    project_name = args[1]
+    Use it when you stop working on the current task. You can add a description
+    to what you've done."""
+
+    if len(args) < 1:
+        raise Exception(__name__.__doc__)
 
     if len(args) > 2:
         description = args[2]
@@ -55,6 +67,10 @@ def stop(options, args):
     parser.update_file()
 
 def update(options, args):
+    """Usage: update
+
+    Synchronizes your project database with the server."""
+
     db = ProjectsDb()
 
     db.update(
@@ -64,10 +80,15 @@ def update(options, args):
     )
 
 def search(options, args):
+    """Usage: search search_string
+
+    Searches for a project by its name.
+    """
+
     db = ProjectsDb()
 
     if len(args) < 2:
-        raise Exception('Usage: search search_string')
+        raise Exception(__name__.__doc__)
 
     try:
         search = args
@@ -80,10 +101,15 @@ def search(options, args):
             print '%-4s %s' % (project.id, project.name)
 
 def show(options, args):
+    """Usage: show project_id
+
+    Shows the details of the given project_id (you can find it with the search
+    command)."""
+
     db = ProjectsDb()
 
     if len(args) < 2:
-        raise Exception('Usage: show project_id')
+        raise Exception(__name__.__doc__)
 
     try:
         project = db.get(int(args[1]))
@@ -97,7 +123,7 @@ def show(options, args):
         else:
             active = 'no'
 
-        print u"""Id: %s
+        print """Id: %s
 Name: %s
 Active: %s
 Budget: %s
@@ -109,6 +135,10 @@ Description: %s""" % (project.id, project.name, active, project.budget, project.
                 print '%-4s %s' % (activity.id, activity.name)
 
 def status(options, args):
+    """Usage: status
+
+    Shows the summary of what's going to be committed to the server."""
+
     total_hours = 0
 
     parser = get_parser(options.file)
@@ -132,6 +162,9 @@ def status(options, args):
     print '\nUse `taxi ci` to commit staging changes to the server'
 
 def commit(options, args):
+    """Usage: commit
+
+    Commits your work to the server."""
     parser = get_parser(options.file)
     check_entries_file(parser, settings)
 
@@ -167,18 +200,42 @@ def check_entries_file(parser, settings):
 
 def call_action(actions, options, args):
     user_action = args[0]
+    display_help = False
+
+    if user_action == 'help':
+        user_action = args[1]
+        display_help = True
+        if user_action == 'help':
+            print 'YO DAWG you asked for help for the help command. Try to'\
+                    ' search Google in Google instead.'
+            return
 
     for action in actions:
         for action_name in action[0]:
             if action_name == user_action:
-                action[1](options=options, args=args)
+                if display_help:
+                    print action[1].__doc__
+                else:
+                    action[1](options=options, args=args)
 
                 return
 
     raise Exception('Error: action not found')
 
 def main():
-    usage = "usage: %prog [options] status|commit|update|search|show"
+    """Usage: %prog [options] command
+
+Available commands:
+  commit \t\tCommits the changes to the server
+  help   \t\tPrints this help or the one of the given command
+  search \t\tSearches for a project
+  show   \t\tShows the activities and other details of a project
+  start  \t\tStarts the counter on a given project
+  status \t\tShows the status of your zebra file
+  stop   \t\tStops the counter and record the elapsed time
+  update \t\tUpdates your project database with the one on the server"""
+
+    usage = main.__doc__
     locale.setlocale(locale.LC_ALL, locale.getdefaultlocale())
 
     opt = OptionParser(usage=usage, version='%prog ' + VERSION)
@@ -190,6 +247,8 @@ def main():
             'DATE (eg. 31.01.2011, 31.01.2011-05.02.2011)')
     (options, args) = opt.parse_args()
 
+    args = [term_unicode(arg) for arg in args]
+
     actions = [
             (['stat', 'status'], status),
             (['ci', 'commit'], commit),
@@ -200,7 +259,7 @@ def main():
             (['stop'], stop),
     ]
 
-    if len(args) == 0:
+    if len(args) == 0 or (len(args) == 1 and args[0] == 'help'):
         opt.print_help()
         exit()
 

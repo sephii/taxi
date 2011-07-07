@@ -128,8 +128,9 @@ class ZebraRemote(Remote):
         print '%d projects found' % len(projects)
 
         for project in projects:
-            p = Project(project['id'], unicode(project['name']),\
-                    project['status'], unicode(project['description']), project['budget'])
+            p = Project(int(project['id']), project['name'],\
+                    project['status'], project['description'],\
+                    project['budget'])
             i += 1
 
             if i % 50 == 0:
@@ -149,8 +150,8 @@ class ZebraRemote(Remote):
                         activities = [activities];
 
                     for activity in activities:
-                        a = Activity(activity['id'],\
-                            unicode(activity['name']), activity['price'])
+                        a = Activity(int(activity['id']),\
+                            activity['name'], activity['price'])
                         p.add_activity(a)
 
             projects_list.append(p)
