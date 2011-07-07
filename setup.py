@@ -4,7 +4,7 @@ from distutils.core import setup
 setup(
     name='taxi',
     version='1.0',
-    py_modules=['taxi'],
+    #py_modules=['taxi'],
     packages=['taxi'],
     package_dir={'taxi': 'src/taxi'},
     description='Taxi is a Zebra frontend',
