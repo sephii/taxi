@@ -179,6 +179,19 @@ def commit(options, args):
 
     parser.update_file()
 
+def edit(options, args):
+    """Usage: edit
+
+    Opens your zebra file in your favourite editor."""
+    try:
+        os.execlp('sensible-editor', '', options.file)
+    except OSError:
+        if 'EDITOR' not in os.environ:
+            raise Exception('Can\'t find any suitable editor. Check your EDITOR'\
+            ' env var.')
+
+        os.execlp(os.environ['EDITOR'], '', options.file)
+
 def get_parser(filename):
     p = TaxiParser(filename)
     p.parse()
@@ -220,6 +233,7 @@ def main():
 
 Available commands:
   commit \t\tcommits the changes to the server
+  edit   \t\topens your zebra file in your favourite editor
   help   \t\tprints this help or the one of the given command
   search \t\tsearches for a project
   show   \t\tshows the activities and other details of a project
@@ -250,6 +264,7 @@ Available commands:
             (['show'], show),
             (['start'], start),
             (['stop'], stop),
+            (['edit'], edit),
     ]
 
     if len(args) == 0 or (len(args) == 1 and args[0] == 'help'):
