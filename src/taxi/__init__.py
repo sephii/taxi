@@ -33,8 +33,10 @@ def start(options, args):
         raise Exception('Error: the project \'%s\' doesn\'t exist' %\
                 project_name)
 
-    if not os.path.exists(options.file):
+    if not os.path.exists(os.path.dirname(options.file)):
         os.makedirs(os.path.dirname(options.file))
+
+    if not os.path.exists(options.file):
         myfile = open(options.file, 'w')
         myfile.close()
 
