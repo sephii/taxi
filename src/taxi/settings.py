@@ -1,5 +1,6 @@
 import ConfigParser
 import os
+import difflib
 
 class Settings:
     TAXI_PATH = os.path.expanduser('~/.taxi')
@@ -32,5 +33,8 @@ class Settings:
 
     def project_exists(self, project_name):
         return project_name[-1] == '?' or project_name in self.projects
+
+    def get_close_matches(self, project_name):
+        return difflib.get_close_matches(project_name, self.projects.keys())
 
 settings = Settings()

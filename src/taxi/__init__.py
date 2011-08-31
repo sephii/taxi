@@ -4,6 +4,7 @@ import ConfigParser
 import sys
 import os
 import datetime
+import difflib
 
 from parser import TaxiParser
 from settings import settings
@@ -13,6 +14,14 @@ from projectsdb import ProjectsDb
 import locale
 
 VERSION = '2.0'
+
+class ProjectNotFoundError(Exception):
+    def __init__(self, project_name, description):
+        self.project_name = project_name
+        self.description = description
+
+    def __str__(self):
+        return repr(self.description)
 
 def term_unicode(string):
     return unicode(string, sys.stdin.encoding)
@@ -30,7 +39,7 @@ def start(options, args):
     project_name = args[1]
 
     if not settings.project_exists(project_name):
-        raise Exception('Error: the project \'%s\' doesn\'t exist' %\
+        raise ProjectNotFoundError(project_name, 'Error: the project \'%s\' doesn\'t exist' %\
                 project_name)
 
     if not os.path.exists(os.path.dirname(options.file)):
@@ -201,11 +210,22 @@ def get_parser(filename):
 
     return p
 
+def suggest_project_names(project_name):
+    close = settings.get_close_matches(project_name)
+
+    if len(close) > 0:
+        return 'Did you mean one of the following?\n\n\t%s' % '\n\t'.join(close)
+
+    return ''
+
 def check_entries_file(parser, settings):
     for date, entries in parser.entries.iteritems():
         for entry in entries:
             if not settings.project_exists(entry.project_name):
-                raise ValueError('Error: project `%s` is not mapped to any project number in your settings file' % entry.project_name)
+                error = 'Error: project `%s` is not mapped to any project number'\
+                ' in your settings file' % entry.project_name
+
+                raise ProjectNotFoundError(entry.project_name, error)
 
 def call_action(actions, options, args):
     user_action = args[0]
@@ -305,9 +325,14 @@ one in your config file with the 'file' setting, or use the -f option""")
             opt.print_help()
             exit()
 
-
     try:
         call_action(actions, options, args)
+    except ProjectNotFoundError as e:
+        if options.verbose:
+            raise
+
+        print e.description
+        print suggest_project_names(e.project_name)
     except Exception as e:
         if options.verbose:
             raise
