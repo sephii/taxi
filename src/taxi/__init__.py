@@ -140,8 +140,9 @@ def status(options, args):
     check_entries_file(parser, settings)
 
     print 'Staging changes :\n'
+    entries_list = sorted(parser.get_entries(date=options.date))
 
-    for date, entries in parser.get_entries(date=options.date):
+    for date, entries in entries_list:
         subtotal_hours = 0
         print '# %s #' % date.strftime('%A %d %B').capitalize()
         for entry in entries:
