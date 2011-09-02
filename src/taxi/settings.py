@@ -35,6 +35,7 @@ class Settings:
         return project_name[-1] == '?' or project_name in self.projects
 
     def get_close_matches(self, project_name):
-        return difflib.get_close_matches(project_name, self.projects.keys())
+        return difflib.get_close_matches(project_name, self.projects.keys(),\
+                cutoff=0.2)
 
 settings = Settings()
