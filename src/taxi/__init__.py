@@ -266,7 +266,7 @@ Available commands:
   update \t\tupdates your project database with the one on the server"""
 
     usage = main.__doc__
-    locale.setlocale(locale.LC_ALL, locale.getdefaultlocale())
+    locale.setlocale(locale.LC_ALL, '')
 
     opt = OptionParser(usage=usage, version='%prog ' + VERSION)
     opt.add_option('-c', '--config', dest='config', help='use CONFIG file instead of ~/.tksrc', default=os.path.join(os.path.expanduser('~'), '.tksrc'))
