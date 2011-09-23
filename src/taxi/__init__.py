@@ -5,6 +5,7 @@ import sys
 import os
 import datetime
 import difflib
+import subprocess
 
 from parser import TaxiParser
 from settings import settings
@@ -196,13 +197,15 @@ def edit(options, args):
 
     Opens your zebra file in your favourite editor."""
     try:
-        os.execlp('sensible-editor', '', options.file)
+        subprocess.call(['sensible-editor', options.file])
     except OSError:
         if 'EDITOR' not in os.environ:
             raise Exception('Can\'t find any suitable editor. Check your EDITOR'\
             ' env var.')
 
-        os.execlp(os.environ['EDITOR'], '', options.file)
+        subprocess.call([os.environ['EDITOR'], options.file])
+
+    status(options, args)
 
 def get_parser(filename):
     p = TaxiParser(filename)
