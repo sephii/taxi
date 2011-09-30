@@ -1,0 +1,22 @@
+[default]
+site = https://zebra.liip.ch
+username = my_zebra_username
+password = my_zebra_password
+file = ~/zebra/%Y/%m.tks
+
+[wrmap]
+liip_internal = 7/16
+liip_meeting = 7/11
+liip_presales = 7/8
+liip_infra = 7/17
+liip_osswork = 523
+liip_marketing = 7/12
+liip_holiday = 7/18
+liip_sick = 7/19
+liip_german = 726/75
+liip_hosting = 7/17
+liip_techday = 1061/72
+liip_techtalk = 1061/71
+liip_hackday = 1061/96
+liip_reise = 7/15
+bizdev = 1070/8
