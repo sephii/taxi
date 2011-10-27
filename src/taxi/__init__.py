@@ -180,6 +180,17 @@ def commit(options, args):
             settings.get('default', 'password')
     )
 
+    entries = parser.get_entries(date=options.date)
+    today = datetime.date.today()
+    yesterday = today - datetime.timedelta(days=1)
+
+    if options.date is None and not options.ignore_date_error:
+        for (date, entry) in entries:
+            if date not in (today, yesterday) or date.strftime('%w') in [6, 0]:
+                raise Exception('Error: you\'re trying to commit for a day that\'s either'\
+                ' on a week-end or that\'s not yesterday nor today.\nTo ignore this'\
+                ' error, re-run taxi with the option `--ignore-date-error`')
+
     pusher.push(parser.get_entries(date=options.date))
 
     total_hours = 0
@@ -278,6 +289,10 @@ Available commands:
             'one defined in your CONFIG file')
     opt.add_option('-d', '--date', dest='date', help='only process entries for date '\
             'DATE (eg. 31.01.2011, 31.01.2011-05.02.2011)')
+    opt.add_option('--ignore-date-error',
+            dest='ignore_date_error', help='suppresses the error if'\
+            ' you\'re trying to commit a date that\'s on a week-end or on another'\
+            ' day than the current day or the day before', action='store_true', default=False)
     (options, args) = opt.parse_args()
 
     args = [term_unicode(arg) for arg in args]
