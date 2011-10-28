@@ -188,8 +188,9 @@ def commit(options, args):
         for (date, entry) in entries:
             if date not in (today, yesterday) or date.strftime('%w') in [6, 0]:
                 raise Exception('Error: you\'re trying to commit for a day that\'s either'\
-                ' on a week-end or that\'s not yesterday nor today.\nTo ignore this'\
-                ' error, re-run taxi with the option `--ignore-date-error`')
+                ' on a week-end or that\'s not yesterday nor today (%s).\nTo ignore this'\
+                ' error, re-run taxi with the option `--ignore-date-error`' %
+                date.strftime('%A %d %B'))
 
     pusher.push(parser.get_entries(date=options.date))
 
