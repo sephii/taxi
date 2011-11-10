@@ -225,8 +225,8 @@ class TaxiParser(Parser):
                     top_date = date
                 else:
                     if top_date > date:
-                        return 'top'
+                        return settings.AUTO_ADD_OPTIONS['TOP']
                     elif top_date < date:
-                        return 'bottom'
+                        return settings.AUTO_ADD_OPTIONS['BOTTOM']
 
         return None
