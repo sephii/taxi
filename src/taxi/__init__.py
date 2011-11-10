@@ -240,7 +240,9 @@ def edit(options, args):
             ' the `auto_add` option to `top` or `bottom` in your .tksrc file'
 
     if auto_add is not None and auto_add != settings.AUTO_ADD_OPTIONS['NO']:
-        get_parser(options.file).auto_add(auto_add)
+        parser = get_parser(options.file)
+        parser.auto_add(auto_add)
+        parser.update_file()
 
     try:
         subprocess.call(['sensible-editor', options.file])

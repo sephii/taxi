@@ -150,7 +150,7 @@ class TaxiParser(Parser):
         # No date in the file, we need to add it
         else:
             new_line['text'] += '\n'
-            self.lines.insert(0, {'text': '%s\n' % date.strftime('%d/%m/%Y'),\
+            self.lines.insert(0, {'text': '%s\n' % date.strftime(settings.get_default_date_format()),\
                 'entry': None})
             self.lines.insert(1, {'text': '\n', 'entry': None})
             self.lines.insert(2, new_line)
@@ -201,18 +201,16 @@ class TaxiParser(Parser):
                     return
 
         if mode == settings.AUTO_ADD_OPTIONS['TOP']:
-            self.lines.insert(0, {'text': '%s\n' % datetime.date.today().strftime('%d/%m/%Y'),\
+            self.lines.insert(0, {'text': '%s\n' % datetime.date.today().strftime(settings.get_default_date_format()),\
                 'entry': None})
             self.lines.insert(1, {'text': '\n', 'entry': None})
         elif mode == settings.AUTO_ADD_OPTIONS['BOTTOM']:
             if len(self.lines) > 0:
                 self.lines.append({'text': '\n', 'entry': None})
 
-            self.lines.append({'text': '%s\n' % datetime.date.today().strftime('%d/%m/%Y'),\
+            self.lines.append({'text': '%s\n' % datetime.date.today().strftime(settings.get_default_date_format()),\
                 'entry': None})
             self.lines.append({'text': '\n', 'entry': None})
-
-        self.update_file()
 
     def get_entries_direction(self):
         top_date = None
