@@ -4,6 +4,7 @@ import datetime
 import os
 
 from models import Entry
+from settings import settings
 
 class ParseError(Exception):
     pass
