@@ -1,6 +1,7 @@
 import re
 import string
 import datetime
+import os
 
 from models import Entry
 
@@ -23,6 +24,9 @@ class Parser:
         file.close()
 
     def __init__(self, file):
+        if not os.path.exists(file):
+            raise ParseError('File %s does not exist' % file)
+
         self.file = file
         self.entries = {}
         self.lines = []
@@ -183,3 +187,47 @@ class TaxiParser(Parser):
 
         return '%s %s %s\n' % (entry.project_name, txtduration,\
                 entry.description or '?')
+
+    def auto_add(self, mode):
+        # Check if we already have the current date in the file
+        for line in self.lines:
+            date_matches = self._match_date(line['text'])
+
+            if date_matches is not None:
+                date = self.process_date(date_matches)
+
+                if date == datetime.date.today():
+                    return
+
+        if mode == settings.AUTO_ADD_OPTIONS['TOP']:
+            self.lines.insert(0, {'text': '%s\n' % datetime.date.today().strftime('%d/%m/%Y'),\
+                'entry': None})
+            self.lines.insert(1, {'text': '\n', 'entry': None})
+        elif mode == settings.AUTO_ADD_OPTIONS['BOTTOM']:
+            if len(self.lines) > 0:
+                self.lines.append({'text': '\n', 'entry': None})
+
+            self.lines.append({'text': '%s\n' % datetime.date.today().strftime('%d/%m/%Y'),\
+                'entry': None})
+            self.lines.append({'text': '\n', 'entry': None})
+
+        self.update_file()
+
+    def get_entries_direction(self):
+        top_date = None
+
+        for line in self.lines:
+            date_matches = self._match_date(line['text'])
+
+            if date_matches is not None:
+                date = self.process_date(date_matches)
+
+                if top_date is None:
+                    top_date = date
+                else:
+                    if top_date > date:
+                        return 'top'
+                    elif top_date < date:
+                        return 'bottom'
+
+        return None

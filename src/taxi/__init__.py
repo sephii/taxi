@@ -7,7 +7,7 @@ import datetime
 import difflib
 import subprocess
 
-from parser import TaxiParser
+from parser import TaxiParser, ParseError
 from settings import settings
 from pusher import Pusher
 from projectsdb import ProjectsDb
@@ -208,6 +208,40 @@ def edit(options, args):
     """Usage: edit
 
     Opens your zebra file in your favourite editor."""
+    # Create the file if it does not exist yet
+    # TODO refactor
+    if not os.path.exists(options.file):
+        myfile = open(options.file, 'w')
+        myfile.close()
+
+    try:
+        auto_add = settings.get('default', 'auto_add')
+    except ConfigParser.NoOptionError:
+        auto_add = settings.AUTO_ADD_OPTIONS['AUTO']
+
+    if auto_add == settings.AUTO_ADD_OPTIONS['AUTO']:
+        auto_add = get_parser(options.file).get_entries_direction()
+
+        # Unable to automatically detect the entries direction, we try to get a
+        # previous file to see if we're lucky
+        if auto_add is None:
+            yesterday = datetime.date.today() - datetime.timedelta(days=30)
+            oldfile = yesterday.strftime(os.path.expanduser(options.unparsed_file))
+
+            if oldfile != options.file:
+                try:
+                    oldparser = get_parser(oldfile)
+                    auto_add = oldparser.get_entries_direction()
+                except ParseError:
+                    pass
+
+    if auto_add is None:
+        print 'Warning: unable to detect where to put the new entry, please set'\
+            ' the `auto_add` option to `top` or `bottom` in your .tksrc file'
+
+    if auto_add is not None and auto_add != settings.AUTO_ADD_OPTIONS['NO']:
+        get_parser(options.file).auto_add(auto_add)
+
     try:
         subprocess.call(['sensible-editor', options.file])
     except OSError:
@@ -324,6 +358,7 @@ Available commands:
             raise Exception("""Error: no file to parse. You must either define \
 one in your config file with the 'file' setting, or use the -f option""")
 
+    options.unparsed_file = options.file
     options.file = datetime.date.today().strftime(os.path.expanduser(options.file))
 
     if options.date is not None:

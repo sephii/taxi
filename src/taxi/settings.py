@@ -4,6 +4,12 @@ import difflib
 
 class Settings:
     TAXI_PATH = os.path.expanduser('~/.taxi')
+    AUTO_ADD_OPTIONS = {
+            'NO': 'no',
+            'TOP': 'top',
+            'BOTTOM': 'bottom',
+            'AUTO': 'auto'
+    }
 
     def load(self, file):
         self.config = ConfigParser.RawConfigParser()
