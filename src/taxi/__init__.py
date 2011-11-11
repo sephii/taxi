@@ -51,8 +51,9 @@ def start(options, args):
         myfile.close()
 
     parser = get_parser(options.file)
+    auto_add = get_auto_add_direction(options.file, options.unparsed_file)
     parser.add_entry(datetime.date.today(), project_name,\
-            (datetime.datetime.now().time(), None))
+            (datetime.datetime.now().time(), None), auto_add)
     parser.update_file()
 
 def stop(options, args):
@@ -214,31 +215,7 @@ def edit(options, args):
         myfile = open(options.file, 'w')
         myfile.close()
 
-    try:
-        auto_add = settings.get('default', 'auto_add')
-    except ConfigParser.NoOptionError:
-        auto_add = settings.AUTO_ADD_OPTIONS['AUTO']
-
-    if auto_add == settings.AUTO_ADD_OPTIONS['AUTO']:
-        auto_add = get_parser(options.file).get_entries_direction()
-
-        # Unable to automatically detect the entries direction, we try to get a
-        # previous file to see if we're lucky
-        if auto_add is None:
-            yesterday = datetime.date.today() - datetime.timedelta(days=30)
-            oldfile = yesterday.strftime(os.path.expanduser(options.unparsed_file))
-
-            if oldfile != options.file:
-                try:
-                    oldparser = get_parser(oldfile)
-                    auto_add = oldparser.get_entries_direction()
-                except ParseError:
-                    pass
-
-    if auto_add is None:
-        print 'Warning: unable to detect where to put the new entry, please set'\
-            ' the `auto_add` option to `top` or `bottom` in your .tksrc file'
-
+    auto_add = get_auto_add_direction(options.file, options.unparsed_file)
     if auto_add is not None and auto_add != settings.AUTO_ADD_OPTIONS['NO']:
         parser = get_parser(options.file)
         parser.auto_add(auto_add)
@@ -254,6 +231,36 @@ def edit(options, args):
         subprocess.call([os.environ['EDITOR'], options.file])
 
     status(options, args)
+
+def get_auto_add_direction(filepath, unparsed_filepath):
+    try:
+        auto_add = settings.get('default', 'auto_add')
+    except ConfigParser.NoOptionError:
+        auto_add = settings.AUTO_ADD_OPTIONS['AUTO']
+
+    if auto_add == settings.AUTO_ADD_OPTIONS['AUTO']:
+        auto_add = get_parser(filepath).get_entries_direction()
+
+        if auto_add is not None:
+            return auto_add
+
+        # Unable to automatically detect the entries direction, we try to get a
+        # previous file to see if we're lucky
+        yesterday = datetime.date.today() - datetime.timedelta(days=30)
+        oldfile = yesterday.strftime(os.path.expanduser(unparsed_filepath))
+
+        if oldfile != options.file:
+            try:
+                oldparser = get_parser(oldfile)
+                auto_add = oldparser.get_entries_direction()
+            except ParseError:
+                pass
+
+    if auto_add is None:
+        print 'Warning: unable to detect where to put the new entry, please set'\
+            ' the `auto_add` option to `top` or `bottom` in your .tksrc file'
+
+    return auto_add
 
 def get_parser(filename):
     p = TaxiParser(filename)

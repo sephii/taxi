@@ -116,7 +116,7 @@ class TaxiParser(Parser):
 
         return entries
 
-    def add_entry(self, date, project, duration=None):
+    def add_entry(self, date, project, duration=None, direction=None):
         if date not in self.entries:
             self.entries[date] = []
 
@@ -131,29 +131,57 @@ class TaxiParser(Parser):
 
         current_date = None
         latest_entry = None
+        latest_entry_is_date = False
 
         for lineno, line in enumerate(self.lines):
             if line['entry'] is None:
-                if latest_entry is not None:
-                    break
-
                 datematches = self._match_date(line['text'])
-
                 if datematches is not None:
                     current_date = self.process_date(datematches)
-            elif current_date == date:
+
+                    # We're on the current date, store the line number
+                    if current_date == date:
+                        latest_entry = lineno
+                        latest_entry_is_date = True
+                    # We passed the current date and we already found the
+                    # current date, break
+                    elif latest_entry is not None:
+                        break
+                # The line contains something else that an entry and a date and
+                # it's not just a blank line
+                elif len(line['text'].strip()) > 0 and latest_entry is not None:
+                    latest_entry = lineno
+                    latest_entry_is_date = False
+            # We're on the current date (latest_entry is set) and we're on an
+            # entry, store the line number
+            elif latest_entry is not None:
                 latest_entry = lineno
+                latest_entry_is_date = False
 
         # There's already an entry for this date: append the new one
         if latest_entry is not None:
-            self.lines.insert(lineno, new_line)
+            if latest_entry_is_date:
+                new_line['text'] = '\n' + new_line['text']
+            self.lines.insert(latest_entry + 1, new_line)
         # No date in the file, we need to add it
         else:
-            new_line['text'] += '\n'
-            self.lines.insert(0, {'text': '%s\n' % date.strftime(settings.get_default_date_format()),\
-                'entry': None})
-            self.lines.insert(1, {'text': '\n', 'entry': None})
-            self.lines.insert(2, new_line)
+            to_insert = [
+                {
+                    'text': '%s\n' % date.strftime(settings.get_default_date_format()),
+                    'entry': None
+                },
+                {'text': '\n', 'entry': None},
+                new_line,
+            ]
+
+            if direction is None or direction == settings.AUTO_ADD_OPTIONS['TOP']:
+                for i in range(len(to_insert)):
+                    self.lines.insert(i, to_insert[i])
+                self.lines.insert(len(to_insert), {'text': '\n', 'entry': None})
+            elif direction == settings.AUTO_ADD_OPTIONS['BOTTOM']:
+                self.lines.append({'text': '\n', 'entry': None})
+                for line in to_insert:
+                    self.lines.append(line)
 
     def continue_entry(self, date, end, description=None):
         found_entry = None
