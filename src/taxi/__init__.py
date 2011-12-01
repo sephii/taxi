@@ -249,7 +249,7 @@ def get_auto_add_direction(filepath, unparsed_filepath):
         yesterday = datetime.date.today() - datetime.timedelta(days=30)
         oldfile = yesterday.strftime(os.path.expanduser(unparsed_filepath))
 
-        if oldfile != options.file:
+        if oldfile != filepath:
             try:
                 oldparser = get_parser(oldfile)
                 auto_add = oldparser.get_entries_direction()
