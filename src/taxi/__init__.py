@@ -215,11 +215,15 @@ def edit(options, args):
         myfile = open(options.file, 'w')
         myfile.close()
 
-    auto_add = get_auto_add_direction(options.file, options.unparsed_file)
-    if auto_add is not None and auto_add != settings.AUTO_ADD_OPTIONS['NO']:
-        parser = get_parser(options.file)
-        parser.auto_add(auto_add)
-        parser.update_file()
+    try:
+        auto_add = get_auto_add_direction(options.file, options.unparsed_file)
+    except ParseError as e:
+        pass
+    else:
+        if auto_add is not None and auto_add != settings.AUTO_ADD_OPTIONS['NO']:
+            parser = get_parser(options.file)
+            parser.auto_add(auto_add)
+            parser.update_file()
 
     try:
         subprocess.call(['sensible-editor', options.file])
