@@ -46,9 +46,7 @@ def start(options, args):
     if not os.path.exists(os.path.dirname(options.file)):
         os.makedirs(os.path.dirname(options.file))
 
-    if not os.path.exists(options.file):
-        myfile = open(options.file, 'w')
-        myfile.close()
+    create_file(options.file)
 
     parser = get_parser(options.file)
     auto_add = get_auto_add_direction(options.file, options.unparsed_file)
@@ -210,10 +208,7 @@ def edit(options, args):
 
     Opens your zebra file in your favourite editor."""
     # Create the file if it does not exist yet
-    # TODO refactor
-    if not os.path.exists(options.file):
-        myfile = open(options.file, 'w')
-        myfile.close()
+    create_file(options.file)
 
     try:
         auto_add = get_auto_add_direction(options.file, options.unparsed_file)
@@ -288,6 +283,11 @@ def check_entries_file(parser, settings):
                 ' in your settings file' % entry.project_name
 
                 raise ProjectNotFoundError(entry.project_name, error)
+
+def create_file(filepath):
+    if not os.path.exists(filepath):
+        myfile = open(filepath, 'w')
+        myfile.close()
 
 def call_action(actions, options, args):
     user_action = args[0]
