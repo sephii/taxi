@@ -43,9 +43,6 @@ def start(options, args):
         raise ProjectNotFoundError(project_name, 'Error: the project \'%s\' doesn\'t exist' %\
                 project_name)
 
-    if not os.path.exists(os.path.dirname(options.file)):
-        os.makedirs(os.path.dirname(options.file))
-
     create_file(options.file)
 
     parser = get_parser(options.file)
@@ -285,6 +282,9 @@ def check_entries_file(parser, settings):
                 raise ProjectNotFoundError(entry.project_name, error)
 
 def create_file(filepath):
+    if not os.path.exists(os.path.dirname(filepath)):
+        os.makedirs(os.path.dirname(filepath))
+
     if not os.path.exists(filepath):
         myfile = open(filepath, 'w')
         myfile.close()
