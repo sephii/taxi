@@ -4,6 +4,9 @@ import json
 from models import Project, Activity
 
 class Remote(object):
+    # Default timeout for HTTP-related operations, in seconds
+    DEFAULT_TIMEOUT = 10
+
     def __init__(self, base_url):
         self.base_url = base_url
 
@@ -46,7 +49,7 @@ class ZebraRemote(Remote):
         opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.cookiejar))
 
         try:
-            response = opener.open(request)
+            response = opener.open(request, timeout=self.DEFAULT_TIMEOUT)
         except urllib2.URLError:
             raise Exception('Unable to connect to Zebra. Check your connection status and try again.')
 
@@ -93,8 +96,13 @@ class ZebraRemote(Remote):
                     'description':  entry.description,
                 })
 
-                response = self._request(post_url, parameters)
-                response_body = response.read()
+                try:
+                    response = self._request(post_url, parameters)
+                    response_body = response.read()
+                except Exception as e:
+                    entry.pushed = False
+                    print 'Unable to send request to Zebra, exception was %s' % e
+                    continue
 
                 try :
                     json_response = json.loads(response_body)
