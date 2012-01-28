@@ -237,8 +237,17 @@ def edit(options, args):
             parser.auto_add(auto_add)
             parser.update_file()
 
+    # Use the 'editor' config var if it's set, otherwise, fall back to
+    # sensible-editor
     try:
-        subprocess.call(['sensible-editor', options.file])
+        editor = settings.get('default', 'editor').split()
+    except ConfigParser.NoOptionError:
+        editor = ['sensible-editor']
+
+    editor.append(options.file)
+
+    try:
+        subprocess.call(editor)
     except OSError:
         if 'EDITOR' not in os.environ:
             raise Exception('Can\'t find any suitable editor. Check your EDITOR'\

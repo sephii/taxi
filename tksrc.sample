@@ -18,6 +18,9 @@ date_format = %d/%m/%Y
 # (values are added to the top of the file) or 'no' (no auto add for the edit
 # command)
 auto_add = auto
+# Your editor command will be deducted from your EDITOR env var but if you want
+# to use a custom command just for taxi you can set it here
+# editor = vim +
 
 # This section contains your project name <-> id mapping. The format is:
 # project_name = project_id/activity_id
