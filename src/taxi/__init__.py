@@ -178,7 +178,17 @@ def commit(options, args):
 
     entries = parser.get_entries(date=options.date)
     today = datetime.date.today()
-    yesterday = today - datetime.timedelta(days=1)
+
+    # Get the number of days required to go to the previous open day (ie. not on
+    # a week-end)
+    if today.weekday() == 6:
+        days = 2
+    elif today.weekday() == 0:
+        days = 3
+    else:
+        days = 1
+
+    yesterday = today - datetime.timedelta(days=days)
 
     if options.date is None and not options.ignore_date_error:
         for (date, entry) in entries:
