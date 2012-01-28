@@ -192,6 +192,16 @@ def commit(options, args):
 
     if options.date is None and not options.ignore_date_error:
         for (date, entry) in entries:
+            # Don't take ignored entries into account when checking the date
+            ignored_only = True
+            for e in entry:
+                if not e.is_ignored():
+                    ignored_only = False
+                    break
+
+            if ignored_only:
+                continue
+
             if date not in (today, yesterday) or date.strftime('%w') in [6, 0]:
                 raise Exception('Error: you\'re trying to commit for a day that\'s either'\
                 ' on a week-end or that\'s not yesterday nor today (%s).\nTo ignore this'\
