@@ -195,8 +195,13 @@ class TaxiParser(Parser):
 
         for lineno, line in enumerate(self.lines):
             if line['entry'] == found_entry:
-                found_entry.duration = (found_entry.duration[0],\
-                        datetime.datetime.now().time())
+                t = (datetime.datetime.now() - (datetime.datetime.combine(datetime.datetime.today(), found_entry.duration[0]))).seconds / 60
+                print 'Elapsed time is %i minutes' % t
+                r = t % 15
+                t += 15 - r if r != 0 else 0
+                print 'It will be rounded to %i minutes' % t
+                rounded_time = (datetime.datetime.combine(datetime.datetime.today(), found_entry.duration[0]) + datetime.timedelta(minutes = t))
+                found_entry.duration = (found_entry.duration[0], rounded_time)
                 found_entry.description = description or '?'
                 self.lines[lineno]['text'] = self.get_line_text(found_entry)
 

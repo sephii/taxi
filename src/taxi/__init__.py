@@ -6,6 +6,7 @@ import os
 import datetime
 import difflib
 import subprocess
+import re
 
 from parser import TaxiParser, ParseError
 from settings import settings
@@ -79,6 +80,97 @@ def update(options, args):
             settings.get('default', 'username'),
             settings.get('default', 'password')
     )
+
+def add(options, args):
+    """Usage: add search_string
+
+    Searches and prompts for project, activity and alias and adds that as a new entry to .tksrc
+    """
+
+    db = ProjectsDb()
+
+    if len(args) < 2:
+        raise Exception(search.__doc__)
+
+    try:
+        search = args
+        search = search[1:]
+        projects = db.search(search)
+    except IOError:
+        print 'Error: the projects database file doesn\'t exist. Please run `bus update` to create it'
+    else:
+        num = 0
+        for project in projects:
+            num += 1
+            print '(%i) %-4s %s' % (num, project.id, project.name)
+        while 1:
+            char = raw_input('\nChoose the project (1-' + str(num) + '), (x) to exit: ')
+            try:
+                if (char == "x"):
+                    print "\nGoodbye honey...\n"
+                    return
+                number = int(char)
+                if (0 < number <= num):
+                    break
+                else:
+                    print '\nError: Number out of range, try again'
+            except:
+                print 'Enter a number dude! Is that so hard?'
+        myproject = projects[number-1].id
+        try:
+            project = db.get(myproject)
+        except IOError:
+            print 'Error: the projects database file doesn\'t exist. Please run `bus update` to create it'
+        except ValueError:
+            print 'Error: the project id must be a number'
+        else:
+            if project.status == 1:
+                active = 'yes'
+            else:
+                active = 'no'
+
+        print """\nId: %s
+Name: %s
+Active: %s
+Budget: %s
+Description: %s""" % (project.id, project.name, active, project.budget, project.description)
+
+        if project.status == 1:
+            num = 0
+            print "\nActivities:"
+            for activity in project.activities:
+                num += 1 
+                print '(%i) %-4s %s' % (num, activity.id, activity.name)
+            while 1:
+                char = raw_input('\nChoose the activity (1-' + str(num) + '), (x) to exit: ')
+                try:
+                    if (char == "x"):
+                        print "\nGoodbye honey...\n"
+                        return
+                    number = int(char)
+                    if (0 < number <= num):
+                        break
+                    else:
+                        print '\nError: Number out of range, try again'
+                except:
+                    print 'Enter a number dude! Is that so hard?'
+            myactivity = project.activities[number - 1].id
+            
+            while 1:
+                char = raw_input('\nEnter the alias for .tksrc, (x) to exit: ')
+                try:
+                    if (char == 'x'):
+                        print '\nGoodbye honey...\n'
+                        return
+                    if re.match('[\w-]+$', char):
+                        with open(os.path.join(os.path.expanduser('~'), '.tksrc'), "a") as f:
+                            f.write(char + ' = ' + str(myproject) + '/' + str(myactivity) + '\n')
+                        print '\nThe following entry has been added to your .tksrc:\n\n' + char + ' = ' + str(myproject) + '/' + str(myactivity) + '\n'
+                        break
+                    else:
+                        print '\nError: only numbers, letters, - and _ are allowed, try again'
+                except:
+                    print 'Exception alert, the boat is sinking!'
 
 def search(options, args):
     """Usage: search search_string
@@ -346,6 +438,7 @@ def main():
     """Usage: %prog [options] command
 
 Available commands:
+  add    \t\tsearches, prompts for project, activity and alias, adds to .tksrc
   commit \t\tcommits the changes to the server
   edit   \t\topens your zebra file in your favourite editor
   help   \t\tprints this help or the one of the given command
@@ -383,6 +476,7 @@ Available commands:
             (['start'], start),
             (['stop'], stop),
             (['edit'], edit),
+            (['add'], add),
     ]
 
     if len(args) == 0 or (len(args) == 1 and args[0] == 'help'):
