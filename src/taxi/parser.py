@@ -75,13 +75,12 @@ class TaxiParser(Parser):
 
         # Try to match XX:XX-XX:XX
         time = re.match(r'(\d{2}):(\d{2})-(?:(?:(\d{2}):(\d{2}))|\?)', splitted_line[1])
+        time_end = None
         if time is not None:
             time_start = datetime.time(int(time.group(1)), int(time.group(2)))
             if time.group(3) is not None and time.group(4) is not None:
                 time_end = datetime.time(int(time.group(3)), int(time.group(4)))
                 total_hours = (time_start, time_end)
-            else:
-                total_hours = (time_start, None)
         else:
             # Try with the ->XX:XX notation
             time = re.match(r'->(?:(?:(\d{2}):(\d{2}))|\?)', splitted_line[1])
