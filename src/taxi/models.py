@@ -25,7 +25,7 @@ class Entry:
         return '%-30s %-5.2f %s' % (project_name, self.get_duration() or 0, self.description)
 
     def is_ignored(self):
-        return self.project_name[-1] == '?' or self.description == '' or self.description == '?' or self.get_duration() == 0
+        return self.project_name[-1] == '?' or self.get_duration() == 0
 
     def get_duration(self):
         if isinstance(self.duration, tuple):
