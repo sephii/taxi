@@ -12,9 +12,14 @@ class Settings:
     }
     DEFAULT_DATE_FORMAT = '%d/%m/%Y'
 
+    def __init__(self):
+        self.config = None
+        self.filepath = None
+
     def load(self, file):
         self.config = ConfigParser.RawConfigParser()
-        parsed = self.config.read(file)
+        self.filepath = file
+        parsed = self.config.read(self.filepath)
 
         if len(parsed) == 0:
             raise Exception('The specified configuration file `%s` doesn\'t exist' % file)
@@ -50,5 +55,13 @@ class Settings:
     def get_close_matches(self, project_name):
         return difflib.get_close_matches(project_name, self.projects.keys(),\
                 cutoff=0.2)
+
+    def add_activity(self, alias, projectid, activityid):
+        if self.config is None:
+            raise Exception('Trying to add an activity before loading the settings file')
+
+        file = open(self.filepath, 'w')
+        self.config.set('wrmap', alias, '%s/%s' % (projectid, activityid))
+        self.config.write(file)
 
 settings = Settings()

@@ -9,8 +9,11 @@ class ProjectsDb:
     DB_PATH = 'projects.db'
 
     def _get_projects(self):
-        input = open(os.path.join(settings.TAXI_PATH, self.DB_PATH), 'r')
-        return pickle.load(input)
+        try:
+            input = open(os.path.join(settings.TAXI_PATH, self.DB_PATH), 'r')
+            return pickle.load(input)
+        except IOError:
+            raise Exception('Error: the projects database file doesn\'t exist.  Please run `taxi update` to create it')
 
     def update(self, base_url, username, password):
         remote = ZebraRemote(base_url, username, password)
