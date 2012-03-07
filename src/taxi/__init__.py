@@ -87,15 +87,19 @@ def select_number(max, description, min=0):
         try:
             number = int(char)
             if min <= number <= max:
-                break
+                return number
             else:
                 print 'Error: Number out of range, try again\n'
-        except KeyboardInterrupt:
-            raise
         except ValueError:
             print 'Enter a number dude! Is that so hard?'
 
-    return number
+def select_string(description, format=None):
+    while True:
+        char = raw_input('\nEnter the alias for .tksrc, (Ctrl-C) to exit: ')
+        if format is not None and re.match(format, char):
+            return char
+        else:
+            print '\nError: only numbers, letters, - and _ are allowed, try again'
 
 def add(options, args):
     """Usage: add search_string
@@ -112,7 +116,7 @@ def add(options, args):
 
     num = 0
     for project in projects:
-        print '(%i) %-4s %s' % (num, project.id, project.name)
+        print '(%d) %-4s %s' % (num, project.id, project.name)
         num += 1
 
     number = select_number(max=num, description='Choose the project (0-%d), (Ctrl-C) to exit: ' % (len(projects) - 1))
@@ -125,27 +129,20 @@ def add(options, args):
 
     print project
 
-    if project.status == 1:
-        num = 0
-        print "\nActivities:"
-        for activity in project.activities:
-            print '(%i) %-4s %s' % (num, activity.id, activity.name)
-            num += 1
+    if project.status == 0:
+        print 'Warning: this project is not active'
 
-        number = select_number(max=num, description='Choose the activity (0-%d), (Ctrl-C) to exit: ' % (len(project.activities) - 1))
-        myactivity = project.activities[number].id
+    num = 0
+    print "\nActivities:"
+    for activity in project.activities:
+        print '(%d) %-4s %s' % (num, activity.id, activity.name)
+        num += 1
 
-        while 1:
-            char = raw_input('\nEnter the alias for .tksrc, (x) to exit: ')
-            try:
-                if re.match(r'^[\w-]+$', char):
-                    settings.add_activity(char, myproject, myactivity)
-                    print '\nThe following entry has been added to your .tksrc:\n\n' + char + ' = ' + str(myproject) + '/' + str(myactivity) + '\n'
-                    break
-                else:
-                    print '\nError: only numbers, letters, - and _ are allowed, try again'
-            except:
-                print 'Exception alert, the boat is sinking!'
+    number = select_number(max=num, description='Choose the activity (0-%d), (Ctrl-C) to exit: ' % (len(project.activities) - 1))
+    myactivity = project.activities[number].id
+    char = select_string('Enter the alias for .tksrc, (Ctrl-C) to exit: ', r'^[\w-]+$')
+    settings.add_activity(char, myproject, myactivity)
+    print '\nThe following entry has been added to your .tksrc:\n\n' + char + ' = ' + str(myproject) + '/' + str(myactivity) + '\n'
 
 def search(options, args):
     """Usage: search search_string
