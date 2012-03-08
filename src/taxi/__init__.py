@@ -89,17 +89,20 @@ def select_number(max, description, min=0):
             if min <= number <= max:
                 return number
             else:
-                print 'Error: Number out of range, try again\n'
+                print 'Number out of range, try again'
         except ValueError:
-            print 'Enter a number dude! Is that so hard?'
+            print 'Please enter a number'
 
-def select_string(description, format=None):
+def select_string(description, format=None, regexp_flags=0, default=None):
     while True:
-        char = raw_input('\nEnter the alias for .tksrc, (Ctrl-C) to exit: ')
-        if format is not None and re.match(format, char):
+        char = raw_input(description)
+        if char == '' and default is not None:
+            return default
+
+        if format is not None and re.match(format, char, regexp_flags):
             return char
         else:
-            print '\nError: only numbers, letters, - and _ are allowed, try again'
+            print 'Invalid input, please try again'
 
 def add(options, args):
     """Usage: add search_string
@@ -115,14 +118,17 @@ def add(options, args):
     projects = db.search(search)
 
     if len(projects) == 0:
-        print u'No project matches your search string \'%s\'' % ' '.join(search)
+        print 'No project matches your search string \'%s\'' % ' '.join(search)
         return
 
-    for key in range(len(projects)):
-        project = projects[key]
+    for (key, project) in enumerate(projects):
         print '(%d) %-4s %s' % (key, project.id, project.name)
 
-    number = select_number(len(projects), 'Choose the project (0-%d), (Ctrl-C) to exit: ' % (len(projects) - 1))
+    try:
+        number = select_number(len(projects), 'Choose the project (0-%d), (Ctrl-C) to exit: ' % (len(projects) - 1))
+    except KeyboardInterrupt:
+        return
+
     project = projects[number]
 
     print project
@@ -131,16 +137,36 @@ def add(options, args):
         print 'Warning: this project is not active'
 
     print "\nActivities:"
-    for key in range(len(project.activities)):
-        activity = project.activities[key]
+    for (key, activity) in enumerate(project.activities):
         print '(%d) %-4s %s' % (key, activity.id, activity.name)
 
-    number = select_number(len(project.activities), 'Choose the activity (0-%d), (Ctrl-C) to exit: ' % (len(project.activities) - 1))
-    alias = select_string('Enter the alias for .tksrc, (Ctrl-C) to exit: ', r'^[\w-]+$')
+    try:
+        number = select_number(len(project.activities), 'Choose the activity (0-%d), (Ctrl-C) to exit: ' % (len(project.activities) - 1))
+    except KeyboardInterrupt:
+        return
+
+    retry = True
+    while retry:
+        try:
+            alias = select_string('Enter the alias for .tksrc (a-z, - and _ allowed), (Ctrl-C) to exit: ', r'^[\w-]+$')
+        except KeyboardInterrupt:
+            return
+
+        if settings.activity_exists(alias):
+            overwrite = select_string('The selected alias you entered already exists,'\
+                ' overwrite? [y/n/R(etry)]: ', r'^[ynr]$', re.I, 'r')
+
+            if overwrite == 'n':
+                return
+            if overwrite == 'y':
+                retry = False
+        else:
+            retry = False
 
     activity = project.activities[number]
     settings.add_activity(alias, project.id, activity.id)
-    print 'The following entry has been added to your .tksrc:\n\n%s = %s/%s' % (alias, project.id, activity.id)
+
+    print '\nThe following entry has been added to your .tksrc: %s = %s/%s' % (alias, project.id, activity.id)
 
 def search(options, args):
     """Usage: search search_string

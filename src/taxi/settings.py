@@ -64,4 +64,7 @@ class Settings:
         self.config.set('wrmap', alias, '%s/%s' % (projectid, activityid))
         self.config.write(file)
 
+    def activity_exists(self, activity_name):
+        return self.config.has_option('wrmap', activity_name)
+
 settings = Settings()
