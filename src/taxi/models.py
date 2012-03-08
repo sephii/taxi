@@ -53,10 +53,14 @@ class Project:
         self.description = description
         self.budget = budget
 
-    def test(self):
-        print 'hello'
-
     def __str__(self):
+        return """\nId: %s
+Name: %s
+Active: %s
+Budget: %s
+Description: %s""" % (self.id, self.name, 'yes' if self.status else 'no', self.budget, self.description)
+
+    def __unicode__(self):
         return """\nId: %s
 Name: %s
 Active: %s

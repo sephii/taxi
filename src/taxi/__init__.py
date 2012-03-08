@@ -114,35 +114,33 @@ def add(options, args):
     search = args[1:]
     projects = db.search(search)
 
-    num = 0
-    for project in projects:
-        print '(%d) %-4s %s' % (num, project.id, project.name)
-        num += 1
+    if len(projects) == 0:
+        print u'No project matches your search string \'%s\'' % ' '.join(search)
+        return
 
-    number = select_number(max=num, description='Choose the project (0-%d), (Ctrl-C) to exit: ' % (len(projects) - 1))
-    myproject = projects[number].id
+    for key in range(len(projects)):
+        project = projects[key]
+        print '(%d) %-4s %s' % (key, project.id, project.name)
 
-    try:
-        project = db.get(myproject)
-    except ValueError:
-        raise Exception('Error: the project id must be a number')
+    number = select_number(len(projects), 'Choose the project (0-%d), (Ctrl-C) to exit: ' % (len(projects) - 1))
+    project = projects[number]
 
     print project
 
     if project.status == 0:
         print 'Warning: this project is not active'
 
-    num = 0
     print "\nActivities:"
-    for activity in project.activities:
-        print '(%d) %-4s %s' % (num, activity.id, activity.name)
-        num += 1
+    for key in range(len(project.activities)):
+        activity = project.activities[key]
+        print '(%d) %-4s %s' % (key, activity.id, activity.name)
 
-    number = select_number(max=num, description='Choose the activity (0-%d), (Ctrl-C) to exit: ' % (len(project.activities) - 1))
-    myactivity = project.activities[number].id
-    char = select_string('Enter the alias for .tksrc, (Ctrl-C) to exit: ', r'^[\w-]+$')
-    settings.add_activity(char, myproject, myactivity)
-    print '\nThe following entry has been added to your .tksrc:\n\n' + char + ' = ' + str(myproject) + '/' + str(myactivity) + '\n'
+    number = select_number(len(project.activities), 'Choose the activity (0-%d), (Ctrl-C) to exit: ' % (len(project.activities) - 1))
+    alias = select_string('Enter the alias for .tksrc, (Ctrl-C) to exit: ', r'^[\w-]+$')
+
+    activity = project.activities[number]
+    settings.add_activity(alias, project.id, activity.id)
+    print 'The following entry has been added to your .tksrc:\n\n%s = %s/%s' % (alias, project.id, activity.id)
 
 def search(options, args):
     """Usage: search search_string
