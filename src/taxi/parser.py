@@ -87,33 +87,33 @@ class TaxiParser(Parser):
         elif len(splitted_line) != 3:
             raise ParseError('Line #%s is not correctly formatted' % line_number)
 
-        time = re.match(r'(\d{1,2}):(\d{1,2})-(?:(?:(\d{1,2}):(\d{1,2}))|\?)', splitted_line[1])
+        time = re.match(r'(?:(\d{1,2}):(\d{1,2}))?-(?:(?:(\d{1,2}):(\d{1,2}))|\?)', splitted_line[1])
         time_end = None
 
         if time is not None:
-            time_start = datetime.time(int(time.group(1)), int(time.group(2)))
-            if time.group(3) is not None and time.group(4) is not None:
-                time_end = datetime.time(int(time.group(3)), int(time.group(4)))
-            total_hours = (time_start, time_end)
-        else:
-            # Try with the ->XX:XX notation
-            time = re.match(r'->(?:(?:(\d{2}):(\d{2}))|\?)', splitted_line[1])
-            if time is not None:
-                previous_line = self.lines[line_number-1]['text']
-                previous_time = re.match(r'.+(?:\d{2}:\d{2}-|->)(\d{2}):(\d{2}).*', previous_line)
-                if previous_time is not None and previous_time.group(1) is not None and previous_time.group(2) is not None:
-                    time_start = datetime.time(int(previous_time.group(1)), int(previous_time.group(2)))
-                else:
+            if time.group(1) is None and time.group(2) is None:
+                if line_number == 0 \
+                        or self.lines[line_number - 1]['entry'] is None \
+                        or not isinstance(
+                                self.lines[line_number - 1]['entry'].duration,
+                                tuple) \
+                        or self.lines[line_number - 1]['entry'].duration[1] is None:
                     raise ParseError('To use the ->XX:XX notation, the previous line must contain the period end value')
-                if time.group(1) is not None and time.group(2) is not None:
-                    time_end = datetime.time(int(time.group(1)), int(time.group(2)))
-                total_hours = (time_start, time_end)
+                else:
+                    if time.group(3) is not None and time.group(4) is not None:
+                        time_end = datetime.time(int(time.group(3)), int(time.group(4)))
+
+                    total_hours = (self.lines[line_number - 1]['entry'] .duration[1], time_end)
             else:
-                # Try the float mode
-                try:
-                    total_hours = float(splitted_line[1])
-                except ValueError:
-                    raise ParseError('Line #%s is not correctly formatted' % line_number)
+                time_start = datetime.time(int(time.group(1)), int(time.group(2)))
+                if time.group(3) is not None and time.group(4) is not None:
+                    time_end = datetime.time(int(time.group(3)), int(time.group(4)))
+                total_hours = (time_start, time_end)
+        else:
+            try:
+                total_hours = float(splitted_line[1])
+            except ValueError:
+                raise ParseError('Line #%s is not correctly formatted' % line_number)
 
         return Entry(self.date, splitted_line[0], total_hours, splitted_line[2])
 
