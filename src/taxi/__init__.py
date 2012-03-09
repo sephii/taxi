@@ -357,8 +357,7 @@ def get_auto_add_direction(filepath, unparsed_filepath):
                 pass
 
     if auto_add is None:
-        print 'Warning: unable to detect where to put the new entry, please set'\
-            ' the `auto_add` option to `top` or `bottom` in your .tksrc file'
+        auto_add = settings.AUTO_ADD_OPTIONS['TOP']
 
     return auto_add
 
