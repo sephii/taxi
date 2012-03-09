@@ -17,10 +17,14 @@ class Parser:
         file = open(self.file, 'r')
         line_number = 0
 
-        for line in file:
-            self.lines.insert(line_number, {'text': line, 'entry': None})
-            self.process_line(line, line_number)
-            line_number += 1
+        try:
+            for line in file:
+                self.lines.insert(line_number, {'text': line, 'entry': None})
+                self.process_line(line, line_number)
+                line_number += 1
+        except Exception as e:
+            raise ParseError('Line #%s is not correctly formatted (error was'\
+                    ' \'%s\')' % (line_number, e.message))
 
         file.close()
 
@@ -34,6 +38,9 @@ class Parser:
 
 class TaxiParser(Parser):
     def process_date(self, date_matches):
+        if len(date_matches.group(1)) == 4:
+            return datetime.date(int(date_matches.group(1)), int(date_matches.group(2)), int(date_matches.group(3)))
+
         if len(date_matches.group(3)) == 2:
             current_year = datetime.date.today().year
             current_millennium = current_year - (current_year % 1000)
@@ -44,7 +51,14 @@ class TaxiParser(Parser):
         return datetime.date(year, int(date_matches.group(2)), int(date_matches.group(1)))
 
     def _match_date(self, line):
-        return re.match('(\d{1,2})\D(\d{1,2})\D(\d{4}|\d{2})', line)
+        # Try to match dd/mm/yyyy format
+        match = re.match(r'(\d{1,2})\D(\d{1,2})\D(\d{4}|\d{2})', line)
+
+        # If no match, try with yyyy/mm/dd format
+        if match is None:
+            match = re.match(r'(\d{4})\D(\d{1,2})\D(\d{1,2})', line)
+
+        return match
 
     def process_line(self, line, line_number):
         line = line.strip()
@@ -73,9 +87,9 @@ class TaxiParser(Parser):
         elif len(splitted_line) != 3:
             raise ParseError('Line #%s is not correctly formatted' % line_number)
 
-        # Try to match XX:XX-XX:XX
-        time = re.match(r'(\d{2}):(\d{2})-(?:(?:(\d{2}):(\d{2}))|\?)', splitted_line[1])
+        time = re.match(r'(\d{1,2}):(\d{1,2})-(?:(?:(\d{1,2}):(\d{1,2}))|\?)', splitted_line[1])
         time_end = None
+
         if time is not None:
             time_start = datetime.time(int(time.group(1)), int(time.group(2)))
             if time.group(3) is not None and time.group(4) is not None:

@@ -15,7 +15,7 @@ from projectsdb import ProjectsDb
 
 import locale
 
-VERSION = '2.1'
+VERSION = '2.2'
 
 class ProjectNotFoundError(Exception):
     def __init__(self, project_name, description):
@@ -81,96 +81,92 @@ def update(options, args):
             settings.get('default', 'password')
     )
 
+def select_number(max, description, min=0):
+    while True:
+        char = raw_input('\n%s' % description)
+        try:
+            number = int(char)
+            if min <= number <= max:
+                return number
+            else:
+                print 'Number out of range, try again'
+        except ValueError:
+            print 'Please enter a number'
+
+def select_string(description, format=None, regexp_flags=0, default=None):
+    while True:
+        char = raw_input(description)
+        if char == '' and default is not None:
+            return default
+
+        if format is not None and re.match(format, char, regexp_flags):
+            return char
+        else:
+            print 'Invalid input, please try again'
+
 def add(options, args):
     """Usage: add search_string
 
     Searches and prompts for project, activity and alias and adds that as a new entry to .tksrc
     """
-
     db = ProjectsDb()
 
     if len(args) < 2:
-        raise Exception(search.__doc__)
+        raise Exception(add.__doc__)
+
+    search = args[1:]
+    projects = db.search(search)
+
+    if len(projects) == 0:
+        print 'No project matches your search string \'%s\'' % ' '.join(search)
+        return
+
+    for (key, project) in enumerate(projects):
+        print '(%d) %-4s %s' % (key, project.id, project.name)
 
     try:
-        search = args
-        search = search[1:]
-        projects = db.search(search)
-    except IOError:
-        print 'Error: the projects database file doesn\'t exist. Please run `bus update` to create it'
-    else:
-        num = 0
-        for project in projects:
-            num += 1
-            print '(%i) %-4s %s' % (num, project.id, project.name)
-        while 1:
-            char = raw_input('\nChoose the project (1-' + str(num) + '), (x) to exit: ')
-            try:
-                if (char == "x"):
-                    print "\nGoodbye honey...\n"
-                    return
-                number = int(char)
-                if (0 < number <= num):
-                    break
-                else:
-                    print '\nError: Number out of range, try again'
-            except:
-                print 'Enter a number dude! Is that so hard?'
-        myproject = projects[number-1].id
+        number = select_number(len(projects), 'Choose the project (0-%d), (Ctrl-C) to exit: ' % (len(projects) - 1))
+    except KeyboardInterrupt:
+        return
+
+    project = projects[number]
+
+    print project
+
+    if project.status == 0:
+        print 'Warning: this project is not active'
+
+    print "\nActivities:"
+    for (key, activity) in enumerate(project.activities):
+        print '(%d) %-4s %s' % (key, activity.id, activity.name)
+
+    try:
+        number = select_number(len(project.activities), 'Choose the activity (0-%d), (Ctrl-C) to exit: ' % (len(project.activities) - 1))
+    except KeyboardInterrupt:
+        return
+
+    retry = True
+    while retry:
         try:
-            project = db.get(myproject)
-        except IOError:
-            print 'Error: the projects database file doesn\'t exist. Please run `bus update` to create it'
-        except ValueError:
-            print 'Error: the project id must be a number'
+            alias = select_string('Enter the alias for .tksrc (a-z, - and _ allowed), (Ctrl-C) to exit: ', r'^[\w-]+$')
+        except KeyboardInterrupt:
+            return
+
+        if settings.activity_exists(alias):
+            overwrite = select_string('The selected alias you entered already exists,'\
+                ' overwrite? [y/n/R(etry)]: ', r'^[ynr]$', re.I, 'r')
+
+            if overwrite == 'n':
+                return
+            if overwrite == 'y':
+                retry = False
         else:
-            if project.status == 1:
-                active = 'yes'
-            else:
-                active = 'no'
+            retry = False
 
-        print """\nId: %s
-Name: %s
-Active: %s
-Budget: %s
-Description: %s""" % (project.id, project.name, active, project.budget, project.description)
+    activity = project.activities[number]
+    settings.add_activity(alias, project.id, activity.id)
 
-        if project.status == 1:
-            num = 0
-            print "\nActivities:"
-            for activity in project.activities:
-                num += 1 
-                print '(%i) %-4s %s' % (num, activity.id, activity.name)
-            while 1:
-                char = raw_input('\nChoose the activity (1-' + str(num) + '), (x) to exit: ')
-                try:
-                    if (char == "x"):
-                        print "\nGoodbye honey...\n"
-                        return
-                    number = int(char)
-                    if (0 < number <= num):
-                        break
-                    else:
-                        print '\nError: Number out of range, try again'
-                except:
-                    print 'Enter a number dude! Is that so hard?'
-            myactivity = project.activities[number - 1].id
-            
-            while 1:
-                char = raw_input('\nEnter the alias for .tksrc, (x) to exit: ')
-                try:
-                    if (char == 'x'):
-                        print '\nGoodbye honey...\n'
-                        return
-                    if re.match('[\w-]+$', char):
-                        with open(os.path.join(os.path.expanduser('~'), '.tksrc'), "a") as f:
-                            f.write(char + ' = ' + str(myproject) + '/' + str(myactivity) + '\n')
-                        print '\nThe following entry has been added to your .tksrc:\n\n' + char + ' = ' + str(myproject) + '/' + str(myactivity) + '\n'
-                        break
-                    else:
-                        print '\nError: only numbers, letters, - and _ are allowed, try again'
-                except:
-                    print 'Exception alert, the boat is sinking!'
+    print '\nThe following entry has been added to your .tksrc: %s = %s/%s' % (alias, project.id, activity.id)
 
 def search(options, args):
     """Usage: search search_string
@@ -183,15 +179,11 @@ def search(options, args):
     if len(args) < 2:
         raise Exception(search.__doc__)
 
-    try:
-        search = args
-        search = search[1:]
-        projects = db.search(search)
-    except IOError:
-        print 'Error: the projects database file doesn\'t exist. Please run `taxi update` to create it'
-    else:
-        for project in projects:
-            print '%-4s %s' % (project.id, project.name)
+    search = args
+    search = search[1:]
+    projects = db.search(search)
+    for project in projects:
+        print '%-4s %s' % (project.id, project.name)
 
 def show(options, args):
     """Usage: show project_id
@@ -211,16 +203,7 @@ def show(options, args):
     except ValueError:
         print 'Error: the project id must be a number'
     else:
-        if project.status == 1:
-            active = 'yes'
-        else:
-            active = 'no'
-
-        print """Id: %s
-Name: %s
-Active: %s
-Budget: %s
-Description: %s""" % (project.id, project.name, active, project.budget, project.description)
+        print project
 
         if project.status == 1:
             print "\nActivities:"
@@ -374,8 +357,7 @@ def get_auto_add_direction(filepath, unparsed_filepath):
                 pass
 
     if auto_add is None:
-        print 'Warning: unable to detect where to put the new entry, please set'\
-            ' the `auto_add` option to `top` or `bottom` in your .tksrc file'
+        auto_add = settings.AUTO_ADD_OPTIONS['TOP']
 
     return auto_add
 
