@@ -15,7 +15,7 @@ from projectsdb import ProjectsDb
 
 import locale
 
-VERSION = '2.1'
+VERSION = '2.2'
 
 class ProjectNotFoundError(Exception):
     def __init__(self, project_name, description):
