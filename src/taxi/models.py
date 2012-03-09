@@ -53,19 +53,15 @@ class Project:
         self.description = description
         self.budget = budget
 
-    def __str__(self):
-        return """\nId: %s
-Name: %s
-Active: %s
-Budget: %s
-Description: %s""" % (self.id, self.name, 'yes' if self.status else 'no', self.budget, self.description)
-
     def __unicode__(self):
         return """\nId: %s
 Name: %s
 Active: %s
 Budget: %s
 Description: %s""" % (self.id, self.name, 'yes' if self.status else 'no', self.budget, self.description)
+
+    def __str__(self):
+        return unicode(self).encode('utf-8')
 
     def add_activity(self, activity):
         self.activities.append(activity)
