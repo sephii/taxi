@@ -17,10 +17,14 @@ class Parser:
         file = open(self.file, 'r')
         line_number = 0
 
-        for line in file:
-            self.lines.insert(line_number, {'text': line, 'entry': None})
-            self.process_line(line, line_number)
-            line_number += 1
+        try:
+            for line in file:
+                self.lines.insert(line_number, {'text': line, 'entry': None})
+                self.process_line(line, line_number)
+                line_number += 1
+        except Exception as e:
+            raise ParseError('Line #%s is not correctly formatted (error was'\
+                    ' \'%s\')' % (line_number, e.message))
 
         file.close()
 
