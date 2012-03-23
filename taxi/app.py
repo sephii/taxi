@@ -14,8 +14,7 @@ from pusher import Pusher
 from projectsdb import ProjectsDb
 
 import locale
-
-VERSION = '2.2'
+import taxi
 
 class ProjectNotFoundError(Exception):
     def __init__(self, project_name, description):
@@ -434,7 +433,7 @@ Available commands:
     usage = main.__doc__
     locale.setlocale(locale.LC_ALL, '')
 
-    opt = OptionParser(usage=usage, version='%prog ' + VERSION)
+    opt = OptionParser(usage=usage, version='%prog ' + taxi.__version__)
     opt.add_option('-c', '--config', dest='config', help='use CONFIG file instead of ~/.tksrc', default=os.path.join(os.path.expanduser('~'), '.tksrc'))
     opt.add_option('-v', '--verbose', dest='verbose', action='store_true', help='make taxi verbose', default=False)
     opt.add_option('-f', '--file', dest='file', help='parse FILE instead of the '\
