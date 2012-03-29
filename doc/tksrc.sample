@@ -5,22 +5,31 @@ site = https://zebra.liip.ch
 username = my_zebra_username
 # Your zebra password, in cleartext
 password = my_zebra_password
+
 # The path of your entries file. You're free to use a single file to store all
 # your entries but you're strongly encouraged to use date placeholders here. The
 # following will expand to ~/zebra/2011/11.tks if you're in November 2011
 file = ~/zebra/%Y/%m.tks
+
 # This is the format of the dates that'll be automatically inserted in your
 # entries file(s), for example when using the `start` and `edit` commands
 date_format = %d/%m/%Y
+
 # This specifies where the new entries will be inserted when you use `start` and
 # `edit` commands. Possible values are 'auto' (automatic detection based on your
 # current entries), 'bottom' (values are added to the end of the file), or 'top'
 # (values are added to the top of the file) or 'no' (no auto add for the edit
 # command)
 auto_add = auto
+
 # Your editor command will be deducted from your EDITOR env var but if you want
 # to use a custom command just for taxi you can set it here
 # editor = vim +
+
+# If auto_fill is set to 1, taxi will add all the dates that are not present in
+# your entries file until the current date. You must have auto_add set to
+# something else than 'no' for this option to take effect. Default is 0
+auto_fill = 1
 
 # This section contains your project name <-> id mapping. The format is:
 # project_name = project_id/activity_id

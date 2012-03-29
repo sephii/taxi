@@ -223,6 +223,9 @@ def status(options, args):
     entries_list = sorted(parser.get_entries(date=options.date))
 
     for date, entries in entries_list:
+        if len(entries) == 0:
+            continue
+
         subtotal_hours = 0
         print '# %s #' % date.strftime('%A %d %B').capitalize()
         for entry in entries:
@@ -294,6 +297,19 @@ def commit(options, args):
 
     parser.update_file()
 
+def _prefill(file, direction):
+    parser = get_parser(file)
+    cur_date = max([date for (date, entries) in parser.get_entries()])
+    cur_date += datetime.timedelta(days = 1)
+
+    while cur_date < datetime.date.today():
+        if cur_date.weekday() not in [5, 6]:
+            parser.auto_add(direction, cur_date)
+
+        cur_date = cur_date + datetime.timedelta(days = 1)
+
+    parser.update_file()
+
 def edit(options, args):
     """Usage: edit
 
@@ -307,6 +323,10 @@ def edit(options, args):
         pass
     else:
         if auto_add is not None and auto_add != settings.AUTO_ADD_OPTIONS['NO']:
+            auto_fill = settings.get('default', 'auto_fill')
+            if auto_fill == '1':
+                _prefill(options.file, auto_add)
+
             parser = get_parser(options.file)
             parser.auto_add(auto_add)
             parser.update_file()

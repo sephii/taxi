@@ -74,14 +74,14 @@ class TaxiParser(Parser):
 
         if date_matches is not None:
             self.date = self.process_date(date_matches)
+
+            if self.date not in self.entries:
+                self.entries[self.date] = []
         else:
             if self.date is None:
                 raise ParseError('Entries must be defined inside a date section')
 
             entry = self.process_entry(line, line_number)
-
-            if not self.date in self.entries:
-                self.entries[self.date] = []
 
             self.entries[self.date].append(entry)
             self.lines[line_number]['entry'] = entry
@@ -157,7 +157,7 @@ class TaxiParser(Parser):
 
     def get_entries(self, date=None):
         if date is None:
-            return self.entries.iteritems()
+            return [(entrydate, entry) for entrydate, entry in self.entries.iteritems()]
 
         if not isinstance(date, tuple):
             date = (date, date)
@@ -273,7 +273,7 @@ class TaxiParser(Parser):
         return '%s %s %s\n' % (entry.project_name, txtduration,\
                 entry.description or '?')
 
-    def auto_add(self, mode):
+    def auto_add(self, mode, new_date = datetime.date.today()):
         # Check if we already have the current date in the file
         for line in self.lines:
             date_matches = self._match_date(line['text'])
@@ -281,18 +281,18 @@ class TaxiParser(Parser):
             if date_matches is not None:
                 date = self.process_date(date_matches)
 
-                if date == datetime.date.today():
+                if date == new_date:
                     return
 
         if mode == settings.AUTO_ADD_OPTIONS['TOP']:
-            self.lines.insert(0, {'text': '%s\n' % datetime.date.today().strftime(settings.get_default_date_format()),\
+            self.lines.insert(0, {'text': '%s\n' % new_date.strftime(settings.get_default_date_format()),\
                 'entry': None})
             self.lines.insert(1, {'text': '\n', 'entry': None})
         elif mode == settings.AUTO_ADD_OPTIONS['BOTTOM']:
             if len(self.lines) > 0:
                 self.lines.append({'text': '\n', 'entry': None})
 
-            self.lines.append({'text': '%s\n' % datetime.date.today().strftime(settings.get_default_date_format()),\
+            self.lines.append({'text': '%s\n' % new_date.strftime(settings.get_default_date_format()),\
                 'entry': None})
             self.lines.append({'text': '\n', 'entry': None})
 

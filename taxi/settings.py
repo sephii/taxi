@@ -12,6 +12,10 @@ class Settings:
     }
     DEFAULT_DATE_FORMAT = '%d/%m/%Y'
 
+    DEFAULTS = {
+            'auto_fill': 0
+    }
+
     def __init__(self):
         self.config = None
         self.filepath = None
@@ -27,7 +31,13 @@ class Settings:
         self.get_projects()
 
     def get(self, section, key):
-        return self.config.get(section, key)
+        try:
+            return self.config.get(section, key)
+        except ConfigParser.NoOptionError:
+            if self.DEFAULTS.has_key(key):
+                return self.DEFAULTS[key]
+
+            raise
 
     def get_projects(self):
         self.projects = {}
