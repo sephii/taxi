@@ -288,12 +288,18 @@ def commit(options, args):
     pusher.push(parser.get_entries(date=options.date))
 
     total_hours = 0
+    ignored_hours = 0
     for date, entries in parser.get_entries(date=options.date):
         for entry in entries:
             if entry.pushed:
                 total_hours += entry.get_duration()
+            elif entry.is_ignored():
+                ignored_hours += entry.get_duration()
 
     print '\n%-29s %5.2f' % ('Total', total_hours)
+
+    if ignored_hours > 0:
+        print '%-29s %5.2f' % ('Total ignored', ignored_hours)
 
     parser.update_file()
 
