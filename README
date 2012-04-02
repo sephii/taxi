@@ -20,22 +20,23 @@ Basically, Taxi allows you to do the following :
 Installation
 ============
 
-The main prerequesite for Taxi to work is to have python installed, you don't need anything else. Taxi has been tested on Python 2.6.6 and I don't know if it works on other versions, so feedback is welcome.
+The main prerequesite for Taxi to work is to have python installed, you don't
+need anything else. Taxi has been tested on Python 2.6.6 and I don't know if it
+works on other versions, so feedback is welcome.
 
 The installation is done through the setup.py script. Basically, all you have to
 do is the following (as root or with sudo) ::
 
     python setup.py install
 
-If you already have a working ~/.tksrc file, you're done and you can start using
-Taxi by typing ``taxi``. Otherwise you'll have to copy the tksrc.sample file to
-~/.tksrc and adapt it with your username/password. This default config file will
-tell taxi to use entries file from ~/zebra/2011/09.tks (year and month are
-automatically set to the current year/month). If you don't want this, simply
-change the "file" configuration option. Note that you can use all of `Python's
-strftime date placeholders
-<http://docs.python.org/library/datetime.html#strftime-and-strptime-behavior>`_
-in the ``file`` path.
+=============
+Configuration
+=============
+
+If you already have a working ~/.tksrc file (because you were using tks before),
+you're done and you can start using Taxi by typing ``taxi``. Otherwise you'll
+have to copy the ``doc/tksrc.sample`` file to ~/.tksrc and adapt it with your
+username/password.
 
 That's it, you're ready to go!
 
@@ -61,7 +62,13 @@ this project with the ``show`` command like so::
     taxi show project_id
 
 Then just add the activities you're interested in with a meaningful name to your
-.tksrc file. Now you can start writing your hours with the following command::
+.tksrc file.
+
+Another way to easily add an activity to your .tksrc file is the ``add`` command.
+Basically, the ``add`` command is an improved version of the ``search`` which will
+ask you for an alias and add it to your .tksrc file.
+
+Now you can start writing your hours with the following command::
 
     taxi edit
 
@@ -80,9 +87,39 @@ Now, if you're satisfied with this, commit your hours to the server with the
 
     taxi ci
 
-==============
-Advanced usage
-==============
+===================
+Entries file syntax
+===================
+
+The syntax of the entries file is the following:
+
+date_line
+activity_alias time description
+activity_alias time description
+...
+
+date_line is a date in one of the following formats:
+
+    * dd/mm/yyyy
+    * dd/mm/yy
+    * yyyy/mm/dd
+
+activity_alias is the alias to the activity that you put in your .tksrc file. If
+it ends with a question mark, the entry will be ignored (ie. not pushed).
+
+time is the duration of the activity in one of the following format:
+
+    * h (duration in hours, eg. 0.75, 1.5, etc)
+    * hh:mm-hh:mm
+    * hh:mm-? (will make the entry to be ignored)
+    * -hh:mm (will use the previous line as start time)
+    * hh:mm can also be replaced by hhmm
+
+description is the description of the entry.
+
+================
+Start/stop usage
+================
 
 You can use the ``start`` and ``stop`` commands to let taxi edit your entries file
 for you. For example, suppose you're going to start a meeting::
@@ -94,6 +131,5 @@ undefined end time. Now do your meeting, and when it's finished, just type::
 
     taxi stop "Discussed about some great stuff"
 
-And taxi will add the end time and the description to the previously created
-entry. You'll probably need to adapt the times at the end of the day to round
-them to 15 minutes since taxi is unable to handle this at the moment.
+And taxi will add the end time, rounded to 15 minutes, and the description to
+the previously created entry.
