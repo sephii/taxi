@@ -94,7 +94,7 @@ class TaxiParser(Parser):
         elif len(splitted_line) != 3:
             raise ParseError('Line #%s is not correctly formatted' % line_number)
 
-        time = re.match(r'(?:(\d{1,2}):(\d{1,2}))?-(?:(?:(\d{1,2}):(\d{1,2}))|\?)', splitted_line[1])
+        time = re.match(r'(?:(\d{1,2}):?(\d{1,2}))?-(?:(?:(\d{1,2}):?(\d{1,2}))|\?)', splitted_line[1])
         time_end = None
 
         # HH:mm-HH:mm syntax found
