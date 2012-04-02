@@ -305,7 +305,12 @@ def commit(options, args):
 
 def _prefill(file, direction):
     parser = get_parser(file)
-    cur_date = max([date for (date, entries) in parser.get_entries()])
+    entries = parser.get_entries()
+
+    if len(entries) == 0:
+        return
+
+    cur_date = max([date for (date, entries) in entries])
     cur_date += datetime.timedelta(days = 1)
 
     while cur_date < datetime.date.today():
