@@ -303,7 +303,7 @@ def commit(options, args):
 
     parser.update_file()
 
-def _prefill(file, direction):
+def _prefill(file, direction, auto_fill_days):
     parser = get_parser(file)
     entries = parser.get_entries()
 
@@ -314,7 +314,7 @@ def _prefill(file, direction):
     cur_date += datetime.timedelta(days = 1)
 
     while cur_date < datetime.date.today():
-        if cur_date.weekday() not in [5, 6]:
+        if cur_date.weekday() in auto_fill_days:
             parser.auto_add(direction, cur_date)
 
         cur_date = cur_date + datetime.timedelta(days = 1)
@@ -334,9 +334,9 @@ def edit(options, args):
         pass
     else:
         if auto_add is not None and auto_add != settings.AUTO_ADD_OPTIONS['NO']:
-            auto_fill = settings.get('default', 'auto_fill')
-            if auto_fill == '1':
-                _prefill(options.file, auto_add)
+            auto_fill_days = settings.get_auto_fill_days()
+            if auto_fill_days:
+                _prefill(options.file, auto_add, auto_fill_days)
 
             parser = get_parser(options.file)
             parser.auto_add(auto_add)

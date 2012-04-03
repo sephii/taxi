@@ -12,7 +12,7 @@ class Settings:
     }
 
     DEFAULTS = {
-            'auto_fill': 0,
+            'auto_fill_days': '',
             'date_format': '%d/%m/%Y',
     }
 
@@ -38,6 +38,14 @@ class Settings:
                 return self.DEFAULTS[key]
 
             raise
+
+    def get_auto_fill_days(self):
+        auto_fill_days = self.get('default', 'auto_fill_days')
+
+        if not auto_fill_days:
+            return []
+
+        return [int(e.strip()) for e in auto_fill_days.split(',')]
 
     def get_projects(self):
         self.projects = {}
