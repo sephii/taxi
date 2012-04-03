@@ -10,10 +10,10 @@ class Settings:
             'BOTTOM': 'bottom',
             'AUTO': 'auto'
     }
-    DEFAULT_DATE_FORMAT = '%d/%m/%Y'
 
     DEFAULTS = {
-            'auto_fill': 0
+            'auto_fill': 0,
+            'date_format': '%d/%m/%Y',
     }
 
     def __init__(self):
@@ -52,12 +52,6 @@ class Settings:
                 value = (parts[0], None)
 
             self.projects[project_name] = value
-
-    def get_default_date_format(self):
-        try:
-            return self.get('default', 'date_format')
-        except ConfigParser.NoOptionError:
-            return self.DEFAULT_DATE_FORMAT
 
     def project_exists(self, project_name):
         return project_name[-1] == '?' or project_name in self.projects

@@ -218,7 +218,8 @@ class TaxiParser(Parser):
         else:
             to_insert = [
                 {
-                    'text': '%s\n' % date.strftime(settings.get_default_date_format()),
+                    'text': '%s\n' % 
+                        date.strftime(settings.get('default', 'date_format')),
                     'entry': None
                 },
                 {'text': '\n', 'entry': None},
@@ -285,15 +286,21 @@ class TaxiParser(Parser):
                     return
 
         if mode == settings.AUTO_ADD_OPTIONS['TOP']:
-            self.lines.insert(0, {'text': '%s\n' % new_date.strftime(settings.get_default_date_format()),\
-                'entry': None})
+            self.lines.insert(0, {
+                'text': '%s\n' %
+                    new_date.strftime(settings.get('default', 'date_format')),
+                'entry': None
+            })
             self.lines.insert(1, {'text': '\n', 'entry': None})
         elif mode == settings.AUTO_ADD_OPTIONS['BOTTOM']:
             if len(self.lines) > 0:
                 self.lines.append({'text': '\n', 'entry': None})
 
-            self.lines.append({'text': '%s\n' % new_date.strftime(settings.get_default_date_format()),\
-                'entry': None})
+            self.lines.append({
+                'text': '%s\n' %
+                    new_date.strftime(settings.get('default', 'date_format')),
+                'entry': None
+            })
             self.lines.append({'text': '\n', 'entry': None})
 
     def get_entries_direction(self):
