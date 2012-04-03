@@ -30,10 +30,12 @@ auto_add = auto
 # to use a custom command just for taxi you can set it here
 # editor = vim +
 
-# If auto_fill is set to 1, taxi will add all the dates that are not present in
-# your entries file until the current date. You must have auto_add set to
-# something else than 'no' for this option to take effect. Default is 0
-auto_fill = 1
+# If auto_fill_days is set, the edit command will add all the dates that are not
+# present in your entries file until the current date if they match any day
+# present in auto_fill_days (0 is Monday, 6 is Sunday). You must have auto_add
+# set to something else than 'no' for this option to take effect. Default is
+# empty
+# auto_fill_days = 0,1,2,3,4
 
 # This section contains your project name <-> id mapping. The format is:
 # project_name = project_id/activity_id
