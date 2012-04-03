@@ -456,8 +456,8 @@ Available commands:
   help   \t\tprints this help or the one of the given command
   search \t\tsearches for a project
   show   \t\tshows the activities and other details of a project
-  start  \t\tstarts the counter on a given project
-  status \t\tshows the status of your zebra file
+  start  \t\tstarts the counter on a given activity
+  status \t\tshows the status of your entries file
   stop   \t\tstops the counter and record the elapsed time
   update \t\tupdates your project database with the one on the server"""
 
