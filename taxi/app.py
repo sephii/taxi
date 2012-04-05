@@ -6,6 +6,7 @@ import os
 import datetime
 import difflib
 import subprocess
+import re
 
 from parser import TaxiParser, ParseError
 from settings import settings
@@ -13,8 +14,7 @@ from pusher import Pusher
 from projectsdb import ProjectsDb
 
 import locale
-
-VERSION = '2.1'
+import taxi
 
 class ProjectNotFoundError(Exception):
     def __init__(self, project_name, description):
@@ -80,6 +80,93 @@ def update(options, args):
             settings.get('default', 'password')
     )
 
+def select_number(max, description, min=0):
+    while True:
+        char = raw_input('\n%s' % description)
+        try:
+            number = int(char)
+            if min <= number <= max:
+                return number
+            else:
+                print 'Number out of range, try again'
+        except ValueError:
+            print 'Please enter a number'
+
+def select_string(description, format=None, regexp_flags=0, default=None):
+    while True:
+        char = raw_input(description)
+        if char == '' and default is not None:
+            return default
+
+        if format is not None and re.match(format, char, regexp_flags):
+            return char
+        else:
+            print 'Invalid input, please try again'
+
+def add(options, args):
+    """Usage: add search_string
+
+    Searches and prompts for project, activity and alias and adds that as a new entry to .tksrc
+    """
+    db = ProjectsDb()
+
+    if len(args) < 2:
+        raise Exception(add.__doc__)
+
+    search = args[1:]
+    projects = db.search(search)
+
+    if len(projects) == 0:
+        print 'No project matches your search string \'%s\'' % ' '.join(search)
+        return
+
+    for (key, project) in enumerate(projects):
+        print '(%d) %-4s %s' % (key, project.id, project.name)
+
+    try:
+        number = select_number(len(projects), 'Choose the project (0-%d), (Ctrl-C) to exit: ' % (len(projects) - 1))
+    except KeyboardInterrupt:
+        return
+
+    project = projects[number]
+
+    print project
+
+    if project.status == 0:
+        print 'Warning: this project is not active'
+
+    print "\nActivities:"
+    for (key, activity) in enumerate(project.activities):
+        print '(%d) %-4s %s' % (key, activity.id, activity.name)
+
+    try:
+        number = select_number(len(project.activities), 'Choose the activity (0-%d), (Ctrl-C) to exit: ' % (len(project.activities) - 1))
+    except KeyboardInterrupt:
+        return
+
+    retry = True
+    while retry:
+        try:
+            alias = select_string('Enter the alias for .tksrc (a-z, - and _ allowed), (Ctrl-C) to exit: ', r'^[\w-]+$')
+        except KeyboardInterrupt:
+            return
+
+        if settings.activity_exists(alias):
+            overwrite = select_string('The selected alias you entered already exists,'\
+                ' overwrite? [y/n/R(etry)]: ', r'^[ynr]$', re.I, 'r')
+
+            if overwrite == 'n':
+                return
+            if overwrite == 'y':
+                retry = False
+        else:
+            retry = False
+
+    activity = project.activities[number]
+    settings.add_activity(alias, project.id, activity.id)
+
+    print '\nThe following entry has been added to your .tksrc: %s = %s/%s' % (alias, project.id, activity.id)
+
 def search(options, args):
     """Usage: search search_string
 
@@ -91,15 +178,11 @@ def search(options, args):
     if len(args) < 2:
         raise Exception(search.__doc__)
 
-    try:
-        search = args
-        search = search[1:]
-        projects = db.search(search)
-    except IOError:
-        print 'Error: the projects database file doesn\'t exist. Please run `taxi update` to create it'
-    else:
-        for project in projects:
-            print '%-4s %s' % (project.id, project.name)
+    search = args
+    search = search[1:]
+    projects = db.search(search)
+    for project in projects:
+        print '%-4s %s' % (project.id, project.name)
 
 def show(options, args):
     """Usage: show project_id
@@ -119,16 +202,7 @@ def show(options, args):
     except ValueError:
         print 'Error: the project id must be a number'
     else:
-        if project.status == 1:
-            active = 'yes'
-        else:
-            active = 'no'
-
-        print """Id: %s
-Name: %s
-Active: %s
-Budget: %s
-Description: %s""" % (project.id, project.name, active, project.budget, project.description)
+        print project
 
         if project.status == 1:
             print "\nActivities:"
@@ -149,6 +223,9 @@ def status(options, args):
     entries_list = sorted(parser.get_entries(date=options.date))
 
     for date, entries in entries_list:
+        if len(entries) == 0:
+            continue
+
         subtotal_hours = 0
         print '# %s #' % date.strftime('%A %d %B').capitalize()
         for entry in entries:
@@ -178,10 +255,30 @@ def commit(options, args):
 
     entries = parser.get_entries(date=options.date)
     today = datetime.date.today()
-    yesterday = today - datetime.timedelta(days=1)
+
+    # Get the number of days required to go to the previous open day (ie. not on
+    # a week-end)
+    if today.weekday() == 6:
+        days = 2
+    elif today.weekday() == 0:
+        days = 3
+    else:
+        days = 1
+
+    yesterday = today - datetime.timedelta(days=days)
 
     if options.date is None and not options.ignore_date_error:
         for (date, entry) in entries:
+            # Don't take ignored entries into account when checking the date
+            ignored_only = True
+            for e in entry:
+                if not e.is_ignored():
+                    ignored_only = False
+                    break
+
+            if ignored_only:
+                continue
+
             if date not in (today, yesterday) or date.strftime('%w') in [6, 0]:
                 raise Exception('Error: you\'re trying to commit for a day that\'s either'\
                 ' on a week-end or that\'s not yesterday nor today (%s).\nTo ignore this'\
@@ -191,12 +288,36 @@ def commit(options, args):
     pusher.push(parser.get_entries(date=options.date))
 
     total_hours = 0
+    ignored_hours = 0
     for date, entries in parser.get_entries(date=options.date):
         for entry in entries:
             if entry.pushed:
                 total_hours += entry.get_duration()
+            elif entry.is_ignored():
+                ignored_hours += entry.get_duration()
 
     print '\n%-29s %5.2f' % ('Total', total_hours)
+
+    if ignored_hours > 0:
+        print '%-29s %5.2f' % ('Total ignored', ignored_hours)
+
+    parser.update_file()
+
+def _prefill(file, direction, auto_fill_days):
+    parser = get_parser(file)
+    entries = parser.get_entries()
+
+    if len(entries) == 0:
+        return
+
+    cur_date = max([date for (date, entries) in entries])
+    cur_date += datetime.timedelta(days = 1)
+
+    while cur_date < datetime.date.today():
+        if cur_date.weekday() in auto_fill_days:
+            parser.auto_add(direction, cur_date)
+
+        cur_date = cur_date + datetime.timedelta(days = 1)
 
     parser.update_file()
 
@@ -213,12 +334,25 @@ def edit(options, args):
         pass
     else:
         if auto_add is not None and auto_add != settings.AUTO_ADD_OPTIONS['NO']:
+            auto_fill_days = settings.get_auto_fill_days()
+            if auto_fill_days:
+                _prefill(options.file, auto_add, auto_fill_days)
+
             parser = get_parser(options.file)
             parser.auto_add(auto_add)
             parser.update_file()
 
+    # Use the 'editor' config var if it's set, otherwise, fall back to
+    # sensible-editor
     try:
-        subprocess.call(['sensible-editor', options.file])
+        editor = settings.get('default', 'editor').split()
+    except ConfigParser.NoOptionError:
+        editor = ['sensible-editor']
+
+    editor.append(options.file)
+
+    try:
+        subprocess.call(editor)
     except OSError:
         if 'EDITOR' not in os.environ:
             raise Exception('Can\'t find any suitable editor. Check your EDITOR'\
@@ -253,8 +387,7 @@ def get_auto_add_direction(filepath, unparsed_filepath):
                 pass
 
     if auto_add is None:
-        print 'Warning: unable to detect where to put the new entry, please set'\
-            ' the `auto_add` option to `top` or `bottom` in your .tksrc file'
+        auto_add = settings.AUTO_ADD_OPTIONS['TOP']
 
     return auto_add
 
@@ -317,20 +450,21 @@ def main():
     """Usage: %prog [options] command
 
 Available commands:
+  add    \t\tsearches, prompts for project, activity and alias, adds to .tksrc
   commit \t\tcommits the changes to the server
   edit   \t\topens your zebra file in your favourite editor
   help   \t\tprints this help or the one of the given command
   search \t\tsearches for a project
   show   \t\tshows the activities and other details of a project
-  start  \t\tstarts the counter on a given project
-  status \t\tshows the status of your zebra file
+  start  \t\tstarts the counter on a given activity
+  status \t\tshows the status of your entries file
   stop   \t\tstops the counter and record the elapsed time
   update \t\tupdates your project database with the one on the server"""
 
     usage = main.__doc__
     locale.setlocale(locale.LC_ALL, '')
 
-    opt = OptionParser(usage=usage, version='%prog ' + VERSION)
+    opt = OptionParser(usage=usage, version='%prog ' + taxi.__version__)
     opt.add_option('-c', '--config', dest='config', help='use CONFIG file instead of ~/.tksrc', default=os.path.join(os.path.expanduser('~'), '.tksrc'))
     opt.add_option('-v', '--verbose', dest='verbose', action='store_true', help='make taxi verbose', default=False)
     opt.add_option('-f', '--file', dest='file', help='parse FILE instead of the '\
@@ -354,6 +488,7 @@ Available commands:
             (['start'], start),
             (['stop'], stop),
             (['edit'], edit),
+            (['add'], add),
     ]
 
     if len(args) == 0 or (len(args) == 1 and args[0] == 'help'):

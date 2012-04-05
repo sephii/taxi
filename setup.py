@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 from distutils.core import setup
+from taxi import __version__
 
 setup(
     name='taxi',
-    version='1.0',
-    #py_modules=['taxi'],
+    version=__version__,
     packages=['taxi'],
-    package_dir={'taxi': 'src/taxi'},
     description='Taxi is a Zebra frontend',
     author='Sylvain Fankhauser',
     author_email='sylvain.fankhauser@liip.ch',
-    scripts = ['taxi'],
+    scripts = ['bin/taxi'],
+    url='http://bitbucket.org/sephi/taxi',
 )

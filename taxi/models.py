@@ -25,12 +25,12 @@ class Entry:
         return '%-30s %-5.2f %s' % (project_name, self.get_duration() or 0, self.description)
 
     def is_ignored(self):
-        return self.project_name[-1] == '?'
+        return self.project_name[-1] == '?' or self.get_duration() == 0
 
     def get_duration(self):
         if isinstance(self.duration, tuple):
             if None in self.duration:
-                return None
+                return 0
 
             now = datetime.datetime.now()
             time_start = now.replace(hour=self.duration[0].hour,\
@@ -52,6 +52,16 @@ class Project:
         self.status = int(status)
         self.description = description
         self.budget = budget
+
+    def __unicode__(self):
+        return """\nId: %s
+Name: %s
+Active: %s
+Budget: %s
+Description: %s""" % (self.id, self.name, 'yes' if self.status else 'no', self.budget, self.description)
+
+    def __str__(self):
+        return unicode(self).encode('utf-8')
 
     def add_activity(self, activity):
         self.activities.append(activity)
