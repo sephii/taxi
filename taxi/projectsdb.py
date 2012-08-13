@@ -30,6 +30,8 @@ class ProjectsDb:
         output = open(os.path.join(settings.TAXI_PATH, self.DB_PATH), 'w')
         pickle.dump(lpdb, output)
 
+        print 'Projects database updated successfully'
+
     def search(self, search):
         projects = self._get_projects()
         found_list = []
