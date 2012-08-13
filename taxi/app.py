@@ -7,6 +7,7 @@ import datetime
 import difflib
 import subprocess
 import re
+import calendar
 
 from parser import TaxiParser, ParseError
 from settings import settings
@@ -184,6 +185,19 @@ def search(options, args):
     for project in projects:
         print '%-4s %s' % (project.id, project.name)
 
+def autofill(options, args):
+    """Usage: autofill
+    """
+
+    auto_add = get_auto_add_direction(options.file, options.unparsed_file)
+    if auto_add is not None and auto_add != settings.AUTO_ADD_OPTIONS['NO']:
+        auto_fill_days = settings.get_auto_fill_days()
+        if auto_fill_days:
+            today = datetime.date.today()
+            last_day = calendar.monthrange(today.year, today.month)
+            last_date = datetime.date(today.year, today.month, last_day[1])
+            _prefill(options.file, auto_add, auto_fill_days, last_date)
+
 def show(options, args):
     """Usage: show project_id
 
@@ -303,17 +317,20 @@ def commit(options, args):
 
     parser.update_file()
 
-def _prefill(file, direction, auto_fill_days):
+def _prefill(file, direction, auto_fill_days, limit=None):
     parser = get_parser(file)
     entries = parser.get_entries()
 
     if len(entries) == 0:
         return
 
+    if limit is None:
+        limit = datetime.date.today()
+
     cur_date = max([date for (date, entries) in entries])
     cur_date += datetime.timedelta(days = 1)
 
-    while cur_date < datetime.date.today():
+    while cur_date < limit:
         if cur_date.weekday() in auto_fill_days:
             parser.auto_add(direction, cur_date)
 
@@ -459,7 +476,8 @@ Available commands:
   start  \t\tstarts the counter on a given activity
   status \t\tshows the status of your entries file
   stop   \t\tstops the counter and record the elapsed time
-  update \t\tupdates your project database with the one on the server"""
+  update \t\tupdates your project database with the one on the server
+  autofill \t\tautofills the current timesheet with all the days of the month"""
 
     usage = main.__doc__
     locale.setlocale(locale.LC_ALL, '')
@@ -489,6 +507,7 @@ Available commands:
             (['stop'], stop),
             (['edit'], edit),
             (['add'], add),
+            (['autofill'], autofill),
     ]
 
     if len(args) == 0 or (len(args) == 1 and args[0] == 'help'):
