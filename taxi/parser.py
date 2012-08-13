@@ -24,7 +24,7 @@ class Parser(object):
                 line_number += 1
         except Exception as e:
             raise ParseError('Line #%s is not correctly formatted (error was'\
-                    ' \'%s\')' % (line_number, e.message))
+                    ' \'%s\')' % (line_number + 1, e.message))
 
         file.close()
 
@@ -92,7 +92,8 @@ class TaxiParser(Parser):
         if len(splitted_line) == 0:
             return
         elif len(splitted_line) != 3:
-            raise ParseError('Line #%s is not correctly formatted' % line_number)
+            raise ParseError('Line #%s is not correctly formatted' %
+                    (line_number + 1))
 
         time = re.match(r'(?:(\d{1,2}):?(\d{1,2}))?-(?:(?:(\d{1,2}):?(\d{1,2}))|\?)', splitted_line[1])
         time_end = None
