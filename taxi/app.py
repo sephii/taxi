@@ -190,12 +190,15 @@ def autofill(options, args):
     """
 
     auto_add = get_auto_add_direction(options.file, options.unparsed_file)
-    if auto_add is not None and auto_add != settings.AUTO_ADD_OPTIONS['NO']:
+
+    if auto_add != settings.AUTO_ADD_OPTIONS['NO']:
         auto_fill_days = settings.get_auto_fill_days()
         if auto_fill_days:
             today = datetime.date.today()
             last_day = calendar.monthrange(today.year, today.month)
             last_date = datetime.date(today.year, today.month, last_day[1])
+
+            create_file(options.file)
             _prefill(options.file, auto_add, auto_fill_days, last_date)
 
 def show(options, args):
@@ -322,15 +325,16 @@ def _prefill(file, direction, auto_fill_days, limit=None):
     entries = parser.get_entries()
 
     if len(entries) == 0:
-        return
+        today = datetime.date.today()
+        cur_date = datetime.date(today.year, today.month, 1)
+    else:
+        cur_date = max([date for (date, entries) in entries])
+        cur_date += datetime.timedelta(days = 1)
 
     if limit is None:
         limit = datetime.date.today()
 
-    cur_date = max([date for (date, entries) in entries])
-    cur_date += datetime.timedelta(days = 1)
-
-    while cur_date < limit:
+    while cur_date <= limit:
         if cur_date.weekday() in auto_fill_days:
             parser.auto_add(direction, cur_date)
 
@@ -386,7 +390,10 @@ def get_auto_add_direction(filepath, unparsed_filepath):
         auto_add = settings.AUTO_ADD_OPTIONS['AUTO']
 
     if auto_add == settings.AUTO_ADD_OPTIONS['AUTO']:
-        auto_add = get_parser(filepath).get_entries_direction()
+        if os.path.exists(filepath):
+            auto_add = get_parser(filepath).get_entries_direction()
+        else:
+            auto_add = None
 
         if auto_add is not None:
             return auto_add
