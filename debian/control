@@ -1,0 +1,13 @@
+Source: taxi
+Section: comm
+Priority: extra
+Maintainer: Didier Raboud <didier.raboud@liip.ch>
+Build-Depends: debhelper (>= 9), python
+Standards-Version: 3.9.3
+Homepage: https://bitbucket.org/sephi/taxi
+#Vcs-Hg:
+
+Package: taxi
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends}
+Description: That's Liip's taxi
