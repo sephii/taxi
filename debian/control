@@ -4,8 +4,8 @@ Priority: extra
 Maintainer: Didier Raboud <didier.raboud@liip.ch>
 Build-Depends: debhelper (>= 9), python
 Standards-Version: 3.9.3
-Homepage: https://bitbucket.org/sephi/taxi
-#Vcs-Hg:
+Homepage: https://github.com/sephii/taxi
+Vcs-Git: https://github.com/sephii/taxi.git
 
 Package: taxi
 Architecture: all
