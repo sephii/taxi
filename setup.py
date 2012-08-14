@@ -10,5 +10,5 @@ setup(
     author='Sylvain Fankhauser',
     author_email='sylvain.fankhauser@liip.ch',
     scripts = ['bin/taxi'],
-    url='http://bitbucket.org/sephi/taxi',
+    url='https://github.com/sephii/taxi',
 )
