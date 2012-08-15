@@ -112,16 +112,29 @@ class ZebraRemote(Remote):
 
                 if 'exception' in json_response:
                     entry.pushed = False
-                    print 'Unable to push entry "%s". Error was : %s' % (entry, json_response['exception']['message'])
+                    print 'Unable to push entry "%s". Error was: %s' % (entry, json_response['exception']['message'])
                 elif 'error' in json_response['command']:
+                    error = None
+                    for element in json_response['command']['error']:
+                        if 'Project' in element:
+                            error = element['Project']
+                            break
+
                     entry.pushed = False
-                    print 'Unable to push entry "%s". Unknown error message.  (sorry that\'s not very useful !)' % (entry)
+
+                    if error:
+                        print('Unable to push entry "%s". Error was: %s' %
+                            (entry, error))
+                    else:
+                        print('Unable to push entry "%s". Unknown error'
+                              ' message. (sorry that\'s not very useful !)' %
+                              (entry))
                 else:
                     entry.pushed = True
                     print entry
 
     def get_projects(self):
-        projects_url = 'project/.json'
+        projects_url = 'project/all.json'
 
         self._login()
 
@@ -130,6 +143,13 @@ class ZebraRemote(Remote):
 
         response_json = json.loads(response_body)
         projects = response_json['command']['projects']['project']
+        activities = response_json['command']['activities']['activity']
+        activities_dict = {}
+
+        for activity in activities:
+            a = Activity(int(activity['id']),
+                    activity['name'], activity['rate_eur'])
+            activities_dict[a.id] = a
 
         projects_list = []
         i = 0
@@ -141,26 +161,27 @@ class ZebraRemote(Remote):
                     project['budget'])
             i += 1
 
-            if i % 50 == 0:
-                print '%d%% projects processed' % (int(i / float(len(projects)) * 100))
-
             if p.status == 1:
-                activities_url = 'project/%d/activities.json' % int(project['id'])
-                response = self._request(activities_url)
-                response_body = response.read()
-                response_json = json.loads(response_body)
-                used = response_json['command']['activities']['used']
+                activities = project['activities']['activity']
 
-                if 'activity' in used:
-                    activities = used['activity']
+                # Sometimes the activity list just contains an @attribute
+                # element, in this case we skip it
+                if isinstance(activities, dict):
+                    continue
 
-                    if not isinstance(activities, list):
-                        activities = [activities];
+                # If there's only 1 activity, this won't be a list but a simple
+                # element
+                if not isinstance(activities, list):
+                    activities = [activities]
 
-                    for activity in activities:
-                        a = Activity(int(activity['id']),\
-                            activity['name'], activity['price'])
-                        p.add_activity(a)
+                for activity in activities:
+                    try:
+                        if int(activity) in activities_dict:
+                            p.add_activity(activities_dict[int(activity)])
+                    except ValueError:
+                        print("Cannot import activity %s for project %s"\
+                            " because activity id is not an int" %
+                            (activity, p.id))
 
             projects_list.append(p)
 
