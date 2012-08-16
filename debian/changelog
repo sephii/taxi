@@ -1,5 +1,5 @@
-taxi (2.2+ga995f15-1~OdyX1) UNRELEASED; urgency=low
+taxi (2.3-1) liip-unstable; urgency=low
 
-  * Initial release. (Closes: #XXXXXX)
+  * Initial release.
 
- -- Didier Raboud <didier.raboud@liip.ch>  Tue, 14 Aug 2012 10:14:52 +0200
+ -- Didier Raboud <didier.raboud@liip.ch>  Thu, 16 Aug 2012 18:51:01 +0200
