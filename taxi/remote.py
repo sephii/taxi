@@ -117,7 +117,7 @@ class ZebraRemote(Remote):
                     error = None
                     for element in json_response['command']['error']:
                         if 'Project' in element:
-                            error = element['Project']
+                            error = unicode(element['Project']).encode('utf-8')
                             break
 
                     entry.pushed = False
