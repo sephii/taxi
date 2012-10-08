@@ -115,7 +115,7 @@ def add(options, args):
         raise Exception(add.__doc__)
 
     search = args[1:]
-    projects = db.search(search)
+    projects = db.search(search, active_only=True)
 
     if len(projects) == 0:
         print 'No project matches your search string \'%s\'' % ' '.join(search)
@@ -131,10 +131,7 @@ def add(options, args):
 
     project = projects[number]
 
-    print project
-
-    if project.status == 0:
-        print 'Warning: this project is not active'
+    print(project)
 
     print "\nActivities:"
     for (key, activity) in enumerate(project.activities):
@@ -171,7 +168,8 @@ def add(options, args):
 def search(options, args):
     """Usage: search search_string
 
-    Searches for a project by its name.
+    Searches for a project by its name. The letter in the first column indicates
+    the status of the project: [N]ot started, [A]ctive, [F]inished, [C]ancelled.
     """
 
     db = ProjectsDb()
@@ -221,8 +219,8 @@ def show(options, args):
     else:
         print project
 
-        if project.status == 1:
-            print "\nActivities:"
+        if project.is_active():
+            print(u"\nActivities:")
             for activity in project.activities:
                 print '%-4s %s' % (activity.id, activity.name)
 

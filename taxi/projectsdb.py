@@ -32,7 +32,7 @@ class ProjectsDb:
 
         print 'Projects database updated successfully'
 
-    def search(self, search):
+    def search(self, search, active_only=False):
         projects = self._get_projects()
         found_list = []
 
@@ -47,7 +47,8 @@ class ProjectsDb:
                     break
 
             if found:
-                found_list.append(project)
+                if not active_only or project.is_active():
+                    found_list.append(project)
 
         return found_list
 
@@ -64,7 +65,7 @@ class ProjectsDb:
 
 class LocalProjectsDb:
     projects = []
-    VERSION = 1
+    VERSION = 2
 
     def __init__(self, projects):
         self.projects = projects

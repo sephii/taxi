@@ -45,6 +45,25 @@ class Entry:
         return self.duration
 
 class Project:
+    STATUS_NOT_STARTED = 0;
+    STATUS_ACTIVE = 1;
+    STATUS_FINISHED = 2;
+    STATUS_CANCELLED = 3;
+
+    STATUSES = {
+            STATUS_NOT_STARTED: 'Not started',
+            STATUS_ACTIVE: 'Active',
+            STATUS_FINISHED: 'Finished',
+            STATUS_CANCELLED: 'Cancelled',
+    }
+
+    SHORT_STATUSES = {
+            STATUS_NOT_STARTED: 'N',
+            STATUS_ACTIVE: 'A',
+            STATUS_FINISHED: 'F',
+            STATUS_CANCELLED: 'C',
+    }
+
     def __init__(self, id, name, status = None, description = None, budget = None):
         self.id = int(id)
         self.name = name
@@ -54,17 +73,42 @@ class Project:
         self.budget = budget
 
     def __unicode__(self):
-        return """\nId: %s
+        if self.status in self.STATUSES:
+            status = self.STATUSES[self.status]
+        else:
+            status = 'Unknown'
+
+        return """Id: %s
 Name: %s
-Active: %s
+Status: %s
+Start date: %s
+End date: %s
 Budget: %s
-Description: %s""" % (self.id, self.name, 'yes' if self.status else 'no', self.budget, self.description)
+Description: %s""" % (
+        self.id, self.name,
+        status,
+        self.start_date.strftime('%d.%m.%Y'),
+        self.end_date.strftime('%d.%m.%Y'),
+        self.budget,
+        self.description
+    )
 
     def __str__(self):
         return unicode(self).encode('utf-8')
 
     def add_activity(self, activity):
         self.activities.append(activity)
+
+    def is_active(self):
+        return (self.status == self.STATUS_ACTIVE and
+                self.start_date <= datetime.datetime.now() and
+                self.end_date > datetime.datetime.now())
+
+    def get_short_status(self):
+        if self.status not in self.SHORT_STATUSES:
+            return '?'
+
+        return self.SHORT_STATUSES[self.status]
 
 class Activity:
     def __init__(self, id, name, price):

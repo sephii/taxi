@@ -1,5 +1,6 @@
 import urllib, urllib2, urlparse, cookielib
 import json
+from datetime import datetime
 
 from models import Project, Activity
 
@@ -159,6 +160,17 @@ class ZebraRemote(Remote):
             p = Project(int(project['id']), project['name'],\
                     project['status'], project['description'],\
                     project['budget'])
+
+            try:
+                p.start_date = datetime.strptime(project['startdate'], '%Y-%m-%d')
+            except ValueError:
+                p.start_date = None
+
+            try:
+                p.end_date = datetime.strptime(project['enddate'], '%Y-%m-%d')
+            except ValueError:
+                p.end_date = None
+
             i += 1
 
             if p.status == 1:
