@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 from optparse import OptionParser
 import ConfigParser
 import sys
@@ -89,9 +90,9 @@ def select_number(max, description, min=0):
             if min <= number <= max:
                 return number
             else:
-                print 'Number out of range, try again'
+                print(u'Number out of range, try again')
         except ValueError:
-            print 'Please enter a number'
+            print(u'Please enter a number')
 
 def select_string(description, format=None, regexp_flags=0, default=None):
     while True:
@@ -102,7 +103,7 @@ def select_string(description, format=None, regexp_flags=0, default=None):
         if format is not None and re.match(format, char, regexp_flags):
             return char
         else:
-            print 'Invalid input, please try again'
+            print(u'Invalid input, please try again')
 
 def add(options, args):
     """Usage: add search_string
@@ -118,11 +119,12 @@ def add(options, args):
     projects = db.search(search, active_only=True)
 
     if len(projects) == 0:
-        print 'No project matches your search string \'%s\'' % ' '.join(search)
+        print(u'No project matches your search string \'%s\'' %
+              ''.join(search))
         return
 
     for (key, project) in enumerate(projects):
-        print '(%d) %-4s %s' % (key, project.id, project.name)
+        print(u'(%d) %-4s %s' % (key, project.id, project.name))
 
     try:
         number = select_number(len(projects), 'Choose the project (0-%d), (Ctrl-C) to exit: ' % (len(projects) - 1))
@@ -133,9 +135,9 @@ def add(options, args):
 
     print(project)
 
-    print "\nActivities:"
+    print(u"\nActivities:")
     for (key, activity) in enumerate(project.activities):
-        print '(%d) %-4s %s' % (key, activity.id, activity.name)
+        print(u'(%d) %-4s %s' % (key, activity.id, activity.name))
 
     try:
         number = select_number(len(project.activities), 'Choose the activity (0-%d), (Ctrl-C) to exit: ' % (len(project.activities) - 1))
@@ -163,7 +165,8 @@ def add(options, args):
     activity = project.activities[number]
     settings.add_activity(alias, project.id, activity.id)
 
-    print '\nThe following entry has been added to your .tksrc: %s = %s/%s' % (alias, project.id, activity.id)
+    print(u'\nThe following entry has been added to your .tksrc: %s = %s/%s' %
+          (alias, project.id, activity.id))
 
 def search(options, args):
     """Usage: search search_string
@@ -181,7 +184,7 @@ def search(options, args):
     search = search[1:]
     projects = db.search(search)
     for project in projects:
-        print '%-4s %s' % (project.id, project.name)
+        print(u'%-4s %s' % (project.id, project.name))
 
 def autofill(options, args):
     """Usage: autofill
@@ -213,16 +216,17 @@ def show(options, args):
     try:
         project = db.get(int(args[1]))
     except IOError:
-        print 'Error: the projects database file doesn\'t exist. Please run `taxi update` to create it'
+        print(u'Error: the projects database file doesn\'t exist. Please run '
+              ' `taxi update` to create it')
     except ValueError:
-        print 'Error: the project id must be a number'
+        print(u'Error: the project id must be a number')
     else:
-        print project
+        print(project)
 
         if project.is_active():
             print(u"\nActivities:")
             for activity in project.activities:
-                print '%-4s %s' % (activity.id, activity.name)
+                print(u'%-4s %s' % (activity.id, activity.name))
 
 def status(options, args):
     """Usage: status
@@ -234,7 +238,7 @@ def status(options, args):
     parser = get_parser(options.file)
     check_entries_file(parser, settings)
 
-    print 'Staging changes :\n'
+    print(u'Staging changes :\n')
     entries_list = sorted(parser.get_entries(date=options.date))
 
     for date, entries in entries_list:
@@ -242,18 +246,18 @@ def status(options, args):
             continue
 
         subtotal_hours = 0
-        print '# %s #' % date.strftime('%A %d %B').capitalize()
+        print(u'# %s #' % date.strftime('%A %d %B').capitalize())
         for entry in entries:
-            print entry
+            print(entry)
             subtotal_hours += entry.get_duration() or 0
 
-        print '%-29s %5.2f' % ('', subtotal_hours)
-        print ''
+        print(u'%-29s %5.2f' % ('', subtotal_hours))
+        print('')
 
         total_hours += subtotal_hours
 
-    print '%-29s %5.2f' % ('Total', total_hours)
-    print '\nUse `taxi ci` to commit staging changes to the server'
+    print(u'%-29s %5.2f' % ('Total', total_hours))
+    print(u'\nUse `taxi ci` to commit staging changes to the server')
 
 def commit(options, args):
     """Usage: commit
@@ -311,10 +315,10 @@ def commit(options, args):
             elif entry.is_ignored():
                 ignored_hours += entry.get_duration()
 
-    print '\n%-29s %5.2f' % ('Total', total_hours)
+    print(u'\n%-29s %5.2f' % ('Total', total_hours))
 
     if ignored_hours > 0:
-        print '%-29s %5.2f' % ('Total ignored', ignored_hours)
+        print(u'%-29s %5.2f' % ('Total ignored', ignored_hours))
 
     parser.update_file()
 
@@ -452,15 +456,15 @@ def call_action(actions, options, args):
         user_action = args[1]
         display_help = True
         if user_action == 'help':
-            print 'YO DAWG you asked for help for the help command. Try to'\
-                    ' search Google in Google instead.'
+            print('YO DAWG you asked for help for the help command. Try to '
+                  'search Google in Google instead.')
             return
 
     for action in actions:
         for action_name in action[0]:
             if action_name == user_action:
                 if display_help:
-                    print action[1].__doc__
+                    print(action[1].__doc__)
                 else:
                     action[1](options=options, args=args)
 
@@ -557,13 +561,13 @@ one in your config file with the 'file' setting, or use the -f option""")
         if options.verbose:
             raise
 
-        print e.description
-        print suggest_project_names(e.project_name)
+        print(e.description)
+        print(suggest_project_names(e.project_name))
     except Exception as e:
         if options.verbose:
             raise
 
-        print e
+        print(e)
 
 if __name__ == '__main__':
     main()

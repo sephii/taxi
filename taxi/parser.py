@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+import codecs
 import re
 import string
 import datetime
@@ -14,7 +16,7 @@ class Parser(object):
         pass
 
     def parse(self):
-        file = open(self.file, 'r')
+        file = codecs.open(self.file, 'r', 'utf-8')
         line_number = 0
 
         try:
@@ -144,7 +146,7 @@ class TaxiParser(Parser):
         return Entry(self.date, splitted_line[0], total_hours, splitted_line[2])
 
     def update_file(self):
-        file = open(self.file, 'w')
+        file = codecs.open(self.file, 'w', 'utf-8')
 
         for line in self.lines:
             text = line['text']
@@ -249,10 +251,10 @@ class TaxiParser(Parser):
         for lineno, line in enumerate(self.lines):
             if line['entry'] == found_entry:
                 t = (datetime.datetime.now() - (datetime.datetime.combine(datetime.datetime.today(), found_entry.duration[0]))).seconds / 60
-                print 'Elapsed time is %i minutes' % t
+                print(u'Elapsed time is %i minutes' % t)
                 r = t % 15
                 t += 15 - r if r != 0 else 0
-                print 'It will be rounded to %i minutes' % t
+                print(u'It will be rounded to %i minutes' % t)
                 rounded_time = (datetime.datetime.combine(datetime.datetime.today(), found_entry.duration[0]) + datetime.timedelta(minutes = t))
                 found_entry.duration = (found_entry.duration[0], rounded_time)
                 found_entry.description = description or '?'
@@ -272,8 +274,8 @@ class TaxiParser(Parser):
         else:
             txtduration = entry.duration
 
-        return '%s %s %s\n' % (entry.project_name, txtduration,\
-                entry.description or '?')
+        return (u'%s %s %s\n' % (entry.project_name, txtduration,
+                entry.description or '?'))
 
     def auto_add(self, mode, new_date = datetime.date.today()):
         # Check if we already have the current date in the file
