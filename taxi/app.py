@@ -181,7 +181,7 @@ def search(options, args):
     search = search[1:]
     projects = db.search(search)
     for project in projects:
-        print '%-4s %s' % (project.id, project.name)
+        print '%s %-4s %s' % (project.get_short_status(), project.id, project.name)
 
 def autofill(options, args):
     """Usage: autofill

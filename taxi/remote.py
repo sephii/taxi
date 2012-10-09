@@ -173,7 +173,7 @@ class ZebraRemote(Remote):
 
             i += 1
 
-            if p.status == 1:
+            if p.is_active():
                 activities = project['activities']['activity']
 
                 # Sometimes the activity list just contains an @attribute
