@@ -16,13 +16,16 @@ class Entry:
             self.project_id = None
             self.activity_id = None
 
-    def __str__(self):
+    def __unicode__(self):
         if self.is_ignored():
-            project_name = '%s (ignored)' % (self.project_name)
+            project_name = u'%s (ignored)' % (self.project_name)
         else:
-            project_name = '%s (%s/%s)' % (self.project_name, self.project_id, self.activity_id)
+            project_name = u'%s (%s/%s)' % (self.project_name, self.project_id, self.activity_id)
 
-        return '%-30s %-5.2f %s' % (project_name, self.get_duration() or 0, self.description)
+        return u'%-30s %-5.2f %s' % (project_name, self.get_duration() or 0, self.description)
+
+    def __str__(self):
+        return unicode(self).encode('utf-8')
 
     def is_ignored(self):
         return self.project_name[-1] == '?' or self.get_duration() == 0
@@ -78,7 +81,7 @@ class Project:
         else:
             status = 'Unknown'
 
-        return """Id: %s
+        return u"""Id: %s
 Name: %s
 Status: %s
 Start date: %s
