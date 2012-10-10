@@ -41,7 +41,9 @@ def clean_aliases(options, args):
     for (alias, mapping) in aliases.iteritems():
         project = db.get(mapping[0])
 
-        if project is None or not project.is_active():
+        if (project is None or not project.is_active() or
+            (mapping[1] is not None and
+            project.get_activity(mapping[1]) is None)):
             inactive_aliases.append((alias, mapping))
 
     if not inactive_aliases:
