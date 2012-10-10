@@ -10,6 +10,10 @@ class ProjectsDb:
     DB_PATH = 'projects.db'
 
     def _get_projects(self):
+        projects_cache = getattr(self, '_projects_cache', None)
+        if projects_cache is not None:
+            return projects_cache
+
         try:
             input = open(os.path.join(settings.TAXI_PATH, self.DB_PATH), 'r')
 
@@ -22,6 +26,8 @@ class ProjectsDb:
             if not isinstance(lpdb, LocalProjectsDb) or lpdb.VERSION < LocalProjectsDb.VERSION:
                 raise Exception('Your projects db is out of date, please' \
                         ' run `taxi update` to update it')
+
+            setattr(self, '_projects_cache', lpdb.projects)
 
             return lpdb.projects
         except IOError:

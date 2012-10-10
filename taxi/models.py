@@ -10,9 +10,9 @@ class Entry:
         self.date = date
         self.pushed = False
 
-        if project_name in settings.projects:
-            self.project_id = settings.projects[project_name][0]
-            self.activity_id = settings.projects[project_name][1]
+        if project_name in settings.get_projects():
+            self.project_id = settings.get_projects()[project_name][0]
+            self.activity_id = settings.get_projects()[project_name][1]
         else:
             self.project_id = None
             self.activity_id = None

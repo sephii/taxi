@@ -225,8 +225,15 @@ def show(options, args):
 
         if project.is_active():
             print(u"\nActivities:")
+            projects_mapping = settings.get_reversed_projects()
+
             for activity in project.activities:
-                print(u'%-4s %s' % (activity.id, activity.name))
+                if (project.id, activity.id) in projects_mapping:
+                    print(u'%-4s %s (mapped to %s)' %
+                          (activity.id, activity.name,
+                          projects_mapping[(project.id, activity.id)]))
+                else:
+                    print(u'%-4s %s' % (activity.id, activity.name))
 
 def status(options, args):
     """Usage: status
