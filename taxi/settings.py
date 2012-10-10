@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+import codecs
 import ConfigParser
 import os
 import difflib
@@ -72,7 +74,7 @@ class Settings:
         if self.config is None:
             raise Exception('Trying to add an activity before loading the settings file')
 
-        file = open(self.filepath, 'w')
+        file = codecs.open(self.filepath, 'w', 'utf-8')
         self.config.set('wrmap', alias, '%s/%s' % (projectid, activityid))
         self.config.write(file)
 

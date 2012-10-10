@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from settings import settings
 from remote import ZebraRemote
 

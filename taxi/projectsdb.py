@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import json
 import pickle
 import os
@@ -11,7 +12,12 @@ class ProjectsDb:
     def _get_projects(self):
         try:
             input = open(os.path.join(settings.TAXI_PATH, self.DB_PATH), 'r')
-            lpdb = pickle.load(input)
+
+            try:
+                lpdb = pickle.load(input)
+            except ImportError:
+                raise Exception('Your projects db is out of date, please '
+                        'run `taxi update` to update it')
 
             if not isinstance(lpdb, LocalProjectsDb) or lpdb.VERSION < LocalProjectsDb.VERSION:
                 raise Exception('Your projects db is out of date, please' \
@@ -23,14 +29,14 @@ class ProjectsDb:
 
     def update(self, base_url, username, password):
         remote = ZebraRemote(base_url, username, password)
-        print 'Updating database, this may take some time...'
+        print(u'Updating database, this may take some time...')
         projects = remote.get_projects()
         lpdb = LocalProjectsDb(projects)
 
         output = open(os.path.join(settings.TAXI_PATH, self.DB_PATH), 'w')
         pickle.dump(lpdb, output)
 
-        print 'Projects database updated successfully'
+        print(u'Projects database updated successfully')
 
     def search(self, search, active_only=False):
         projects = self._get_projects()
