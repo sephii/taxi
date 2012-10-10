@@ -34,8 +34,9 @@ def alias(options, args):
        alias [project_id/activity_id]
        alias [alias] [project_id/activity_id]
 
-- The first form will display the project your alias is mapped to.
-- The second form will display the alias you've defined for this
+- The first form will display the mappings whose aliases start with the search
+  string you entered
+- The second form will display the mapping you've defined for this
   project/activity tuple
 - The last form allows you to map a new alias on the given
   project_id/activity_id tuple
@@ -45,10 +46,44 @@ You can also run this command without any argument to view all your mappings."""
     activity_regexp = r'^(\d{1,4})/(\d{1,4})$'
     projects = settings.get_projects()
     db = ProjectsDb()
+    search = None
+
+    # 1 argument, display the alias or the project id/activity id tuple
+    if len(args) == 2:
+        alias = args[1]
+
+        matches = re.match(activity_regexp, alias)
+        if not matches:
+            search = alias
+        else:
+            # project_id/activity_id tuple
+            if matches:
+                reversed_projects = settings.get_reversed_projects()
+                project_activity = (int(matches.group(1)), int(matches.group(2)))
+                project = db.get(project_activity[0])
+
+                if project is None:
+                    print(u"Project %s doesn't exist." % (project_activity[0]))
+                else:
+                    if project_activity in reversed_projects:
+                        activity = project.get_activity(project_activity[1])
+
+                        if activity is None:
+                            print(u"Activity %s/%s doesn't exist." %
+                                  project_activity)
+                        else:
+                            print(u"%s -> %s (%s, %s)" % (alias,
+                                  reversed_projects[project_activity], project.name,
+                                  project.get_activity(project_activity[1]).name))
+                    else:
+                        print(u"%s is not mapped to any activity." % alias)
 
     # No argument, display the mappings
-    if len(args) == 1:
+    if len(args) == 1 or search is not None:
         for (alias, project_activity) in settings.get_projects().iteritems():
+            if search and not alias.startswith(search):
+                continue
+
             project = db.get(project_activity[0])
 
             if project is None:
@@ -64,51 +99,6 @@ You can also run this command without any argument to view all your mappings."""
                     print(u"%s -> %s, %s (%s/%s)" % (alias, project.name,
                           activity.name if activity is not None else '?',
                           project_activity[0], project_activity[1]))
-    # 1 argument, display the alias or the project id/activity id tuple
-    elif len(args) == 2:
-        alias = args[1]
-
-        matches = re.match(activity_regexp, alias)
-        # project_id/activity_id tuple
-        if matches:
-            reversed_projects = settings.get_reversed_projects()
-            project_activity = (int(matches.group(1)), int(matches.group(2)))
-            project = db.get(project_activity[0])
-
-            if project is None:
-                print(u"Project %s doesn't exist." % (project_activity[0]))
-            else:
-                if project_activity in reversed_projects:
-                    activity = project.get_activity(project_activity[1])
-
-                    if activity is None:
-                        print(u"Activity %s/%s doesn't exist." %
-                              project_activity)
-                    else:
-                        print(u"%s -> %s (%s, %s)" % (alias,
-                              reversed_projects[project_activity], project.name,
-                              project.get_activity(project_activity[1]).name))
-                else:
-                    print(u"%s is not mapped to any activity." % alias)
-        # alias search
-        else:
-            if args[1] in projects:
-                project = db.get(projects[args[1]][0])
-
-                if project is None:
-                    print(u"%s -> %s/%s (?)" % (args[1],
-                          projects[args[1]][0], projects[args[1]][1]))
-                else:
-                    activity = project.get_activity(projects[args[1]][1])
-
-                    if activity is not None:
-                        print(u"%s -> %s/%s (%s, %s)" % (args[1],
-                              projects[args[1]][0], projects[args[1]][1], project.name, activity.name))
-                    else:
-                        print(u"%s -> %s (%s)" % (args[1],
-                              projects[args[1]][0], project.name))
-            else:
-                print(u"Alias %s doesn't exist." % args[1])
     elif len(args) == 3:
         pass
 
