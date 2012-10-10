@@ -65,15 +65,17 @@ class ProjectsDb:
         return found_list
 
     def get(self, id):
-        projects = self._get_projects()
-        found_list = []
-        id = int(id)
+        projects_hash = getattr(self, '_projects_hash', None)
+        if projects_hash is None:
+            projects = self._get_projects()
+            projects_hash = {}
 
-        for project in projects:
-            if project.id == id:
-                return project
+            for project in projects:
+                projects_hash[project.id] = project
 
-        raise Exception('Project not found')
+            setattr(self, '_projects_hash', projects_hash)
+
+        return projects_hash[id] if id in projects_hash else None
 
 class LocalProjectsDb:
     projects = []

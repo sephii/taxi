@@ -29,6 +29,50 @@ class ProjectNotFoundError(Exception):
 def term_unicode(string):
     return unicode(string, sys.stdin.encoding)
 
+def clean_aliases(options, args):
+    """Usage: clean-aliases
+
+    Removes aliases from your config file that point to inactive projects."""
+
+    aliases = settings.get_projects()
+    db = ProjectsDb()
+    inactive_aliases = []
+
+    for (alias, mapping) in aliases.iteritems():
+        project = db.get(mapping[0])
+
+        if project is None or not project.is_active():
+            inactive_aliases.append((alias, mapping))
+
+    if not inactive_aliases:
+        print(u"No inactive aliases found.")
+        return
+
+    print(u"The following aliases are mapped to inactive projects:\n")
+    for (alias, mapping) in inactive_aliases:
+        project = db.get(mapping[0])
+        activity = None
+
+        if mapping[1] is not None:
+            activity = project.get_activity(mapping[1])
+
+            if activity is not None:
+                activity = activity.name
+            else:
+                activity = None
+
+        if activity is not None:
+            print(u"%s -> %s, %s (%s/%s)" % (alias, project.name, activity,
+                  mapping[0], mapping[1]))
+        else:
+            print(u"%s -> %s (%s)" % (alias, project.name, mapping[0]))
+
+    confirm = select_string(u"\nDo you want to clean them [y/N]? ", r'^[yn]$',
+                            re.I, 'n')
+
+    if confirm == 'y':
+        settings.remove_activities([item[0] for item in inactive_aliases])
+
 def start(options, args):
     """Usage: start project_name
 
@@ -221,6 +265,10 @@ def show(options, args):
     except ValueError:
         print(u'Error: the project id must be a number')
     else:
+        if project is None:
+            print(u"Error: the project doesn't exist")
+            return
+
         print(project)
 
         if project.is_active():
@@ -484,6 +532,8 @@ def main():
 
 Available commands:
   add    \t\tsearches, prompts for project, activity and alias, adds to .tksrc
+  autofill \t\tautofills the current timesheet with all the days of the month
+  clean-aliases\t\tremoves aliases that point to inactive projects
   commit \t\tcommits the changes to the server
   edit   \t\topens your zebra file in your favourite editor
   help   \t\tprints this help or the one of the given command
@@ -492,8 +542,7 @@ Available commands:
   start  \t\tstarts the counter on a given activity
   status \t\tshows the status of your entries file
   stop   \t\tstops the counter and record the elapsed time
-  update \t\tupdates your project database with the one on the server
-  autofill \t\tautofills the current timesheet with all the days of the month"""
+  update \t\tupdates your project database with the one on the server"""
 
     usage = main.__doc__
     locale.setlocale(locale.LC_ALL, '')
@@ -524,6 +573,7 @@ Available commands:
             (['edit'], edit),
             (['add'], add),
             (['autofill'], autofill),
+            (['clean-aliases'], clean_aliases),
     ]
 
     if len(args) == 0 or (len(args) == 1 and args[0] == 'help'):

@@ -122,6 +122,13 @@ Description: %s""" % (
     def add_activity(self, activity):
         self.activities.append(activity)
 
+    def get_activity(self, id):
+        for activity in self.activities:
+            if activity.id == id:
+                return activity
+
+        return None
+
     def is_active(self):
         return (self.status == self.STATUS_ACTIVE and
                 (self.start_date is None or

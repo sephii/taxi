@@ -102,8 +102,18 @@ class Settings:
         if self.config is None:
             raise Exception('Trying to add an activity before loading the settings file')
 
-        file = codecs.open(self.filepath, 'w', 'utf-8')
         self.config.set('wrmap', alias, '%s/%s' % (projectid, activityid))
+        file = codecs.open(self.filepath, 'w', 'utf-8')
+        self.config.write(file)
+
+    def remove_activities(self, aliases):
+        if self.config is None:
+            raise Exception('Trying to add an activity before loading the settings file')
+
+        for alias in aliases:
+            self.config.remove_option('wrmap', alias)
+
+        file = codecs.open(self.filepath, 'w', 'utf-8')
         self.config.write(file)
 
     def activity_exists(self, activity_name):

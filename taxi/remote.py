@@ -191,27 +191,26 @@ class ZebraRemote(Remote):
 
             i += 1
 
-            if p.is_active():
-                activities = project['activities']['activity']
+            activities = project['activities']['activity']
 
-                # Sometimes the activity list just contains an @attribute
-                # element, in this case we skip it
-                if isinstance(activities, dict):
-                    continue
+            # Sometimes the activity list just contains an @attribute
+            # element, in this case we skip it
+            if isinstance(activities, dict):
+                continue
 
-                # If there's only 1 activity, this won't be a list but a simple
-                # element
-                if not isinstance(activities, list):
-                    activities = [activities]
+            # If there's only 1 activity, this won't be a list but a simple
+            # element
+            if not isinstance(activities, list):
+                activities = [activities]
 
-                for activity in activities:
-                    try:
-                        if int(activity) in activities_dict:
-                            p.add_activity(activities_dict[int(activity)])
-                    except ValueError:
-                        print(u"Cannot import activity %s for project %s"\
-                              " because activity id is not an int" %
-                              (activity, p.id))
+            for activity in activities:
+                try:
+                    if int(activity) in activities_dict:
+                        p.add_activity(activities_dict[int(activity)])
+                except ValueError:
+                    print(u"Cannot import activity %s for project %s"\
+                          " because activity id is not an int" %
+                          (activity, p.id))
 
             projects_list.append(p)
 
