@@ -114,8 +114,8 @@ def clean_aliases(options, args):
         project = db.get(mapping[0])
 
         if (project is None or not project.is_active() or
-            (mapping[1] is not None and
-            project.get_activity(mapping[1]) is None)):
+                (mapping[1] is not None and
+                project.get_activity(mapping[1]) is None)):
             inactive_aliases.append((alias, mapping))
 
     if not inactive_aliases:
@@ -125,24 +125,29 @@ def clean_aliases(options, args):
     print(u"The following aliases are mapped to inactive projects:\n")
     for (alias, mapping) in inactive_aliases:
         project = db.get(mapping[0])
-        activity = None
 
+        # The project the alias is mapped to doesn't exist anymore
         if project is None:
-            print(u"%s -> ? (%s/%s)" % (alias, mapping[0], mapping[1]))
+            project_name = '?'
+            mapping_name = '%s/%s' % mapping
         else:
+            # The alias is mapped to a project and an activity (it can also be
+            # mapped only to a project)
             if mapping[1] is not None:
                 activity = project.get_activity(mapping[1])
 
+                # The activity still exists in the project database
                 if activity is not None:
-                    activity = activity.name
+                    project_name = '%s, %s' % (project.name, activity.name)
+                    mapping_name = '%s/%s' % mapping
                 else:
-                    activity = None
-
-            if activity is not None:
-                print(u"%s -> %s, %s (%s/%s)" % (alias, project.name, activity,
-                      mapping[0], mapping[1]))
+                    project_name = project.name
+                    mapping_name = '%s/%s' % mapping
             else:
-                print(u"%s -> %s (%s)" % (alias, project.name, mapping[0]))
+                project_name = '%s, ?' % (project.name)
+                mapping_name = '%s' % (mapping[0])
+
+        print(u"%s -> %s (%s)" % (alias, project_name, mapping_name))
 
     confirm = select_string(u"\nDo you want to clean them [y/N]? ", r'^[yn]$',
                             re.I, 'n')
