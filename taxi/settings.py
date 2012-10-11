@@ -27,7 +27,7 @@ class Settings:
         self.filepath = file
 
         try:
-            with codecs.open(self.filepath, 'r', 'utf-8') as fp:
+            with open(self.filepath, 'r') as fp:
                 self.config.readfp(fp)
         except IOError:
             raise IOError('The specified configuration file `%s` doesn\'t exist' % file)
@@ -105,8 +105,7 @@ class Settings:
             raise Exception('Trying to add an activity before loading the settings file')
 
         self.config.set('wrmap', alias, '%s/%s' % (projectid, activityid))
-        file = codecs.open(self.filepath, 'w', 'utf-8')
-        self.config.write(file)
+        self.write_config()
 
     def remove_activities(self, aliases):
         if self.config is None:
@@ -115,7 +114,10 @@ class Settings:
         for alias in aliases:
             self.config.remove_option('wrmap', alias)
 
-        with codecs.open(self.filepath, 'w', 'utf-8') as file:
+        self.write_config()
+
+    def write_config(self):
+        with open(self.filepath, 'w') as file:
             self.config.write(file)
 
     def activity_exists(self, activity_name):
