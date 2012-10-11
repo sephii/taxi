@@ -6,6 +6,7 @@ import sys
 import os
 import datetime
 import difflib
+import inspect
 import subprocess
 import re
 import calendar
@@ -32,29 +33,29 @@ def term_unicode(string):
 def alias(options, args):
     """Usage: alias [alias]
        alias [project_id/activity_id]
-       alias [alias] [project_id/activity_id]
 
-- The first form will display the mappings whose aliases start with the search
-  string you entered
-- The second form will display the mapping you've defined for this
-  project/activity tuple
-- The last form allows you to map a new alias on the given
-  project_id/activity_id tuple
+    - The first form will display the mappings whose aliases start with the search
+      string you entered
+    - The second form will display the mapping you've defined for this
+      project/activity tuple
 
-You can also run this command without any argument to view all your mappings."""
+    You can also run this command without any argument to view all your mappings."""
 
     activity_regexp = r'^(\d{1,4})/(\d{1,4})$'
     projects = settings.get_projects()
     db = ProjectsDb()
     search = None
 
-    # 1 argument, display the alias or the project id/activity id tuple
-    if len(args) == 2:
-        alias = args[1]
+    if len(args) > 2:
+        raise Exception(inspect.cleandoc(alias.__doc__))
 
-        matches = re.match(activity_regexp, alias)
+    # 1 argument, display the user_alias or the project id/activity id tuple
+    if len(args) == 2:
+        user_alias = args[1]
+
+        matches = re.match(activity_regexp, user_alias)
         if not matches:
-            search = alias
+            search = user_alias
         else:
             # project_id/activity_id tuple
             if matches:
@@ -72,35 +73,33 @@ You can also run this command without any argument to view all your mappings."""
                             print(u"Activity %s/%s doesn't exist." %
                                   project_activity)
                         else:
-                            print(u"%s -> %s (%s, %s)" % (alias,
+                            print(u"%s -> %s (%s, %s)" % (user_alias,
                                   reversed_projects[project_activity], project.name,
                                   project.get_activity(project_activity[1]).name))
                     else:
-                        print(u"%s is not mapped to any activity." % alias)
+                        print(u"%s is not mapped to any activity." % user_alias)
 
     # No argument, display the mappings
     if len(args) == 1 or search is not None:
-        for (alias, project_activity) in settings.get_projects().iteritems():
-            if search and not alias.startswith(search):
+        for (user_alias, project_activity) in settings.get_projects().iteritems():
+            if search and not user_alias.startswith(search):
                 continue
 
             project = db.get(project_activity[0])
 
             if project is None:
-                print(u"%s -> ? (%s/%s)" % (alias, project_activity[0],
+                print(u"%s -> ? (%s/%s)" % (user_alias, project_activity[0],
                       project_activity[1]))
             else:
                 if project_activity[1] is None:
-                    print(u"%s -> %s (%s)" % (alias, project.name,
+                    print(u"%s -> %s (%s)" % (user_alias, project.name,
                           project_activity[0]))
                 else:
                     activity = project.get_activity(project_activity[1])
 
-                    print(u"%s -> %s, %s (%s/%s)" % (alias, project.name,
+                    print(u"%s -> %s, %s (%s/%s)" % (user_alias, project.name,
                           activity.name if activity is not None else '?',
                           project_activity[0], project_activity[1]))
-    elif len(args) == 3:
-        pass
 
 def clean_aliases(options, args):
     """Usage: clean-aliases
@@ -156,7 +155,7 @@ def start(options, args):
     finished, use the stop command."""
 
     if len(args) < 2:
-        raise Exception(start.__doc__)
+        raise Exception(inspect.cleandoc(start.__doc__))
 
     project_name = args[1]
 
@@ -227,12 +226,13 @@ def select_string(description, format=None, regexp_flags=0, default=None):
 def add(options, args):
     """Usage: add search_string
 
-    Searches and prompts for project, activity and alias and adds that as a new entry to .tksrc
-    """
+    Searches and prompts for project, activity and alias and adds that as a new
+    entry to .tksrc."""
+
     db = ProjectsDb()
 
     if len(args) < 2:
-        raise Exception(add.__doc__)
+        raise Exception(inspect.cleandoc(add.__doc__))
 
     search = args[1:]
     projects = db.search(search, active_only=True)
@@ -291,13 +291,12 @@ def search(options, args):
     """Usage: search search_string
 
     Searches for a project by its name. The letter in the first column indicates
-    the status of the project: [N]ot started, [A]ctive, [F]inished, [C]ancelled.
-    """
+    the status of the project: [N]ot started, [A]ctive, [F]inished, [C]ancelled."""
 
     db = ProjectsDb()
 
     if len(args) < 2:
-        raise Exception(search.__doc__)
+        raise Exception(inspect.cleandoc(search.__doc__))
 
     search = args
     search = search[1:]
@@ -306,8 +305,7 @@ def search(options, args):
         print(u'%s %-4s %s' % (project.get_short_status(), project.id, project.name))
 
 def autofill(options, args):
-    """Usage: autofill
-    """
+    """Usage: autofill"""
 
     auto_add = get_auto_add_direction(options.file, options.unparsed_file)
 
@@ -330,7 +328,7 @@ def show(options, args):
     db = ProjectsDb()
 
     if len(args) < 2:
-        raise Exception(show.__doc__)
+        raise Exception(inspect.cleandoc(show.__doc__))
 
     try:
         project = db.get(int(args[1]))
@@ -594,7 +592,7 @@ def call_action(actions, options, args):
         for action_name in action[0]:
             if action_name == user_action:
                 if display_help:
-                    print(action[1].__doc__)
+                    print(inspect.cleandoc(action[1].__doc__))
                 else:
                     action[1](options=options, args=args)
 
@@ -605,21 +603,21 @@ def call_action(actions, options, args):
 def main():
     """Usage: %prog [options] command
 
-Available commands:
-  add    \t\tsearches, prompts for project, activity and alias, adds to .tksrc
-  autofill \t\tautofills the current timesheet with all the days of the month
-  clean-aliases\t\tremoves aliases that point to inactive projects
-  commit \t\tcommits the changes to the server
-  edit   \t\topens your zebra file in your favourite editor
-  help   \t\tprints this help or the one of the given command
-  search \t\tsearches for a project
-  show   \t\tshows the activities and other details of a project
-  start  \t\tstarts the counter on a given activity
-  status \t\tshows the status of your entries file
-  stop   \t\tstops the counter and record the elapsed time
-  update \t\tupdates your project database with the one on the server"""
+    Available commands:
+      add    \t\tsearches, prompts for project, activity and alias, adds to .tksrc
+      autofill \t\tautofills the current timesheet with all the days of the month
+      clean-aliases\tremoves aliases that point to inactive projects
+      commit \t\tcommits the changes to the server
+      edit   \t\topens your zebra file in your favourite editor
+      help   \t\tprints this help or the one of the given command
+      search \t\tsearches for a project
+      show   \t\tshows the activities and other details of a project
+      start  \t\tstarts the counter on a given activity
+      status \t\tshows the status of your entries file
+      stop   \t\tstops the counter and record the elapsed time
+      update \t\tupdates your project database with the one on the server"""
 
-    usage = main.__doc__
+    usage = inspect.cleandoc(main.__doc__)
     locale.setlocale(locale.LC_ALL, '')
 
     opt = OptionParser(usage=usage, version='%prog ' + taxi.__version__)
