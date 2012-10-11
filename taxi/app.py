@@ -127,19 +127,22 @@ def clean_aliases(options, args):
         project = db.get(mapping[0])
         activity = None
 
-        if mapping[1] is not None:
-            activity = project.get_activity(mapping[1])
+        if project is None:
+            print(u"%s -> ? (%s/%s)" % (alias, mapping[0], mapping[1]))
+        else:
+            if mapping[1] is not None:
+                activity = project.get_activity(mapping[1])
+
+                if activity is not None:
+                    activity = activity.name
+                else:
+                    activity = None
 
             if activity is not None:
-                activity = activity.name
+                print(u"%s -> %s, %s (%s/%s)" % (alias, project.name, activity,
+                      mapping[0], mapping[1]))
             else:
-                activity = None
-
-        if activity is not None:
-            print(u"%s -> %s, %s (%s/%s)" % (alias, project.name, activity,
-                  mapping[0], mapping[1]))
-        else:
-            print(u"%s -> %s (%s)" % (alias, project.name, mapping[0]))
+                print(u"%s -> %s (%s)" % (alias, project.name, mapping[0]))
 
     confirm = select_string(u"\nDo you want to clean them [y/N]? ", r'^[yn]$',
                             re.I, 'n')
