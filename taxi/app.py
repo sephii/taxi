@@ -30,6 +30,20 @@ class ProjectNotFoundError(Exception):
 def term_unicode(string):
     return unicode(string, sys.stdin.encoding)
 
+def cat(options, args):
+    """
+   |\      _,,,---,,_
+   /,`.-'`'    -.  ;-;;,_
+  |,4-  ) )-,_..;\ (  `'-'
+ '---''(_/--'  `-'\_)
+
+  Soft kitty, warm kitty
+      Little ball of fur
+          Happy kitty, sleepy kitty
+              Purr, purr, purr"""
+
+    print(cat.__doc__)
+
 def alias(options, args):
     """Usage: alias [alias]
        alias [project_id/activity_id]
@@ -656,6 +670,7 @@ def main():
             (['autofill'], autofill),
             (['clean-aliases'], clean_aliases),
             (['alias'], alias),
+            (['cat', 'kitty', 'ohai'], cat),
     ]
 
     if len(args) == 0 or (len(args) == 1 and args[0] == 'help'):
