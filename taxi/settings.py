@@ -25,10 +25,12 @@ class Settings:
     def load(self, file):
         self.config = ConfigParser.RawConfigParser()
         self.filepath = file
-        parsed = self.config.read(self.filepath)
 
-        if len(parsed) == 0:
-            raise Exception('The specified configuration file `%s` doesn\'t exist' % file)
+        try:
+            with codecs.open(self.filepath, 'r', 'utf-8') as fp:
+                self.config.readfp(fp)
+        except IOError:
+            raise IOError('The specified configuration file `%s` doesn\'t exist' % file)
 
     def get(self, section, key):
         try:
@@ -113,8 +115,8 @@ class Settings:
         for alias in aliases:
             self.config.remove_option('wrmap', alias)
 
-        file = codecs.open(self.filepath, 'w', 'utf-8')
-        self.config.write(file)
+        with codecs.open(self.filepath, 'w', 'utf-8') as file:
+            self.config.write(file)
 
     def activity_exists(self, activity_name):
         return self.config.has_option('wrmap', activity_name)
