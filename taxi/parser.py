@@ -38,10 +38,12 @@ class Parser(object):
         self.entries = {}
         self.lines = []
 
+        self.parse()
+
 class TaxiParser(Parser):
     def __init__(self, file):
-        super(TaxiParser, self).__init__(file)
         self.date = None
+        super(TaxiParser, self).__init__(file)
 
     def process_date(self, date_matches):
         if len(date_matches.group(1)) == 4:
@@ -324,3 +326,13 @@ class TaxiParser(Parser):
                         return settings.AUTO_ADD_OPTIONS['BOTTOM']
 
         return None
+
+    def check_entries_mapping(self, aliases):
+        for (date, entries) in self.entries.iteritems():
+            for entry in entries:
+                if entry.project_name[-1] != '?' and entry.project_name not in aliases:
+                    error = 'Error: project `%s` is not mapped to any project number'\
+                    ' in your settings file' % entry.project_name
+
+                    raise ProjectNotFoundError(entry.project_name, error)
+

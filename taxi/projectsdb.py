@@ -83,3 +83,5 @@ class LocalProjectsDb:
 
     def __init__(self, projects):
         self.projects = projects
+
+projects_db = ProjectsDb()
