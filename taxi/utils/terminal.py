@@ -34,17 +34,22 @@ def print_mapping(mapping):
 
     user_alias = reversed_projects[mapping]
 
+    mapping_name = '%s/%s' % mapping
     if not project:
         project_name = '?'
     else:
-        activity = project.get_activity(mapping[1])
-
-        if activity is None:
+        if mapping[1] is None:
             project_name = '%s' % (project.name)
+            mapping_name = '%s' % (mapping[0])
         else:
-            project_name = '%s, %s' % (project.name, activity.name)
+            activity = project.get_activity(mapping[1])
 
-    print(u"%s/%s -> %s (%s)" % (mapping[0], mapping[1], user_alias, project_name))
+            if activity is None:
+                project_name = '%s, ?' % (project.name)
+            else:
+                project_name = '%s, %s' % (project.name, activity.name)
+
+    print(u"%s -> %s (%s)" % (mapping_name, user_alias, project_name))
 
 def select_number(max, description, min=0):
     while True:
@@ -68,4 +73,3 @@ def select_string(description, format=None, regexp_flags=0, default=None):
             return char
         else:
             print(u'Invalid input, please try again')
-

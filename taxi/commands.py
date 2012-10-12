@@ -75,20 +75,62 @@ def add(options, args):
 def alias(options, args):
     """Usage: alias [alias]
        alias [project_id/activity_id]
+       alias [alias] [project_id/activity_id]
 
     - The first form will display the mappings whose aliases start with the search
       string you entered
     - The second form will display the mapping you've defined for this
       project/activity tuple
+    - The third form will add a new alias in your configuration file
 
     You can also run this command without any argument to view all your mappings."""
 
-    activity_regexp = r'^(\d{1,4})/(\d{1,4})$'
+    activity_regexp = r'^(\d{1,4})(?:/(\d{1,4}))?$'
     projects = settings.get_projects()
     search = None
 
-    if len(args) > 2:
+    if len(args) > 3:
         raise Exception(inspect.cleandoc(alias.__doc__))
+
+    # 2 arguments, add a new alias
+    if len(args) == 3:
+        alias_name = args[1]
+        mapping = args[2]
+
+        matches = re.match(activity_regexp, mapping)
+        if not matches:
+            raise Exception("The mapping must be in the format xxxx/yyyy")
+
+        project_activity = tuple([int(item) if item else None for item in matches.groups()])
+        activity = None
+        project = projects_db.get(project_activity[0])
+
+        if project:
+            activity = project.get_activity(project_activity[1])
+
+
+        if project is None or activity is None:
+            raise Exception("The project/activity tuple was not found in the"
+                            " project database. Check your input or update"
+                            " your projects database")
+
+        if settings.activity_exists(alias_name):
+            (project_id, activity_id) = settings.get_projects()[alias_name]
+            project = projects_db.get(project_id)
+
+            if activity_id is not None:
+                mapping_name = u'%s/%s' % (project_id, activity_id)
+            else:
+                mapping_name = str(project_id)
+
+            confirm = terminal.select_string(u"The alias `%s` is already"
+                      " mapped to `%s`.\nDo you want to overwrite it [y/N]? " %
+                      (alias_name, mapping_name), r'^[yn]$', re.I, 'n')
+
+            if confirm != 'y':
+                return
+
+        settings.add_activity(alias_name, matches.group(1), matches.group(2))
 
     # 1 argument, display the alias or the project id/activity id tuple
     if len(args) == 2:
@@ -97,8 +139,19 @@ def alias(options, args):
         matches = re.match(activity_regexp, search)
         # project_id/activity_id tuple search
         if matches:
-            project_activity = (int(matches.group(1)), int(matches.group(2)))
-            terminal.print_mapping(project_activity)
+            project_activity = tuple([int(item) if item else None for item in matches.groups()])
+            for (user_alias, project_activity) in settings.get_projects().iteritems():
+                # check if project id matches search string
+                if not str(project_activity[0]).startswith(matches.group(1)):
+                    continue
+
+                # check if activity id matches search string
+                if matches.group(2) is not None and (
+                        project_activity[1] is None or
+                        not str(project_activity[1]).startswith(matches.group(2))):
+                    continue
+
+                terminal.print_mapping(project_activity)
 
             return
 
