@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import datetime
-from settings import settings
+from taxi.settings import settings
 
 class Entry:
     def __init__(self, date, project_name, hours, description):

@@ -3,7 +3,7 @@ import urllib, urllib2, urlparse, cookielib
 import json
 from datetime import datetime
 
-from models import Project, Activity
+from taxi.models import Project, Activity
 
 class Remote(object):
     # Default timeout for HTTP-related operations, in seconds

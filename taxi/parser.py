@@ -5,8 +5,8 @@ import string
 import datetime
 import os
 
-from models import Entry
-from settings import settings
+from taxi.models import Entry
+from taxi.settings import settings
 
 class ParseError(Exception):
     pass

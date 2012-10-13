@@ -3,8 +3,8 @@ import json
 import pickle
 import os
 
-from remote import ZebraRemote
-from settings import settings
+from taxi.remote import ZebraRemote
+from taxi.settings import settings
 
 class ProjectsDb:
     DB_PATH = 'projects.db'
