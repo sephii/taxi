@@ -74,12 +74,15 @@ def add(options, args):
 
 def alias(options, args):
     """Usage: alias [alias]
+       alias [project_id]
        alias [project_id/activity_id]
        alias [alias] [project_id/activity_id]
 
-    - The first form will display the mappings whose aliases start with the search
-      string you entered
-    - The second form will display the mapping you've defined for this
+    - The first form will display the mappings whose aliases start with the
+      search string you entered
+    - The second form will display the mapping(s) you've defined for this
+      project and all of its activities
+    - The third form will display the mapping you've defined for this exact
       project/activity tuple
     - The third form will add a new alias in your configuration file
 
@@ -107,7 +110,6 @@ def alias(options, args):
 
         if project:
             activity = project.get_activity(project_activity[1])
-
 
         if project is None or activity is None:
             raise Exception("The project/activity tuple was not found in the"
@@ -139,19 +141,13 @@ def alias(options, args):
         matches = re.match(activity_regexp, search)
         # project_id/activity_id tuple search
         if matches:
-            project_activity = tuple([int(item) if item else None for item in matches.groups()])
-            for (user_alias, project_activity) in settings.get_projects().iteritems():
-                # check if project id matches search string
-                if not str(project_activity[0]).startswith(matches.group(1)):
+            matched_alias = tuple([int(item) if item else None for item in matches.groups()])
+            for (user_alias, mapped_alias) in settings.get_projects().iteritems():
+                if (mapped_alias[0] != matched_alias[0] or
+                        (matched_alias[1] is not None and
+                        mapped_alias[1] != matched_alias[1])):
                     continue
-
-                # check if activity id matches search string
-                if matches.group(2) is not None and (
-                        project_activity[1] is None or
-                        not str(project_activity[1]).startswith(matches.group(2))):
-                    continue
-
-                terminal.print_mapping(project_activity)
+                terminal.print_mapping(mapped_alias)
 
             return
 
