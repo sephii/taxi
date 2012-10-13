@@ -84,7 +84,7 @@ def alias(options, args):
       project and all of its activities
     - The third form will display the mapping you've defined for this exact
       project/activity tuple
-    - The third form will add a new alias in your configuration file
+    - The last form will add a new alias in your configuration file
 
     You can also run this command without any argument to view all your mappings."""
 
@@ -112,18 +112,17 @@ def alias(options, args):
             activity = project.get_activity(project_activity[1])
 
         if project is None or activity is None:
-            raise Exception("The project/activity tuple was not found in the"
-                            " project database. Check your input or update"
-                            " your projects database")
+            raise Exception("Error: the project/activity tuple was not found"
+                    " in the project database. Check your input or update your"
+                    " projects database.")
 
         if settings.activity_exists(alias_name):
             (project_id, activity_id) = settings.get_projects()[alias_name]
-            project = projects_db.get(project_id)
 
             if activity_id is not None:
                 mapping_name = u'%s/%s' % (project_id, activity_id)
             else:
-                mapping_name = str(project_id)
+                mapping_name = unicode(project_id)
 
             confirm = terminal.select_string(u"The alias `%s` is already"
                       " mapped to `%s`.\nDo you want to overwrite it [y/N]? " %
@@ -132,7 +131,16 @@ def alias(options, args):
             if confirm != 'y':
                 return
 
-        settings.add_activity(alias_name, matches.group(1), matches.group(2))
+        settings.add_activity(alias_name, project_activity[0],
+                              project_activity[1])
+
+        if project_activity[1] is not None:
+            mapping_name = u'%s/%s' % project_activity
+        else:
+            mapping_name = unicode(project_activity[0])
+
+        print(u"The following mapping has been added to your configuration"
+              " file: `%s = %s`" % (alias_name, mapping_name))
 
     # 1 argument, display the alias or the project id/activity id tuple
     if len(args) == 2:
@@ -240,6 +248,8 @@ def clean_aliases(options, args):
 
     if confirm == 'y':
         settings.remove_activities([item[0] for item in inactive_aliases])
+
+        print(u"Inactive aliases have been successfully cleaned.")
 
 def commit(options, args):
     """Usage: commit
