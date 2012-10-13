@@ -69,7 +69,10 @@ def select_string(description, format=None, regexp_flags=0, default=None):
         if char == '' and default is not None:
             return default
 
-        if format is not None and re.match(format, char, regexp_flags):
-            return char
+        if format is not None:
+            if re.match(format, char, regexp_flags):
+                return char
+            else:
+                print(u'Invalid input, please try again')
         else:
-            print(u'Invalid input, please try again')
+            return char
