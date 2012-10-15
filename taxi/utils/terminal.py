@@ -10,7 +10,7 @@ def print_alias(alias):
     # Project doesn't exist in the database
     if project is None:
         project_name = '?'
-        mapping_name = '%s/%s' % project.activity
+        mapping_name = '%s/%s' % user_alias
     else:
         # Alias is mapped to a project, not a project/activity tuple
         if user_alias[1] is None:
