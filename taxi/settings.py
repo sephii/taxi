@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+import codecs
 import ConfigParser
 import os
 import difflib
@@ -23,12 +25,12 @@ class Settings:
     def load(self, file):
         self.config = ConfigParser.RawConfigParser()
         self.filepath = file
-        parsed = self.config.read(self.filepath)
 
-        if len(parsed) == 0:
-            raise Exception('The specified configuration file `%s` doesn\'t exist' % file)
-
-        self.get_projects()
+        try:
+            with open(self.filepath, 'r') as fp:
+                self.config.readfp(fp)
+        except IOError:
+            raise IOError('The specified configuration file `%s` doesn\'t exist' % file)
 
     def get(self, section, key):
         try:
@@ -48,33 +50,75 @@ class Settings:
         return [int(e.strip()) for e in auto_fill_days.split(',')]
 
     def get_projects(self):
-        self.projects = {}
-        projects = self.config.items('wrmap')
+        projects_cache = getattr(self, '_projects_cache', None)
+        if projects_cache is not None:
+            return projects_cache
 
-        for (project_name, id) in projects:
+        config_projects = self.config.items('wrmap')
+        projects = {}
+
+        for (project_name, id) in config_projects:
             parts = id.split('/', 1)
 
             if len(parts) == 2:
-                value = (parts[0], parts[1])
+                value = (int(parts[0]), int(parts[1]))
             else:
-                value = (parts[0], None)
+                value = (int(parts[0]), None)
 
-            self.projects[project_name] = value
+            projects[project_name] = value
+
+        setattr(self, '_projects_cache', projects)
+
+        return projects
+
+    def get_reversed_projects(self):
+        reversed_projects_cache = getattr(self, '_reversed_projects_cache', None)
+        if reversed_projects_cache is not None:
+            return reversed_projects_cache
+
+        config_projects = self.config.items('wrmap')
+        projects = {}
+
+        for (project_name, id) in config_projects:
+            parts = id.split('/', 1)
+
+            if len(parts) == 2:
+                value = (int(parts[0]), int(parts[1]))
+            else:
+                value = (int(parts[0]), None)
+
+            projects[value] = project_name
+
+        setattr(self, '_reversed_projects_cache', projects)
+
+        return projects
 
     def project_exists(self, project_name):
-        return project_name[-1] == '?' or project_name in self.projects
+        return project_name[-1] == '?' or project_name in self.get_projects()
 
     def get_close_matches(self, project_name):
-        return difflib.get_close_matches(project_name, self.projects.keys(),\
-                cutoff=0.2)
+        return difflib.get_close_matches(project_name, self.get_projects().keys(),
+                                         cutoff=0.2)
 
     def add_activity(self, alias, projectid, activityid):
         if self.config is None:
             raise Exception('Trying to add an activity before loading the settings file')
 
-        file = open(self.filepath, 'w')
         self.config.set('wrmap', alias, '%s/%s' % (projectid, activityid))
-        self.config.write(file)
+        self.write_config()
+
+    def remove_activities(self, aliases):
+        if self.config is None:
+            raise Exception('Trying to add an activity before loading the settings file')
+
+        for alias in aliases:
+            self.config.remove_option('wrmap', alias)
+
+        self.write_config()
+
+    def write_config(self):
+        with open(self.filepath, 'w') as file:
+            self.config.write(file)
 
     def activity_exists(self, activity_name):
         return self.config.has_option('wrmap', activity_name)
