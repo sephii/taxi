@@ -1,21 +1,33 @@
+# -*- coding: utf-8 -*-
 import json
 import pickle
 import os
 
-from remote import ZebraRemote
-from settings import settings
+from taxi.remote import ZebraRemote
+from taxi.settings import settings
 
 class ProjectsDb:
     DB_PATH = 'projects.db'
 
     def _get_projects(self):
+        projects_cache = getattr(self, '_projects_cache', None)
+        if projects_cache is not None:
+            return projects_cache
+
         try:
             input = open(os.path.join(settings.TAXI_PATH, self.DB_PATH), 'r')
-            lpdb = pickle.load(input)
+
+            try:
+                lpdb = pickle.load(input)
+            except ImportError:
+                raise Exception('Your projects db is out of date, please '
+                        'run `taxi update` to update it')
 
             if not isinstance(lpdb, LocalProjectsDb) or lpdb.VERSION < LocalProjectsDb.VERSION:
                 raise Exception('Your projects db is out of date, please' \
                         ' run `taxi update` to update it')
+
+            setattr(self, '_projects_cache', lpdb.projects)
 
             return lpdb.projects
         except IOError:
@@ -23,16 +35,16 @@ class ProjectsDb:
 
     def update(self, base_url, username, password):
         remote = ZebraRemote(base_url, username, password)
-        print 'Updating database, this may take some time...'
+        print(u'Updating database, this may take some time...')
         projects = remote.get_projects()
         lpdb = LocalProjectsDb(projects)
 
         output = open(os.path.join(settings.TAXI_PATH, self.DB_PATH), 'w')
         pickle.dump(lpdb, output)
 
-        print 'Projects database updated successfully'
+        print(u'Projects database updated successfully')
 
-    def search(self, search):
+    def search(self, search, active_only=False):
         projects = self._get_projects()
         found_list = []
 
@@ -47,24 +59,29 @@ class ProjectsDb:
                     break
 
             if found:
-                found_list.append(project)
+                if not active_only or project.is_active():
+                    found_list.append(project)
 
         return found_list
 
     def get(self, id):
-        projects = self._get_projects()
-        found_list = []
-        id = int(id)
+        projects_hash = getattr(self, '_projects_hash', None)
+        if projects_hash is None:
+            projects = self._get_projects()
+            projects_hash = {}
 
-        for project in projects:
-            if project.id == id:
-                return project
+            for project in projects:
+                projects_hash[project.id] = project
 
-        raise Exception('Project not found')
+            setattr(self, '_projects_hash', projects_hash)
+
+        return projects_hash[id] if id in projects_hash else None
 
 class LocalProjectsDb:
     projects = []
-    VERSION = 1
+    VERSION = 2
 
     def __init__(self, projects):
         self.projects = projects
+
+projects_db = ProjectsDb()
