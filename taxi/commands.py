@@ -7,6 +7,7 @@ import subprocess
 
 from taxi.parser import ParseError, TaxiParser
 from taxi.projectsdb import projects_db
+from taxi.pusher import Pusher
 from taxi.settings import settings
 from taxi.utils import file, terminal
 
