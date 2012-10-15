@@ -5,6 +5,7 @@ import string
 import datetime
 import os
 
+from taxi.exceptions import ProjectNotFoundError
 from taxi.models import Entry
 from taxi.settings import settings
 

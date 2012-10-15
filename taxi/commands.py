@@ -5,6 +5,7 @@ import inspect
 import re
 import subprocess
 
+from taxi.exceptions import ProjectNotFoundError
 from taxi.parser import ParseError, TaxiParser
 from taxi.projectsdb import projects_db
 from taxi.pusher import Pusher
