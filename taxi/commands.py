@@ -5,76 +5,87 @@ import inspect
 import re
 import subprocess
 
-from taxi.exceptions import ProjectNotFoundError
+from taxi.exceptions import CancelException, ProjectNotFoundError, UsageError
 from taxi.parser import ParseError, TaxiParser
-from taxi.projectsdb import projects_db
+#from taxi.projectsdb import projects_db
 from taxi.pusher import Pusher
-from taxi.settings import settings
+#from taxi.settings import settings
 from taxi.utils import file, terminal
 
-def add(options, args):
+class Command(object):
+    def setup(self, app_container):
+        self.options = app_container.options
+        self.arguments = app_container.arguments
+        self.view = app_container.view
+        self.projects_db = app_container.projects_db
+        self.settings = app_container.settings
+
+    def validate(self):
+        pass
+
+    def run(self):
+        pass
+
+class AddCommand(Command):
     """Usage: add search_string
 
     Searches and prompts for project, activity and alias and adds that as a new
     entry to .tksrc."""
 
-    if len(args) < 2:
-        raise Exception(inspect.cleandoc(add.__doc__))
+    def validate(self):
+        if len(self.arguments) < 1:
+            raise UsageError()
 
-    search = args[1:]
-    projects = projects_db.search(search, active_only=True)
+    def run(self):
+        search = self.arguments
+        projects = self.projects_db.search(search, active_only=True)
 
-    if len(projects) == 0:
-        print(u'No project matches your search string \'%s\'' %
-              ''.join(search))
-        return
-
-    for (key, project) in enumerate(projects):
-        print(u'(%d) %-4s %s' % (key, project.id, project.name))
-
-    try:
-        number = terminal.select_number(len(projects), 'Choose the project (0-%d), (Ctrl-C) to exit: ' % (len(projects) - 1))
-    except KeyboardInterrupt:
-        return
-
-    project = projects[number]
-
-    print(project)
-
-    print(u"\nActivities:")
-    for (key, activity) in enumerate(project.activities):
-        print(u'(%d) %-4s %s' % (key, activity.id, activity.name))
-
-    try:
-        number = terminal.select_number(len(project.activities), 'Choose the activity (0-%d), (Ctrl-C) to exit: ' % (len(project.activities) - 1))
-    except KeyboardInterrupt:
-        return
-
-    retry = True
-    while retry:
-        try:
-            alias = terminal.select_string('Enter the alias for .tksrc (a-z, - and _ allowed), (Ctrl-C) to exit: ', r'^[\w-]+$')
-        except KeyboardInterrupt:
+        if len(projects) == 0:
+            view.msg(u"No project matches your search string '%s" %
+                     ''.join(search))
             return
 
-        if settings.activity_exists(alias):
-            overwrite = terminal.select_string('The selected alias you entered already exists,'\
-                ' overwrite? [y/n/R(etry)]: ', r'^[ynr]$', re.I, 'r')
+        view.projects_list_numbered(projects, True)
 
-            if overwrite == 'n':
+        try:
+            number = view.select_project(projects)
+        except CancelException:
+            return
+
+        project = projects[number]
+        view.project_with_activities(project, True)
+
+        try:
+            number = view.select_activity(project.activities)
+        except CancelException:
+            return
+
+        retry = True
+        while retry:
+            try:
+                alias = view.select_alias()
+            except CancelException:
                 return
-            if overwrite == 'y':
+
+            if settings.activity_exists(alias):
+                overwrite = terminal.overwrite_alias()
+
+                if overwrite == False:
+                    return
+                elif ovewrite == True:
+                    retry = False
+                # User chose "retry"
+                else:
+                    retry = True
+            else:
                 retry = False
-        else:
-            retry = False
 
-    activity = project.activities[number]
-    settings.add_activity(alias, project.id, activity.id)
+        activity = project.activities[number]
+        self.settings.add_activity(alias, project.id, activity.id)
 
-    print(u'\nThe following entry has been added to your .tksrc: %s = %s/%s' %
-          (alias, project.id, activity.id))
+        view.alias_added(alias, (project.id, activity.id))
 
-def alias(options, args):
+class AliasCommand(Command):
     """Usage: alias [alias]
        alias [project_id]
        alias [project_id/activity_id]
@@ -90,84 +101,86 @@ def alias(options, args):
 
     You can also run this command without any argument to view all your mappings."""
 
-    activity_regexp = r'^(\d{1,4})(?:/(\d{1,4}))?$'
-    projects = settings.get_projects()
-    search = None
+    def validate(self):
+        if len(args) > 3:
+            raise UsageError()
 
-    if len(args) > 3:
-        raise Exception(inspect.cleandoc(alias.__doc__))
+    def run(self):
+        activity_regexp = r'^(\d{1,4})(?:/(\d{1,4}))?$'
+        projects = settings.get_projects()
+        search = None
 
-    # 2 arguments, add a new alias
-    if len(args) == 3:
-        alias_name = args[1]
-        mapping = args[2]
+        # 2 arguments, add a new alias
+        if len(args) == 3:
+            alias_name = args[1]
+            mapping = args[2]
 
-        matches = re.match(activity_regexp, mapping)
-        if not matches:
-            raise Exception("The mapping must be in the format xxxx/yyyy")
+            matches = re.match(activity_regexp, mapping)
+            if not matches:
+                raise UsageError("The mapping must be in the format xxxx/yyyy")
 
-        project_activity = tuple([int(item) if item else None for item in matches.groups()])
-        activity = None
-        project = projects_db.get(project_activity[0])
+            project_activity = tuple([int(item) if item else None for item in matches.groups()])
+            activity = None
+            project = projects_db.get(project_activity[0])
 
-        if project:
-            activity = project.get_activity(project_activity[1])
+            if project:
+                activity = project.get_activity(project_activity[1])
 
-        if project is None or activity is None:
-            raise Exception("Error: the project/activity tuple was not found"
-                    " in the project database. Check your input or update your"
-                    " projects database.")
+            if project is None or activity is None:
+                raise Exception("Error: the project/activity tuple was not found"
+                        " in the project database. Check your input or update your"
+                        " projects database.")
 
-        if settings.activity_exists(alias_name):
-            (project_id, activity_id) = settings.get_projects()[alias_name]
+            if settings.activity_exists(alias_name):
+                (project_id, activity_id) = settings.get_projects()[alias_name]
 
-            if activity_id is not None:
-                mapping_name = u'%s/%s' % (project_id, activity_id)
+                if activity_id is not None:
+                    mapping_name = u'%s/%s' % (project_id, activity_id)
+                else:
+                    mapping_name = unicode(project_id)
+
+                confirm = terminal.select_string(u"The alias `%s` is already"
+                          " mapped to `%s`.\nDo you want to overwrite it [y/N]? " %
+                          (alias_name, mapping_name), r'^[yn]$', re.I, 'n')
+
+                if confirm != 'y':
+                    return
+
+            settings.add_activity(alias_name, project_activity[0],
+                                  project_activity[1])
+
+            if project_activity[1] is not None:
+                mapping_name = u'%s/%s' % project_activity
             else:
-                mapping_name = unicode(project_id)
+                mapping_name = unicode(project_activity[0])
 
-            confirm = terminal.select_string(u"The alias `%s` is already"
-                      " mapped to `%s`.\nDo you want to overwrite it [y/N]? " %
-                      (alias_name, mapping_name), r'^[yn]$', re.I, 'n')
+            print(u"The following mapping has been added to your configuration"
+                  " file: `%s = %s`" % (alias_name, mapping_name))
 
-            if confirm != 'y':
+        # 1 argument, display the alias or the project id/activity id tuple
+        if len(args) == 2:
+            search = args[1]
+
+            matches = re.match(activity_regexp, search)
+            # project_id/activity_id tuple search
+            if matches:
+                matched_alias = tuple([int(item) if item else None for item in matches.groups()])
+                for (user_alias, mapped_alias) in settings.get_projects().iteritems():
+                    if (mapped_alias[0] != matched_alias[0] or
+                            (matched_alias[1] is not None and
+                            mapped_alias[1] != matched_alias[1])):
+                        continue
+                    _print_mapping(mapped_alias)
+
                 return
 
-        settings.add_activity(alias_name, project_activity[0],
-                              project_activity[1])
-
-        if project_activity[1] is not None:
-            mapping_name = u'%s/%s' % project_activity
-        else:
-            mapping_name = unicode(project_activity[0])
-
-        print(u"The following mapping has been added to your configuration"
-              " file: `%s = %s`" % (alias_name, mapping_name))
-
-    # 1 argument, display the alias or the project id/activity id tuple
-    if len(args) == 2:
-        search = args[1]
-
-        matches = re.match(activity_regexp, search)
-        # project_id/activity_id tuple search
-        if matches:
-            matched_alias = tuple([int(item) if item else None for item in matches.groups()])
-            for (user_alias, mapped_alias) in settings.get_projects().iteritems():
-                if (mapped_alias[0] != matched_alias[0] or
-                        (matched_alias[1] is not None and
-                        mapped_alias[1] != matched_alias[1])):
+        # No argument, display the mappings
+        if len(args) == 1 or search is not None:
+            for (user_alias, project_activity) in settings.get_projects().iteritems():
+                if search and not user_alias.startswith(search):
                     continue
-                _print_mapping(mapped_alias)
 
-            return
-
-    # No argument, display the mappings
-    if len(args) == 1 or search is not None:
-        for (user_alias, project_activity) in settings.get_projects().iteritems():
-            if search and not user_alias.startswith(search):
-                continue
-
-            _print_alias(user_alias)
+                _print_alias(user_alias)
 
 def autofill(options, args):
     """Usage: autofill"""

@@ -5,3 +5,9 @@ class ProjectNotFoundError(Exception):
 
     def __str__(self):
         return repr(self.description)
+
+class UsageError(Exception):
+    pass
+
+class CancelException(Exception):
+    pass

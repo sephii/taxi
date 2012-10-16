@@ -122,5 +122,3 @@ class Settings:
 
     def activity_exists(self, activity_name):
         return self.config.has_option('wrmap', activity_name)
-
-settings = Settings()

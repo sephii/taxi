@@ -4,10 +4,10 @@ import pickle
 import os
 
 from taxi.remote import ZebraRemote
-from taxi.settings import settings
 
 class ProjectsDb:
-    DB_PATH = 'projects.db'
+    def __init__(self, path):
+        self.path = path
 
     def _get_projects(self):
         projects_cache = getattr(self, '_projects_cache', None)
@@ -15,7 +15,7 @@ class ProjectsDb:
             return projects_cache
 
         try:
-            input = open(os.path.join(settings.TAXI_PATH, self.DB_PATH), 'r')
+            input = open(self.path, 'r')
 
             try:
                 lpdb = pickle.load(input)
@@ -39,7 +39,7 @@ class ProjectsDb:
         projects = remote.get_projects()
         lpdb = LocalProjectsDb(projects)
 
-        output = open(os.path.join(settings.TAXI_PATH, self.DB_PATH), 'w')
+        output = open(self.path, 'w')
         pickle.dump(lpdb, output)
 
         print(u'Projects database updated successfully')
@@ -83,5 +83,3 @@ class LocalProjectsDb:
 
     def __init__(self, projects):
         self.projects = projects
-
-projects_db = ProjectsDb()
