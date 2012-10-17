@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from taxi.settings import settings
 from taxi.remote import ZebraRemote
 
 class Pusher:

@@ -93,6 +93,27 @@ class Settings:
 
         return projects
 
+    def search_aliases(self, mapping):
+        aliases = []
+
+        for (user_alias, mapped_alias) in self.get_projects().iteritems():
+            if (mapped_alias[0] != mapping[0] or
+                    (mapping[1] is not None and mapped_alias[1] != mapping[1])):
+                continue
+
+            aliases.append((user_alias, mapped_alias))
+
+        return aliases
+
+    def search_mappings(self, search_alias):
+        aliases = []
+
+        for (user_alias, mapped_alias) in self.get_projects().iteritems():
+            if search_alias is None or user_alias.startswith(search_alias):
+                aliases.append((user_alias, mapped_alias))
+
+        return aliases
+
     def project_exists(self, project_name):
         return project_name[-1] == '?' or project_name in self.get_projects()
 

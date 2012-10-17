@@ -6,9 +6,11 @@ import re
 import subprocess
 
 from taxi.exceptions import CancelException, ProjectNotFoundError, UsageError
+from taxi.models import Project
 from taxi.parser import ParseError, TaxiParser
 #from taxi.projectsdb import projects_db
 from taxi.pusher import Pusher
+from taxi.settings import Settings
 #from taxi.settings import settings
 from taxi.utils import file, terminal
 
@@ -68,7 +70,8 @@ class AddCommand(Command):
                 return
 
             if settings.activity_exists(alias):
-                overwrite = terminal.overwrite_alias()
+                mapping = settings.get_projects()[alias]
+                overwrite = terminal.overwrite_alias(alias, mapping)
 
                 if overwrite == False:
                     return
@@ -102,100 +105,95 @@ class AliasCommand(Command):
     You can also run this command without any argument to view all your mappings."""
 
     def validate(self):
-        if len(args) > 3:
+        if len(self.arguments) > 2:
             raise UsageError()
 
     def run(self):
-        activity_regexp = r'^(\d{1,4})(?:/(\d{1,4}))?$'
-        projects = settings.get_projects()
-        search = None
+        projects = self.settings.get_projects()
+        alias = None
 
         # 2 arguments, add a new alias
-        if len(args) == 3:
-            alias_name = args[1]
-            mapping = args[2]
-
-            matches = re.match(activity_regexp, mapping)
-            if not matches:
-                raise UsageError("The mapping must be in the format xxxx/yyyy")
-
-            project_activity = tuple([int(item) if item else None for item in matches.groups()])
-            activity = None
-            project = projects_db.get(project_activity[0])
-
-            if project:
-                activity = project.get_activity(project_activity[1])
-
-            if project is None or activity is None:
-                raise Exception("Error: the project/activity tuple was not found"
-                        " in the project database. Check your input or update your"
-                        " projects database.")
-
-            if settings.activity_exists(alias_name):
-                (project_id, activity_id) = settings.get_projects()[alias_name]
-
-                if activity_id is not None:
-                    mapping_name = u'%s/%s' % (project_id, activity_id)
-                else:
-                    mapping_name = unicode(project_id)
-
-                confirm = terminal.select_string(u"The alias `%s` is already"
-                          " mapped to `%s`.\nDo you want to overwrite it [y/N]? " %
-                          (alias_name, mapping_name), r'^[yn]$', re.I, 'n')
-
-                if confirm != 'y':
-                    return
-
-            settings.add_activity(alias_name, project_activity[0],
-                                  project_activity[1])
-
-            if project_activity[1] is not None:
-                mapping_name = u'%s/%s' % project_activity
-            else:
-                mapping_name = unicode(project_activity[0])
-
-            print(u"The following mapping has been added to your configuration"
-                  " file: `%s = %s`" % (alias_name, mapping_name))
-
+        if len(self.arguments) == 2:
+            self._add_alias(self.arguments[0], self.arguments[1])
         # 1 argument, display the alias or the project id/activity id tuple
-        if len(args) == 2:
-            search = args[1]
+        elif len(self.arguments) == 1:
+            alias = self.arguments[0]
+            mapping = Project.str_to_tuple(alias)
 
-            matches = re.match(activity_regexp, search)
-            # project_id/activity_id tuple search
-            if matches:
-                matched_alias = tuple([int(item) if item else None for item in matches.groups()])
-                for (user_alias, mapped_alias) in settings.get_projects().iteritems():
-                    if (mapped_alias[0] != matched_alias[0] or
-                            (matched_alias[1] is not None and
-                            mapped_alias[1] != matched_alias[1])):
-                        continue
-                    _print_mapping(mapped_alias)
+            if mapping is not None:
+                for m in self.settings.search_aliases(mapping):
+                    self.view.mapping_detail(m, self.projects_db.get(m[1][0]))
 
                 return
 
         # No argument, display the mappings
-        if len(args) == 1 or search is not None:
-            for (user_alias, project_activity) in settings.get_projects().iteritems():
-                if search and not user_alias.startswith(search):
-                    continue
+        if alias is not None or len(self.arguments) == 0:
+            for m in self.settings.search_mappings(alias):
+                self.view.alias_detail(m, self.projects_db.get(m[1][0]))
 
-                _print_alias(user_alias)
+    def _add_alias(self, alias_name, mapping):
+        project_activity = Project.str_to_tuple(mapping)
 
-def autofill(options, args):
+        if project_activity is None:
+            raise UsageError("The mapping must be in the format xxxx/yyyy")
+
+        activity = None
+        project = projects_db.get(project_activity[0])
+
+        if project:
+            activity = project.get_activity(project_activity[1])
+
+        if project is None or activity is None:
+            raise Exception("Error: the project/activity tuple was not found"
+                    " in the project database. Check your input or update your"
+                    " projects database.")
+
+        if self.settings.activity_exists(alias_name):
+            existing_mapping = settings.get_projects()[alias_name]
+            confirm = self.view.confirm_alias(alias_name, existing_mapping, False)
+
+            if not confirm:
+                return
+
+        settings.add_activity(alias_name, project_activity[0],
+                              project_activity[1])
+
+        self.view.alias_added(alias_name, mapping)
+
+class AutofillCommand(Command):
     """Usage: autofill"""
 
-    auto_add = file.get_auto_add_direction(options.file, options.unparsed_file)
+    def run(self):
+        try:
+            direction = self.settings.get('default', 'auto_add')
+        except NoOptionError:
+            direction = Settings.AUTO_ADD_OPTIONS['AUTO']
 
-    if auto_add != settings.AUTO_ADD_OPTIONS['NO']:
-        auto_fill_days = settings.get_auto_fill_days()
-        if auto_fill_days:
-            today = datetime.date.today()
-            last_day = calendar.monthrange(today.year, today.month)
-            last_date = datetime.date(today.year, today.month, last_day[1])
+        if direction == Settings.AUTO_ADD_OPTIONS['AUTO']:
+            direction = file.get_auto_add_direction(self.options.file,
+                                                    self.options.unparsed_file)
 
-            file.create_file(options.file)
-            file.prefill(options.file, auto_add, auto_fill_days, last_date)
+        if direction is None:
+            direction = Settings.AUTO_ADD_OPTIONS['TOP']
+
+        if direction == Settings.AUTO_ADD_OPTIONS['NO']:
+            self.view.err(u"The parameter `auto_add` must have a value that "
+                          "is different than 'no' for this command to work.")
+        else:
+            auto_fill_days = self.settings.get_auto_fill_days()
+
+            if auto_fill_days:
+                today = datetime.date.today()
+                last_day = calendar.monthrange(today.year, today.month)
+                last_date = datetime.date(today.year, today.month, last_day[1])
+
+                file.create_file(self.options.file)
+                file.prefill(self.options.file, direction, auto_fill_days, last_date)
+
+                self.view.msg(u"Your entries file has been filled.")
+            else:
+                self.view.err(u"The parameter `auto_fill_days` must be set to "
+                              "use this command.")
 
 def cat(options, args):
     """
@@ -347,7 +345,9 @@ def edit(options, args):
                 file.prefill(options.file, auto_add, auto_fill_days)
 
             parser = TaxiParser(options.file)
-            parser.auto_add(auto_add)
+            parser.auto_add(auto_add,
+                            date_format=self.settings.get('default',
+                                'date_format'))
             parser.update_file()
 
     # Use the 'editor' config var if it's set, otherwise, fall back to
@@ -523,30 +523,3 @@ def _print_alias(alias):
             mapping_name = '%s/%s' % user_alias
 
     print(u"%s -> %s (%s)" % (alias, mapping_name, project_name))
-
-def _print_mapping(mapping):
-    reversed_projects = settings.get_reversed_projects()
-    project = projects_db.get(mapping[0])
-
-    if mapping not in reversed_projects:
-        raise Exception("%s/%s is not mapped to any activity." % mapping)
-
-    user_alias = reversed_projects[mapping]
-
-    mapping_name = '%s/%s' % mapping
-    if not project:
-        project_name = '?'
-    else:
-        if mapping[1] is None:
-            project_name = '%s' % (project.name)
-            mapping_name = '%s' % (mapping[0])
-        else:
-            activity = project.get_activity(mapping[1])
-
-            if activity is None:
-                project_name = '%s, ?' % (project.name)
-            else:
-                project_name = '%s, %s' % (project.name, activity.name)
-
-    print(u"%s -> %s (%s)" % (mapping_name, user_alias, project_name))
-

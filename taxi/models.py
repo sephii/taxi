@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import datetime
-from taxi.settings import settings
+import re
+# from taxi.settings import settings
 
 class Entry:
     def __init__(self, date, project_name, hours, description):
@@ -10,12 +11,13 @@ class Entry:
         self.date = date
         self.pushed = False
 
-        if project_name in settings.get_projects():
-            self.project_id = settings.get_projects()[project_name][0]
-            self.activity_id = settings.get_projects()[project_name][1]
-        else:
-            self.project_id = None
-            self.activity_id = None
+        # TODO
+        # if project_name in settings.get_projects():
+        #     self.project_id = settings.get_projects()[project_name][0]
+        #     self.activity_id = settings.get_projects()[project_name][1]
+        # else:
+        #     self.project_id = None
+        #     self.activity_id = None
 
     def __unicode__(self):
         if self.is_ignored():
@@ -67,6 +69,8 @@ class Project:
             STATUS_FINISHED: 'F',
             STATUS_CANCELLED: 'C',
     }
+
+    STR_TUPLE_REGEXP = r'^(\d{1,4})(?:/(\d{1,4}))?$'
 
     def __init__(self, id, name, status = None, description = None, budget = None):
         self.id = int(id)
@@ -141,6 +145,29 @@ Description: %s""" % (
             return '?'
 
         return self.SHORT_STATUSES[self.status]
+
+    @classmethod
+    def str_to_tuple(cls, string):
+        """Converts a string in the format xxx/yyy to a (project, activity)
+        tuple"""
+        matches = re.match(cls.STR_TUPLE_REGEXP, string)
+
+        if not matches or len(matches.groups()) != 2:
+            return None
+
+        return tuple([int(item) if item else None for item in matches.groups()])
+
+    @classmethod
+    def tuple_to_str(cls, t):
+        """Converts a (project, activity) tuple to a string in the format
+        xxx/yyy"""
+        if len(t) != 2:
+            return None
+
+        if t[1] is not None:
+            return u'%s/%s' % t
+        else:
+            return unicode(t[0])
 
 class Activity:
     def __init__(self, id, name, price):

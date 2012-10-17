@@ -1,9 +1,13 @@
-from taxi import terminal
+from taxi.utils import terminal
 from taxi.exceptions import CancelException
+from taxi.models import Project
 
 class BaseUi(object):
     def msg(self, message):
         print(message)
+
+    def err(self, message):
+        self.msg(u"Error: %s" % message)
 
     def projects_list(self, projects, numbered=False):
         for (key, project) in enumerate(projects):
@@ -42,11 +46,22 @@ class BaseUi(object):
         except KeyboardError:
             raise CancelException()
 
-    def overwrite_alias(self):
-        overwrite = terminal.select_string(u"The selected alias you entered "
-                                           "already exists, overwrite? "
-                                           "[y/n/R(etry)]: ", r'^[ynr]$',
-                                           re.I, 'r')
+    def overwrite_alias(self, alias, mapping, retry=True):
+        mapping_name = Project.tuple_to_str(mapping)
+
+        if retry:
+            choices = 'y/n/R(etry)'
+            default_choice = 'r'
+            choice_regexp = r'^[ynr]$'
+        else:
+            choices = 'y/N'
+            default_choice = 'n'
+            choice_regexp = r'^[yn]$'
+
+        s = (u"The alias `%s` is already mapped to `%s`.\nDo you want to "
+             "overwrite it [%s]? " % (alias, mapping_name, choices))
+
+        overwrite = terminal.select_string(s, choice_regexp, re.I, default_choice)
 
         if overwrite == 'n':
             return False
@@ -56,5 +71,39 @@ class BaseUi(object):
         return None
 
     def alias_added(self, alias, mapping):
-        print(u"The following alias has been added to your configuration "
-              "file: %s = %s/%s" % ((alias) + mapping))
+        mapping_name = Project.tuple_to_str(mapping)
+
+        self.msg(u"The following alias has been added to your configuration "
+                 "file: %s = %s" % ((alias) + mapping_name))
+
+    def _show_mapping(self, mapping, project, alias_first=True):
+        (alias, t) = mapping
+
+        mapping_name = '%s/%s' % t
+
+        if not project:
+            project_name = '?'
+        else:
+            if t[1] is None:
+                project_name = unicode(project.name)
+                mapping_name = unicode(t[0])
+            else:
+                activity = project.get_activity(t[1])
+
+                if activity is None:
+                    project_name = u'%s, ?' % (project.name)
+                else:
+                    project_name = u'%s, %s' % (project.name, activity.name)
+
+        if alias_first:
+            args = (alias, mapping_name, project_name)
+        else:
+            args = (mapping_name, alias, project_name)
+
+        self.msg(u"%s -> %s (%s)" % args)
+
+    def mapping_detail(self, mapping, project):
+        self._show_mapping(mapping, project, False)
+
+    def alias_detail(self, mapping, project):
+        self._show_mapping(mapping, project, True)

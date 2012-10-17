@@ -3,9 +3,10 @@ from ConfigParser import NoOptionError
 import os
 
 from taxi.parser import ParseError, TaxiParser
-from taxi.settings import settings
+# TODO
+#from taxi.settings import settings
 
-def prefill(file, direction, auto_fill_days, limit=None):
+def prefill(file, direction, auto_fill_days, limit=None, date_format='%d/%m/%Y'):
     parser = TaxiParser(file)
     entries = parser.get_entries()
 
@@ -21,7 +22,7 @@ def prefill(file, direction, auto_fill_days, limit=None):
 
     while cur_date <= limit:
         if cur_date.weekday() in auto_fill_days:
-            parser.auto_add(direction, cur_date)
+            parser.auto_add(direction, cur_date, date_format=date_format)
 
         cur_date = cur_date + datetime.timedelta(days = 1)
 
@@ -36,33 +37,24 @@ def create_file(filepath):
         myfile.close()
 
 def get_auto_add_direction(filepath, unparsed_filepath):
-    try:
-        auto_add = settings.get('default', 'auto_add')
-    except NoOptionError:
-        auto_add = settings.AUTO_ADD_OPTIONS['AUTO']
+    if os.path.exists(filepath):
+        auto_add = TaxiParser(filepath).get_entries_direction()
+    else:
+        auto_add = None
 
-    if auto_add == settings.AUTO_ADD_OPTIONS['AUTO']:
-        if os.path.exists(filepath):
-            auto_add = TaxiParser(filepath).get_entries_direction()
-        else:
-            auto_add = None
+    if auto_add is not None:
+        return auto_add
 
-        if auto_add is not None:
-            return auto_add
+    # Unable to automatically detect the entries direction, we try to get a
+    # previous file to see if we're lucky
+    prev_month = datetime.date.today() - datetime.timedelta(days=30)
+    oldfile = prev_month.strftime(unparsed_filepath)
 
-        # Unable to automatically detect the entries direction, we try to get a
-        # previous file to see if we're lucky
-        yesterday = datetime.date.today() - datetime.timedelta(days=30)
-        oldfile = yesterday.strftime(os.path.expanduser(unparsed_filepath))
-
-        if oldfile != filepath:
-            try:
-                oldparser = TaxiParser(oldfile)
-                auto_add = oldparser.get_entries_direction()
-            except ParseError:
-                pass
-
-    if auto_add is None:
-        auto_add = settings.AUTO_ADD_OPTIONS['TOP']
+    if oldfile != filepath:
+        try:
+            oldparser = TaxiParser(oldfile)
+            auto_add = oldparser.get_entries_direction()
+        except ParseError:
+            pass
 
     return auto_add

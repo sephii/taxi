@@ -68,6 +68,8 @@ class Taxi(object):
 
         actions = {
             'add': commands.AddCommand,
+            'alias': commands.AliasCommand,
+            'autofill': commands.AutofillCommand,
         }
 
         settings = Settings()
@@ -83,7 +85,7 @@ class Taxi(object):
                                 "define one in your config file with the "
                                 "'file' setting, or use the -f option")
 
-        options.unparsed_file = options.file
+        options.unparsed_file = os.path.expanduser(options.file)
         options.file = datetime.date.today().strftime(os.path.expanduser(options.file))
 
         if options.date is not None:

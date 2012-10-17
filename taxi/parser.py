@@ -7,7 +7,9 @@ import os
 
 from taxi.exceptions import ProjectNotFoundError
 from taxi.models import Entry
-from taxi.settings import settings
+# TODO
+#from taxi.settings import settings
+from taxi.settings import Settings
 
 class ParseError(Exception):
     pass
@@ -280,7 +282,8 @@ class TaxiParser(Parser):
         return (u'%s %s %s\n' % (entry.project_name, txtduration,
                 entry.description or '?'))
 
-    def auto_add(self, mode, new_date = datetime.date.today()):
+    def auto_add(self, mode, new_date = datetime.date.today(),
+                 date_format='%d/%m/%Y'):
         # Check if we already have the current date in the file
         for line in self.lines:
             date_matches = self._match_date(line['text'])
@@ -291,20 +294,20 @@ class TaxiParser(Parser):
                 if date == new_date:
                     return
 
-        if mode == settings.AUTO_ADD_OPTIONS['TOP']:
+        if mode == Settings.AUTO_ADD_OPTIONS['TOP']:
             self.lines.insert(0, {
                 'text': '%s\n' %
-                    new_date.strftime(settings.get('default', 'date_format')),
+                    new_date.strftime(date_format),
                 'entry': None
             })
             self.lines.insert(1, {'text': '\n', 'entry': None})
-        elif mode == settings.AUTO_ADD_OPTIONS['BOTTOM']:
+        elif mode == Settings.AUTO_ADD_OPTIONS['BOTTOM']:
             if len(self.lines) > 0:
                 self.lines.append({'text': '\n', 'entry': None})
 
             self.lines.append({
                 'text': '%s\n' %
-                    new_date.strftime(settings.get('default', 'date_format')),
+                    new_date.strftime(date_format),
                 'entry': None
             })
             self.lines.append({'text': '\n', 'entry': None})
