@@ -1,3 +1,5 @@
+import re
+
 from taxi.utils import terminal
 from taxi.exceptions import CancelException
 from taxi.models import Project
@@ -107,3 +109,14 @@ class BaseUi(object):
 
     def alias_detail(self, mapping, project):
         self._show_mapping(mapping, project, True)
+
+    def clean_inactive_aliases(self, aliases):
+        self.msg(u"The following aliases are mapped to inactive projects:\n")
+
+        for (mapping, project) in aliases:
+            self.alias_detail(mapping, project)
+
+        confirm = terminal.select_string(u"\nDo you want to clean them [y/N]? ",
+                                         r'^[yn]$', re.I, 'n')
+
+        return confirm == 'y'

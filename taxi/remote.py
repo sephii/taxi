@@ -97,9 +97,6 @@ class ZebraRemote(Remote):
 
         for date, entries in entries:
             for entry in entries:
-                if entry.is_ignored():
-                    continue
-
                 parameters_dict = {
                     'time':         entry.get_duration(),
                     'project_id':   entry.project_id,

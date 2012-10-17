@@ -2,17 +2,14 @@ from ConfigParser import NoOptionError
 import calendar
 import datetime
 import inspect
-import re
 import subprocess
 
 from taxi.exceptions import CancelException, ProjectNotFoundError, UsageError
 from taxi.models import Project
 from taxi.parser import ParseError, TaxiParser
-#from taxi.projectsdb import projects_db
 from taxi.pusher import Pusher
 from taxi.settings import Settings
-#from taxi.settings import settings
-from taxi.utils import file, terminal
+from taxi.utils import file, terminal, date as date_utils
 
 class Command(object):
     def setup(self, app_container):
@@ -29,10 +26,12 @@ class Command(object):
         pass
 
 class AddCommand(Command):
-    """Usage: add search_string
+    """
+    Usage: add search_string
 
     Searches and prompts for project, activity and alias and adds that as a new
-    entry to .tksrc."""
+    entry to .tksrc.
+    """
 
     def validate(self):
         if len(self.arguments) < 1:
@@ -89,7 +88,8 @@ class AddCommand(Command):
         view.alias_added(alias, (project.id, activity.id))
 
 class AliasCommand(Command):
-    """Usage: alias [alias]
+    """
+    Usage: alias [alias]
        alias [project_id]
        alias [project_id/activity_id]
        alias [alias] [project_id/activity_id]
@@ -102,7 +102,8 @@ class AliasCommand(Command):
       project/activity tuple
     - The last form will add a new alias in your configuration file
 
-    You can also run this command without any argument to view all your mappings."""
+    You can also run this command without any argument to view all your mappings.
+    """
 
     def validate(self):
         if len(self.arguments) > 2:
@@ -161,7 +162,10 @@ class AliasCommand(Command):
         self.view.alias_added(alias_name, mapping)
 
 class AutofillCommand(Command):
-    """Usage: autofill"""
+    """
+    Usage: autofill
+    """
+    # TODO add description
 
     def run(self):
         try:
@@ -195,7 +199,7 @@ class AutofillCommand(Command):
                 self.view.err(u"The parameter `auto_fill_days` must be set to "
                               "use this command.")
 
-def cat(options, args):
+class KittyCommand(Command):
     """
    |\      _,,,---,,_
    /,`.-'`'    -.  ;-;;,_
@@ -205,127 +209,88 @@ def cat(options, args):
   Soft kitty, warm kitty
       Little ball of fur
           Happy kitty, sleepy kitty
-              Purr, purr, purr"""
+              Purr, purr, purr
+    """
 
-    print(cat.__doc__)
+    def run(self):
+        self.view.msg(self.__doc__)
 
-def clean_aliases(options, args):
+class CleanAliasesCommand(Command):
     """Usage: clean-aliases
 
     Removes aliases from your config file that point to inactive projects."""
 
-    aliases = settings.get_projects()
-    inactive_aliases = []
+    def run(self):
+        aliases = self.settings.get_projects()
+        inactive_aliases = []
 
-    for (alias, mapping) in aliases.iteritems():
-        project = projects_db.get(mapping[0])
+        for (alias, mapping) in aliases.iteritems():
+            project = self.projects_db.get(mapping[0])
 
-        if (project is None or not project.is_active() or
-                (mapping[1] is not None and
-                project.get_activity(mapping[1]) is None)):
-            inactive_aliases.append((alias, mapping))
+            if (project is None or not project.is_active() or
+                    (mapping[1] is not None and
+                    project.get_activity(mapping[1]) is None)):
+                inactive_aliases.append(((alias, mapping), project))
 
-    if not inactive_aliases:
-        print(u"No inactive aliases found.")
-        return
+        if not inactive_aliases:
+            self.view.msg(u"No inactive aliases found.")
+            return
 
-    print(u"The following aliases are mapped to inactive projects:\n")
-    for (alias, mapping) in inactive_aliases:
-        project = projects_db.get(mapping[0])
+        confirm = self.view.clean_inactive_aliases(inactive_aliases)
 
-        # The project the alias is mapped to doesn't exist anymore
-        if project is None:
-            project_name = '?'
-            mapping_name = '%s/%s' % mapping
-        else:
-            # The alias is mapped to a project and an activity (it can also be
-            # mapped only to a project)
-            if mapping[1] is not None:
-                activity = project.get_activity(mapping[1])
+        if confirm:
+            self.settings.remove_activities([item[0] for item in inactive_aliases])
+            self.view.msg(u"Inactive aliases have been successfully cleaned.")
 
-                # The activity still exists in the project database
-                if activity is not None:
-                    project_name = '%s, %s' % (project.name, activity.name)
-                    mapping_name = '%s/%s' % mapping
-                else:
-                    project_name = project.name
-                    mapping_name = '%s/%s' % mapping
-            else:
-                project_name = '%s, ?' % (project.name)
-                mapping_name = '%s' % (mapping[0])
+class CommitCommand(Command):
+    """
+    Usage: commit
 
-        print(u"%s -> %s (%s)" % (alias, project_name, mapping_name))
+    Commits your work to the server.
+    """
 
-    confirm = terminal.select_string(u"\nDo you want to clean them [y/N]? ", r'^[yn]$',
-                            re.I, 'n')
+    def run(self):
+        parser = TaxiParser(self.options.file)
+        parser.check_mappings(self.settings.get_projects().keys())
 
-    if confirm == 'y':
-        settings.remove_activities([item[0] for item in inactive_aliases])
+        pusher = Pusher(
+                self.settings.get('default', 'site'),
+                self.settings.get('default', 'username'),
+                self.settings.get('default', 'password')
+        )
 
-        print(u"Inactive aliases have been successfully cleaned.")
+        today = datetime.date.today()
 
-def commit(options, args):
-    """Usage: commit
+        yesterday = date_utils.get_previous_working_day(today)
 
-    Commits your work to the server."""
-    parser = TaxiParser(options.file)
-    parser.check_entries_mapping(settings.get_projects().keys())
+        if self.options.date is None and not self.options.ignore_date_error:
+            entries = parser.get_entries(self.options.date, exclude_ignored=True)
+            for (date, entry) in entries:
+                if date not in (today, yesterday) or date.strftime('%w') in [6, 0]:
+                    self.view.err(u"You're trying to commit for a day that's "
+                    " on a week-end or that's not yesterday nor today (%s).\n"
+                    "To ignore this error, re-run taxi with the option "
+                    "`--ignore-date-error`" % date.strftime('%A %d %B'))
 
-    pusher = Pusher(
-            settings.get('default', 'site'),
-            settings.get('default', 'username'),
-            settings.get('default', 'password')
-    )
+                    return
 
-    entries = parser.get_entries(date=options.date)
-    today = datetime.date.today()
+        pusher.push(parser.get_entries(self.options.date, exclude_ignored=True))
 
-    # Get the number of days required to go to the previous open day (ie. not on
-    # a week-end)
-    if today.weekday() == 6:
-        days = 2
-    elif today.weekday() == 0:
-        days = 3
-    else:
-        days = 1
+        total_hours = 0
+        ignored_hours = 0
+        for date, entries in parser.get_entries(date=options.date):
+            for entry in entries:
+                if entry.pushed:
+                    total_hours += entry.get_duration()
+                elif entry.is_ignored():
+                    ignored_hours += entry.get_duration()
 
-    yesterday = today - datetime.timedelta(days=days)
+        print(u'\n%-29s %5.2f' % ('Total', total_hours))
 
-    if options.date is None and not options.ignore_date_error:
-        for (date, entry) in entries:
-            # Don't take ignored entries into account when checking the date
-            ignored_only = True
-            for e in entry:
-                if not e.is_ignored():
-                    ignored_only = False
-                    break
+        if ignored_hours > 0:
+            print(u'%-29s %5.2f' % ('Total ignored', ignored_hours))
 
-            if ignored_only:
-                continue
-
-            if date not in (today, yesterday) or date.strftime('%w') in [6, 0]:
-                raise Exception('Error: you\'re trying to commit for a day that\'s either'\
-                ' on a week-end or that\'s not yesterday nor today (%s).\nTo ignore this'\
-                ' error, re-run taxi with the option `--ignore-date-error`' %
-                date.strftime('%A %d %B'))
-
-    pusher.push(parser.get_entries(date=options.date))
-
-    total_hours = 0
-    ignored_hours = 0
-    for date, entries in parser.get_entries(date=options.date):
-        for entry in entries:
-            if entry.pushed:
-                total_hours += entry.get_duration()
-            elif entry.is_ignored():
-                ignored_hours += entry.get_duration()
-
-    print(u'\n%-29s %5.2f' % ('Total', total_hours))
-
-    if ignored_hours > 0:
-        print(u'%-29s %5.2f' % ('Total ignored', ignored_hours))
-
-    parser.update_file()
+        parser.update_file()
 
 def edit(options, args):
     """Usage: edit
@@ -501,25 +466,3 @@ def update(options, args):
             settings.get('default', 'username'),
             settings.get('default', 'password')
     )
-
-def _print_alias(alias):
-    user_alias = settings.get_projects()[alias]
-    project = projects_db.get(user_alias[0])
-
-    # Project doesn't exist in the database
-    if project is None:
-        project_name = '?'
-        mapping_name = '%s/%s' % user_alias
-    else:
-        # Alias is mapped to a project, not a project/activity tuple
-        if user_alias[1] is None:
-            project_name = project.name
-            mapping_name = user_alias[0]
-        else:
-            activity = project.get_activity(user_alias[1])
-            activity_name = activity.name if activity else '?'
-
-            project_name = '%s, %s' % (project.name, activity_name)
-            mapping_name = '%s/%s' % user_alias
-
-    print(u"%s -> %s (%s)" % (alias, mapping_name, project_name))

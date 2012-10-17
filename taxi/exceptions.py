@@ -1,10 +1,10 @@
 class ProjectNotFoundError(Exception):
-    def __init__(self, project_name, description):
+    def __init__(self, project_name):
         self.project_name = project_name
-        self.description = description
 
     def __str__(self):
-        return repr(self.description)
+        return("The alias `%s` is not mapped to any project in your "
+               " configuration file.")
 
 class UsageError(Exception):
     pass

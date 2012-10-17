@@ -70,6 +70,10 @@ class Taxi(object):
             'add': commands.AddCommand,
             'alias': commands.AliasCommand,
             'autofill': commands.AutofillCommand,
+            'kitty': commands.KittyCommand,
+            'ohai': commands.KittyCommand,
+            'clean-aliases': commands.CleanAliasesCommand,
+            'commit': commands.CommitCommand,
         }
 
         settings = Settings()

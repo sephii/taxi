@@ -163,17 +163,23 @@ class TaxiParser(Parser):
 
         file.close()
 
-    def get_entries(self, date=None):
-        if date is None:
-            return [(entrydate, entry) for entrydate, entry in self.entries.iteritems()]
+    def get_entries(self, date=None, exclude_ignored=False):
+        entries_list = []
 
-        if not isinstance(date, tuple):
+        # Date can either be a single date (only 1 day) or a tuple for a
+        # date range
+        if date is not None and not isinstance(date, tuple):
             date = (date, date)
 
-        entries = [(entrydate, entry) for entrydate, entry in self.entries.iteritems() if \
-                entrydate >= date[0] and entrydate <= date[1]]
+        for (entrydate, entries) in self.entries.iteritems():
+            if date is None or (entrydate >= date[0] and entrydate <= date[1]):
+                if not exclude_ignored:
+                    entries_list.append((entrydate, entries))
+                else:
+                    d_list = [entry for entry in entries if not entry.is_ignored()]
+                    entries_list.append((entrydate, d_list))
 
-        return entries
+        return entries_list
 
     def add_entry(self, date, project, duration=None, direction=None):
         if date not in self.entries:
@@ -325,18 +331,15 @@ class TaxiParser(Parser):
                     top_date = date
                 else:
                     if top_date > date:
-                        return settings.AUTO_ADD_OPTIONS['TOP']
+                        return Settings.AUTO_ADD_OPTIONS['TOP']
                     elif top_date < date:
-                        return settings.AUTO_ADD_OPTIONS['BOTTOM']
+                        return Settings.AUTO_ADD_OPTIONS['BOTTOM']
 
         return None
 
-    def check_entries_mapping(self, aliases):
+    def check_mappings(self, aliases):
         for (date, entries) in self.entries.iteritems():
             for entry in entries:
-                if entry.project_name[-1] != '?' and entry.project_name not in aliases:
-                    error = 'Error: project `%s` is not mapped to any project number'\
-                    ' in your settings file' % entry.project_name
-
-                    raise ProjectNotFoundError(entry.project_name, error)
+                if not entry.is_ignored() and entry.project_name not in aliases:
+                    raise ProjectNotFoundError(entry.project_name)
 
