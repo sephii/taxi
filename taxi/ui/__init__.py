@@ -126,3 +126,11 @@ class BaseUi(object):
 
         if ignored_hours > 0:
             self.msg(u'%-29s %5.2f' % ('Total ignored', ignored_hours))
+
+    def non_working_dates_commit_error(self, dates):
+        dates = [d.strftime('%A %d %B') for d in dates]
+
+        self.err(u"You're trying to commit for a day that's "
+        " on a week-end or that's not yesterday nor today (%s).\n"
+        "To ignore this error, re-run taxi with the option "
+        "`--ignore-date-error`" % ', '.join(dates))

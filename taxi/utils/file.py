@@ -3,8 +3,6 @@ from ConfigParser import NoOptionError
 import os
 
 from taxi.parser import ParseError, TaxiParser
-# TODO
-#from taxi.settings import settings
 
 def prefill(file, direction, auto_fill_days, limit=None, date_format='%d/%m/%Y'):
     parser = TaxiParser(file)
@@ -58,3 +56,21 @@ def get_auto_add_direction(filepath, unparsed_filepath):
             pass
 
     return auto_add
+
+def spawn_editor(filepath, editor=None):
+    if editor is None:
+        editor = 'sensible-editor'
+
+    editor = editor.split()
+    editor.append(options.file)
+
+    try:
+        subprocess.call(editor)
+    except OSError:
+        if 'EDITOR' not in os.environ:
+            raise Exception("Can't find any suitable editor. Check your EDITOR "
+                            " env var.")
+
+        editor = os.environ['EDITOR'].split()
+        editor.append(options.file)
+        subprocess.call(editor)

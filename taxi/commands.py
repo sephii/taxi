@@ -254,12 +254,11 @@ class CommitCommand(Command):
         parser.check_mappings(self.settings.get_projects().keys())
 
         if self.options.date is None and not self.options.ignore_date_error:
-            if parser.has_non_current_workday_entries():
-                self.view.err(u"You're trying to commit for a day that's "
-                " on a week-end or that's not yesterday nor today (%s).\n"
-                "To ignore this error, re-run taxi with the option "
-                "`--ignore-date-error`" % date.strftime('%A %d %B'))
+            non_workday_entries = parser.get_non_current_workday_entries()
 
+            if non_workday_entries:
+                dates = [d[0] for d in non_workday_entries]
+                self.view.non_working_dates_commit_error(dates)
                 return
 
         pusher = Pusher(self.settings.get('default', 'site'),
@@ -279,48 +278,41 @@ class CommitCommand(Command):
         self.view.pushed_hours_total(total_hours, ignored_hours)
         parser.update_file()
 
-def edit(options, args):
-    """Usage: edit
+class EditCommand(Command):
+    """
+    Usage: edit
 
-    Opens your zebra file in your favourite editor."""
-    # Create the file if it does not exist yet
-    file.create_file(options.file)
+    Opens your zebra file in your favourite editor.
+    """
 
-    try:
-        auto_add = file.get_auto_add_direction(options.file, options.unparsed_file)
-    except ParseError as e:
-        pass
-    else:
-        if auto_add is not None and auto_add != settings.AUTO_ADD_OPTIONS['NO']:
-            auto_fill_days = settings.get_auto_fill_days()
-            if auto_fill_days:
-                file.prefill(options.file, auto_add, auto_fill_days)
+    def run(self):
+        # Create the file if it does not exist yet
+        file.create_file(options.file)
 
-            parser = TaxiParser(options.file)
-            parser.auto_add(auto_add,
-                            date_format=self.settings.get('default',
-                                'date_format'))
-            parser.update_file()
+        try:
+            auto_add = file.get_auto_add_direction(options.file, options.unparsed_file)
+        except ParseError as e:
+            pass
+        else:
+            if auto_add is not None and auto_add != settings.AUTO_ADD_OPTIONS['NO']:
+                auto_fill_days = settings.get_auto_fill_days()
+                if auto_fill_days:
+                    file.prefill(options.file, auto_add, auto_fill_days)
 
-    # Use the 'editor' config var if it's set, otherwise, fall back to
-    # sensible-editor
-    try:
-        editor = settings.get('default', 'editor').split()
-    except NoOptionError:
-        editor = ['sensible-editor']
+                parser = TaxiParser(options.file)
+                parser.auto_add(auto_add,
+                                date_format=self.settings.get('default',
+                                    'date_format'))
+                parser.update_file()
 
-    editor.append(options.file)
+        try:
+            editor = settings.get('default', 'editor')
+        except NoOptionError:
+            editor = None
 
-    try:
-        subprocess.call(editor)
-    except OSError:
-        if 'EDITOR' not in os.environ:
-            raise Exception('Can\'t find any suitable editor. Check your EDITOR'\
-            ' env var.')
+        file.spawn_editor(options.file, editor)
 
-        subprocess.call([os.environ['EDITOR'], options.file])
-
-    status(options, args)
+        status(options, args)
 
 def search(options, args):
     """Usage: search search_string
