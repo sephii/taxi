@@ -10,6 +10,7 @@ from taxi.models import Entry
 # TODO
 #from taxi.settings import settings
 from taxi.settings import Settings
+from taxi.utils import date_utils
 
 class ParseError(Exception):
     pass
@@ -343,3 +344,13 @@ class TaxiParser(Parser):
                 if not entry.is_ignored() and entry.project_name not in aliases:
                     raise ProjectNotFoundError(entry.project_name)
 
+    def has_non_current_workday_entries(self, limit_date=None):
+        entries = self.get_entries(limit_date, exclude_ignored=True)
+        today = datetime.date.today()
+        yesterday = date_utils.get_previous_working_day(today)
+
+        for (date, entry) in entries:
+            if date not in (today, yesterday) or date.strftime('%w') in [6, 0]:
+                return True
+
+        return False

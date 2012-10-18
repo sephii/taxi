@@ -149,6 +149,8 @@ class ZebraRemote(Remote):
                     entry.pushed = True
                     print(entry)
 
+        return entries
+
     def get_projects(self):
         projects_url = 'project/all.json'
 

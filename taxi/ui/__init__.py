@@ -87,8 +87,8 @@ class BaseUi(object):
             project_name = '?'
         else:
             if t[1] is None:
-                project_name = unicode(project.name)
-                mapping_name = unicode(t[0])
+                project_name = project.name
+                mapping_name = t[0]
             else:
                 activity = project.get_activity(t[1])
 
@@ -120,3 +120,9 @@ class BaseUi(object):
                                          r'^[yn]$', re.I, 'n')
 
         return confirm == 'y'
+
+    def pushed_hours_total(self, pushed_hours, ignored_hours):
+        self.msg(u'\n%-29s %5.2f' % ('Total', pushed_hours))
+
+        if ignored_hours > 0:
+            self.msg(u'%-29s %5.2f' % ('Total ignored', ignored_hours))

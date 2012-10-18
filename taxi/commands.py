@@ -253,43 +253,30 @@ class CommitCommand(Command):
         parser = TaxiParser(self.options.file)
         parser.check_mappings(self.settings.get_projects().keys())
 
-        pusher = Pusher(
-                self.settings.get('default', 'site'),
-                self.settings.get('default', 'username'),
-                self.settings.get('default', 'password')
-        )
-
-        today = datetime.date.today()
-
-        yesterday = date_utils.get_previous_working_day(today)
-
         if self.options.date is None and not self.options.ignore_date_error:
-            entries = parser.get_entries(self.options.date, exclude_ignored=True)
-            for (date, entry) in entries:
-                if date not in (today, yesterday) or date.strftime('%w') in [6, 0]:
-                    self.view.err(u"You're trying to commit for a day that's "
-                    " on a week-end or that's not yesterday nor today (%s).\n"
-                    "To ignore this error, re-run taxi with the option "
-                    "`--ignore-date-error`" % date.strftime('%A %d %B'))
+            if parser.has_non_current_workday_entries():
+                self.view.err(u"You're trying to commit for a day that's "
+                " on a week-end or that's not yesterday nor today (%s).\n"
+                "To ignore this error, re-run taxi with the option "
+                "`--ignore-date-error`" % date.strftime('%A %d %B'))
 
-                    return
+                return
 
+        pusher = Pusher(self.settings.get('default', 'site'),
+                        self.settings.get('default', 'username'),
+                        self.settings.get('default', 'password'))
         pusher.push(parser.get_entries(self.options.date, exclude_ignored=True))
 
         total_hours = 0
         ignored_hours = 0
-        for date, entries in parser.get_entries(date=options.date):
+        for (date, entries) in parser.get_entries(date=options.date):
             for entry in entries:
                 if entry.pushed:
                     total_hours += entry.get_duration()
                 elif entry.is_ignored():
                     ignored_hours += entry.get_duration()
 
-        print(u'\n%-29s %5.2f' % ('Total', total_hours))
-
-        if ignored_hours > 0:
-            print(u'%-29s %5.2f' % ('Total ignored', ignored_hours))
-
+        self.view.pushed_hours_total(total_hours, ignored_hours)
         parser.update_file()
 
 def edit(options, args):
