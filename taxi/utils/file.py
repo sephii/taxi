@@ -1,6 +1,7 @@
-import datetime
 from ConfigParser import NoOptionError
+import datetime
 import os
+import subprocess
 
 from taxi.parser import ParseError, TaxiParser
 
@@ -62,7 +63,7 @@ def spawn_editor(filepath, editor=None):
         editor = 'sensible-editor'
 
     editor = editor.split()
-    editor.append(options.file)
+    editor.append(filepath)
 
     try:
         subprocess.call(editor)
@@ -72,5 +73,5 @@ def spawn_editor(filepath, editor=None):
                             " env var.")
 
         editor = os.environ['EDITOR'].split()
-        editor.append(options.file)
+        editor.append(filepath)
         subprocess.call(editor)

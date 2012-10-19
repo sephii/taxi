@@ -287,32 +287,35 @@ class EditCommand(Command):
 
     def run(self):
         # Create the file if it does not exist yet
-        file.create_file(options.file)
+        file.create_file(self.options.file)
 
         try:
-            auto_add = file.get_auto_add_direction(options.file, options.unparsed_file)
+            auto_add = file.get_auto_add_direction(self.options.file,
+                                                   self.options.unparsed_file)
         except ParseError as e:
             pass
         else:
-            if auto_add is not None and auto_add != settings.AUTO_ADD_OPTIONS['NO']:
-                auto_fill_days = settings.get_auto_fill_days()
+            if auto_add is not None and auto_add != Settings.AUTO_ADD_OPTIONS['NO']:
+                auto_fill_days = self.settings.get_auto_fill_days()
                 if auto_fill_days:
-                    file.prefill(options.file, auto_add, auto_fill_days)
+                    file.prefill(self.options.file, auto_add, auto_fill_days)
 
-                parser = TaxiParser(options.file)
+                parser = TaxiParser(self.options.file)
                 parser.auto_add(auto_add,
                                 date_format=self.settings.get('default',
                                     'date_format'))
                 parser.update_file()
 
         try:
-            editor = settings.get('default', 'editor')
+            editor = self.settings.get('default', 'editor')
         except NoOptionError:
             editor = None
 
-        file.spawn_editor(options.file, editor)
+        file.spawn_editor(self.options.file, editor)
 
-        status(options, args)
+        parser = TaxiParser(self.options.file)
+        entries = parser.get_entries()
+        self.view.show_status(entries)
 
 def search(options, args):
     """Usage: search search_string

@@ -174,3 +174,6 @@ class Activity:
         self.id = int(id)
         self.name = name
         self.price = float(price)
+
+class Timesheet:
+    pass

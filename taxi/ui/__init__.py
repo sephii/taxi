@@ -134,3 +134,23 @@ class BaseUi(object):
         " on a week-end or that's not yesterday nor today (%s).\n"
         "To ignore this error, re-run taxi with the option "
         "`--ignore-date-error`" % ', '.join(dates))
+
+    def show_status(self, entries_list):
+        self.msg(u'Staging changes :\n')
+        entries_list = sorted(entries_list)
+
+        for (date, entries) in entries_list:
+            if len(entries) == 0:
+                continue
+
+            subtotal_hours = 0
+            self.msg(u'# %s #' % date.strftime('%A %d %B').capitalize())
+            for entry in entries:
+                self.msg(entry)
+                subtotal_hours += entry.get_duration() or 0
+
+            self.msg(u'%-29s %5.2f\n' % ('', subtotal_hours))
+            total_hours += subtotal_hours
+
+        self.pushed_hours_total(total_hours, 0)
+        self.msg(u'\nUse `taxi ci` to commit staging changes to the server')
