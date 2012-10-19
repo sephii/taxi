@@ -75,6 +75,7 @@ class Taxi(object):
             'clean-aliases': commands.CleanAliasesCommand,
             'commit': commands.CommitCommand,
             'edit': commands.EditCommand,
+            'test': commands.TestCommand,
         }
 
         settings = Settings()

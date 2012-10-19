@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import datetime
 import re
+from taxi.parser import ParsedFile
 # from taxi.settings import settings
 
 class Entry:
@@ -10,14 +11,9 @@ class Entry:
         self.description = description
         self.date = date
         self.pushed = False
-
-        # TODO
-        # if project_name in settings.get_projects():
-        #     self.project_id = settings.get_projects()[project_name][0]
-        #     self.activity_id = settings.get_projects()[project_name][1]
-        # else:
-        #     self.project_id = None
-        #     self.activity_id = None
+        self.ignored = False
+        self.project_id = None
+        self.activity_id = None
 
     def __unicode__(self):
         if self.is_ignored():
@@ -31,7 +27,7 @@ class Entry:
         return unicode(self).encode('utf-8')
 
     def is_ignored(self):
-        return self.project_name[-1] == '?' or self.get_duration() == 0
+        return self.ignored or self.get_duration() == 0
 
     def get_duration(self):
         if isinstance(self.duration, tuple):
@@ -176,4 +172,24 @@ class Activity:
         self.price = float(price)
 
 class Timesheet:
-    pass
+    def __init__(self, parsed_file, settings):
+        self.entries = {}
+
+        for (date, entries) in parsed_file.get_entries().iteritems():
+            self.entries[date] = []
+
+            for entry in entries:
+                entry_obj = Entry(date, entry[0], entry[1], entry[2])
+
+                if ParsedFile.is_entry_ignored(entry):
+                    entry_obj.ignored = True
+
+                if entry_obj.project_name in settings.get_projects():
+                    entry_obj.project_id = settings.get_projects()[entry_obj.project_name][0]
+                    entry_obj.activity_id = settings.get_projects()[entry_obj.project_name][1]
+
+                print(entry_obj)
+
+                self.entries[date].append(entry_obj)
+
+        print(self.entries)

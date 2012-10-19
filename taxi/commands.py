@@ -5,7 +5,7 @@ import inspect
 import subprocess
 
 from taxi.exceptions import CancelException, ProjectNotFoundError, UsageError
-from taxi.models import Project
+from taxi.models import Project, Timesheet
 from taxi.parser import ParseError, TaxiParser
 from taxi.pusher import Pusher
 from taxi.settings import Settings
@@ -24,6 +24,11 @@ class Command(object):
 
     def run(self):
         pass
+
+class TestCommand(Command):
+    def run(self):
+        p = TaxiParser(self.options.file)
+        t = Timesheet(p.parsed_file, self.settings)
 
 class AddCommand(Command):
     """

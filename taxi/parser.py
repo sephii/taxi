@@ -6,7 +6,6 @@ import datetime
 import os
 
 from taxi.exceptions import ProjectNotFoundError
-from taxi.models import Entry
 # TODO
 #from taxi.settings import settings
 from taxi.settings import Settings
@@ -20,7 +19,26 @@ class ParsedFile(object):
         self.entries = {}
 
     def add_entry(self, date, entry):
+        if date not in self.entries:
+            self.entries[date] = []
+
+        self.entries[date].append(entry)
+
+    @staticmethod
+    def is_entry_ignored(entry):
+        return entry[0].endswith('?')
+
+    def get_entry_duration(entry):
         pass
+
+    def get_entries(self, date=None):
+        if not date:
+            return self.entries
+
+        if date in self.entries:
+            return self.entries[date]
+
+        return []
 
 class Parser(object):
     def process_line(self, line, line_number):
@@ -28,21 +46,22 @@ class Parser(object):
 
     def parse(self):
         file = codecs.open(self.file, 'r', 'utf-8')
-        self.lines = file.read()
+        self.lines = file.readlines()
         self.current_line_number = 1
 
         try:
-            for line in file:
+            for line in self.lines:
                 self.parse_line()
                 self.current_line_number += 1
         except Exception as e:
+            raise
             raise ParseError('Line #%s is not correctly formatted (error was'\
-                    ' \'%s\')' % (line_number, e.message))
+                    ' \'%s\')' % (self.current_line_number, e.message))
 
         file.close()
 
     def _get_current_line(self):
-        return self.lines[self.current_line_number]
+        return self.lines[self.current_line_number - 1]
 
     def __init__(self, file):
         if not os.path.exists(file):
@@ -57,8 +76,8 @@ class Parser(object):
 
 class TaxiParser(Parser):
     def __init__(self, file):
-        self.date = None
-        self.parsed_lines = []
+        self.current_date = None
+        self.parsed_lines = {}
         super(TaxiParser, self).__init__(file)
 
     def _process_date(self, date_matches):
@@ -93,14 +112,15 @@ class TaxiParser(Parser):
         date_matches = self._match_date(line)
 
         if date_matches is not None:
-            self.date = self._process_date(date_matches)
+            self.current_date = self._process_date(date_matches)
+            print(self.current_date)
         else:
-            if self.date is None:
+            if self.current_date is None:
                 raise ParseError('Entries must be defined inside a date section')
 
             entry = self._parse_entry_line(line)
-            self.parsed_lines[line_number] = entry
-            self.parsed_file.add_entry(self.date, entry)
+            self.parsed_lines[self.current_line_number] = entry
+            self.parsed_file.add_entry(self.current_date, entry)
 
     def _parse_entry_line(self, line):
         split_line = string.split(s=line, maxsplit=2)
@@ -119,8 +139,9 @@ class TaxiParser(Parser):
     def _process_alias(self, alias):
         return alias
 
-    def _process_time(self, time):
-        time = re.match(r'(?:(\d{1,2}):?(\d{1,2}))?-(?:(?:(\d{1,2}):?(\d{1,2}))|\?)', splitted_line[1])
+    def _process_time(self, str_time):
+        time = re.match(r'(?:(\d{1,2}):?(\d{1,2}))?-(?:(?:(\d{1,2}):?(\d{1,2}))|\?)',
+                        str_time)
         time_end = None
 
         # HH:mm-HH:mm syntax found
@@ -128,7 +149,7 @@ class TaxiParser(Parser):
             # -HH:mm syntax found
             if time.group(1) is None and time.group(2) is None:
                 my_line_number = self.current_line_number
-                prev_entry = None
+                prev_time = None
 
                 # Browse previous lines to find an entry with an end date
                 while my_line_number > 0:
@@ -138,21 +159,22 @@ class TaxiParser(Parser):
                     if self._match_date(self.lines[my_line_number]):
                         break
 
-                    if self.lines[my_line_number] is not None:
-                        prev_entry = self.lines[my_line_number]['entry']
+                    if my_line_number in self.parsed_lines:
+                        prev_time = self.parsed_lines[my_line_number][1]
                         break
 
-                if prev_entry is None:
+                if prev_time is None:
+                    print(self.parsed_lines)
                     raise ParseError('No previous entry to take time from')
                 else:
-                    if (not isinstance(prev_entry.duration, tuple) or
-                        prev_entry.duration[1] is None):
+                    if (not isinstance(prev_time, tuple) or
+                            prev_time[1] is None):
                         raise ParseError('The previous entry must use HH:mm notation and have an end time')
 
                     if time.group(3) is not None and time.group(4) is not None:
                         time_end = datetime.time(int(time.group(3)), int(time.group(4)))
 
-                    total_hours = (prev_entry.duration[1], time_end)
+                    total_hours = (prev_time[1], time_end)
             else:
                 time_start = datetime.time(int(time.group(1)), int(time.group(2)))
                 if time.group(3) is not None and time.group(4) is not None:
@@ -160,62 +182,15 @@ class TaxiParser(Parser):
                 total_hours = (time_start, time_end)
         else:
             try:
-                total_hours = float(splitted_line[1])
+                total_hours = float(str_time)
             except ValueError:
                 raise ParseError('The duration must be a number (eg. 0.75, 2, etc)' \
                                  ' or a HH:mm string')
 
-        return Entry(self.date, splitted_line[0], total_hours, splitted_line[2])
+        return total_hours
 
     def _process_description(self, description):
-
-        time = re.match(r'(?:(\d{1,2}):?(\d{1,2}))?-(?:(?:(\d{1,2}):?(\d{1,2}))|\?)', splitted_line[1])
-        time_end = None
-
-        # HH:mm-HH:mm syntax found
-        if time is not None:
-            # -HH:mm syntax found
-            if time.group(1) is None and time.group(2) is None:
-                my_line_number = line_number
-                prev_entry = None
-
-                # Browse previous lines to find an entry with an end date
-                while my_line_number > 0:
-                    my_line_number -= 1
-
-                    # Date line detected, but no previous candidate found
-                    if (self.lines[my_line_number]['entry'] is None and
-                        self._match_date(self.lines[my_line_number]['text'])):
-                        break
-
-                    if self.lines[my_line_number]['entry'] is not None:
-                        prev_entry = self.lines[my_line_number]['entry']
-                        break
-
-                if prev_entry is None:
-                    raise ParseError('No previous entry to take time from')
-                else:
-                    if (not isinstance(prev_entry.duration, tuple) or
-                        prev_entry.duration[1] is None):
-                        raise ParseError('The previous entry must use HH:mm notation and have an end time')
-
-                    if time.group(3) is not None and time.group(4) is not None:
-                        time_end = datetime.time(int(time.group(3)), int(time.group(4)))
-
-                    total_hours = (prev_entry.duration[1], time_end)
-            else:
-                time_start = datetime.time(int(time.group(1)), int(time.group(2)))
-                if time.group(3) is not None and time.group(4) is not None:
-                    time_end = datetime.time(int(time.group(3)), int(time.group(4)))
-                total_hours = (time_start, time_end)
-        else:
-            try:
-                total_hours = float(splitted_line[1])
-            except ValueError:
-                raise ParseError('The duration must be a number (eg. 0.75, 2, etc)' \
-                                 ' or a HH:mm string')
-
-        return Entry(self.date, splitted_line[0], total_hours, splitted_line[2])
+        return description
 
     def update_file(self):
         file = codecs.open(self.file, 'w', 'utf-8')
@@ -252,6 +227,7 @@ class TaxiParser(Parser):
         if date not in self.entries:
             self.entries[date] = []
 
+        # TODO
         new_entry = Entry(date, project, duration, '?')
         new_text = self.get_line_text(new_entry)
 
