@@ -1,11 +1,12 @@
 from ConfigParser import NoOptionError
 import calendar
+import codecs
 import datetime
 import inspect
 import subprocess
 
 from taxi.exceptions import CancelException, ProjectNotFoundError, UsageError
-from taxi.models import Project, Timesheet
+from taxi.models import Entry, Project, Timesheet
 from taxi.parser import ParseError, TaxiParser
 from taxi.pusher import Pusher
 from taxi.settings import Settings
@@ -27,8 +28,20 @@ class Command(object):
 
 class TestCommand(Command):
     def run(self):
-        p = TaxiParser(self.options.file)
-        t = Timesheet(p.parsed_file, self.settings)
+        with codecs.open(self.options.file, 'r', 'utf-8') as file:
+            contents = file.readlines()
+
+        p = TaxiParser(contents)
+        t = Timesheet(p.parsed_lines, self.settings.get_projects(),
+                self.settings.get('default', 'date_format'))
+
+        e = Entry(datetime.date.today(), 'foobar', (datetime.time(10, 15),
+            datetime.time(11, 0)), 'description')
+        t.add_entry(e, Settings.AUTO_ADD_OPTIONS['BOTTOM'])
+        e = Entry(datetime.date.today(), 'baz', (datetime.time(10, 15),
+            None), 'description')
+        t.add_entry(e, Settings.AUTO_ADD_OPTIONS['BOTTOM'])
+        print(t.to_lines())
 
 class AddCommand(Command):
     """
