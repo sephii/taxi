@@ -55,6 +55,38 @@ class DateLine(TextLine):
         else:
             self.text = self.date.strftime(date_format)
 
+class BasicIo(object):
+    def read(self):
+        raise NotImplementedError()
+
+    def write(self, lines):
+        raise NotImplementedError()
+
+class PlainFileIo(BasicIo):
+    def __init__(self, path):
+        self.file_path = path
+
+    def read(self):
+        with codecs.open(self.file_path, 'r', 'utf-8') as f:
+            lines = f.readlines()
+
+        return lines
+
+    def write(self, lines):
+        with codecs.open(self.file_path, 'w', 'utf-8') as f:
+            for line in lines:
+                f.write('%s\n' % line)
+
+class StreamIo(BasicIo):
+    def __init__(self, text):
+        self.lines = text.split('\n')
+
+    def read(self):
+        return self.lines
+
+    def write(self, path):
+        print(self.lines)
+
 class Parser(object):
     def parse(self):
         self.current_line_number = 1
@@ -74,18 +106,17 @@ class Parser(object):
     def _get_current_line(self):
         return self.lines[self.current_line_number - 1]
 
-    def __init__(self, lines):
+    def __init__(self, file_reader):
         self.entries = {}
-        self.lines = lines
+        self.lines = file_reader.get_lines()
         self.parsed_lines = []
 
         self.parse()
 
 class TaxiParser(Parser):
     r"""
-    >>> t = TaxiParser([
-    ... '01.01.2013', '\n', 'foobar 0900-1000 baz', '# comment',
-    ... 'foo -1100 bar'])
+    >>> sr = StreamReader("01.01.2013\n\nfoobar 0900-1000 baz\n# comment\nfoo -1100 bar")
+    >>> t = TaxiParser(sr)
     ...
     >>> len(t.parsed_lines)
     5
@@ -255,58 +286,6 @@ class TaxiParser(Parser):
 
         return datetime.date(year, int(date_matches.group(2)),
                              int(date_matches.group(1)))
-
-    def update_file(self):
-        file = codecs.open(self.file, 'w', 'utf-8')
-
-        for line in self.lines:
-            file.write(line)
-
-        file.close()
-
-    def get_line_text(self, entry):
-        if isinstance(entry.duration, tuple):
-            if entry.duration[0] is not None:
-                txtduration = entry.duration[0].strftime('%H:%M')
-
-                if entry.duration[1] is not None:
-                    txtduration += '-%s' % entry.duration[1].strftime('%H:%M')
-                else:
-                    txtduration += '-?'
-            else:
-                txtduration = '?'
-        else:
-            txtduration = entry.duration
-
-        return (u'%s %s %s\n' % (entry.project_name, txtduration,
-                entry.description or '?'))
-
-    def auto_add(self, mode, new_date = datetime.date.today(),
-                 date_format='%d/%m/%Y'):
-        # Check if we already have the current date in the file
-        for line in self.lines:
-            date = self.extract_date(line['text'])
-
-            if date is not None and date == new_date:
-                return
-
-        if mode == Settings.AUTO_ADD_OPTIONS['TOP']:
-            self.lines.insert(0, {
-                'text': '%s\n' %
-                    new_date.strftime(date_format),
-                'entry': None
-            })
-            self.lines.insert(1, {'text': '\n', 'entry': None})
-        elif mode == Settings.AUTO_ADD_OPTIONS['BOTTOM']:
-            if len(self.lines) > 0:
-                self.lines.append({'text': '\n', 'entry': None})
-
-            self.lines.append({
-                'text': '%s\n' %
-                    new_date.strftime(date_format),
-                'entry': None
-            })
-            self.lines.append({'text': '\n', 'entry': None})
 
     def get_entries_direction(self):
         top_date = None

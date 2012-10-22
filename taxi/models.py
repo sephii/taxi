@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
+import codecs
 import datetime
 import re
 
 from taxi import parser
-from taxi.settings import Settings
 
 class Entry:
     def __init__(self, date, project_name, hours, description):
@@ -184,14 +184,14 @@ class Timesheet:
     >>> t.to_lines()
     ['10.10.2012', 'foo 09:00-10:00 baz']
     >>> e = Entry(datetime.date(2012, 10, 10), 'bar', 2, 'baz')
-    >>> t.add_entry(e, Settings.AUTO_ADD_OPTIONS['BOTTOM'])
+    >>> t.add_entry(e)
     >>> t.get_entries() # doctest: +ELLIPSIS
     [(datetime.date(2012, 10, 10), [<models.Entry instance at 0x...>, <models.Entry instance at 0x...])]
     >>> t.to_lines()
     ['10.10.2012', 'foo 09:00-10:00 baz', 'bar 2 baz']
     >>> e = Entry(datetime.date(2012, 10, 21), 'baz', (datetime.time(9, 0),
     ... None), 'baz')
-    >>> t.add_entry(e, Settings.AUTO_ADD_OPTIONS['BOTTOM'])
+    >>> t.add_entry(e)
     >>> t.to_lines()
     ['10.10.2012', 'foo 09:00-10:00 baz', 'bar 2 baz', '21.10.2012', '', 'baz 09:00-? baz']
     """
@@ -199,9 +199,9 @@ class Timesheet:
         self.lines = lines
         self.mappings = mappings
         self.date_format = date_format
-        self.update_entries()
+        self._update_entries()
 
-    def update_entries(self):
+    def _update_entries(self):
         self.entries = {}
         current_date = None
 
@@ -220,6 +220,9 @@ class Timesheet:
                 if line.get_alias() in self.mappings:
                     entry.project_id = self.mappings[entry.project_name][0]
                     entry.activity_id = self.mappings[entry.project_name][1]
+                else:
+                    raise Exception("Alias %s is not defined" %
+                                    line.get_alias())
 
                 if isinstance(line.time, tuple) and line.time[0] is None:
                     if len(self.entries[current_date]) == 0:
@@ -267,7 +270,7 @@ class Timesheet:
 
         return last_entry_line
 
-    def add_entry(self, entry, direction):
+    def add_entry(self, entry, add_to_bottom=True):
         new_entry = parser.EntryLine(entry.project_name, entry.duration,
                                      entry.description)
 
@@ -276,30 +279,22 @@ class Timesheet:
         if last_entry_line is not None:
             self.lines.insert(last_entry_line + 1, new_entry)
         else:
-            if direction == Settings.AUTO_ADD_OPTIONS['TOP']:
-                index = 0
-            elif direction == Settings.AUTO_ADD_OPTIONS['BOTTOM']:
+            if add_to_bottom:
                 index = len(self.lines)
+            else:
+                index = 0
 
             date_line = parser.DateLine(entry.date, date_format=self.date_format)
             blank_line = parser.TextLine('')
 
-            if direction != Settings.AUTO_ADD_OPTIONS['BOTTOM']:
+            if not add_to_bottom:
                 self.lines.insert(index, blank_line)
 
             self.lines.insert(index, new_entry)
             self.lines.insert(index, blank_line)
             self.lines.insert(index, date_line)
 
-        self.update_entries()
-
-    def to_lines(self):
-        lines = []
-
-        for line in self.lines:
-            lines.append(line.text)
-
-        return lines
+        self._update_entries()
 
     def continue_entry(self, date, end, description=None):
         last_entry_line = self._get_latest_entry_for_date(date)
@@ -322,3 +317,49 @@ class Timesheet:
         last_entry.description = description or '?'
 
         self.lines[last_entry_line] = last_entry
+
+    def prefill(self, auto_fill_days, limit=None, add_to_bottom=True):
+        entries = self.get_entries()
+
+        if len(entries) == 0:
+            today = datetime.date.today()
+            cur_date = datetime.date(today.year, today.month, 1)
+        else:
+            cur_date = max([date for (date, entries) in entries])
+            cur_date += datetime.timedelta(days = 1)
+
+        if limit is None:
+            limit = datetime.date.today()
+
+        while cur_date <= limit:
+            if cur_date.weekday() in auto_fill_days:
+                self.add_date(cur_date, add_to_bottom)
+
+            cur_date = cur_date + datetime.timedelta(days = 1)
+
+    def add_date(self, date, add_to_bottom=True):
+        # Check if we already have the current date in the file
+        if date in self.entries:
+            return
+
+        if add_to_bottom:
+            index = len(self.lines)
+        else:
+            index = 0
+
+        self.lines.insert(index, parser.TextLine(''))
+        self.lines.insert(index, parser.DateLine(date, date_format=self.date_format))
+        self._update_entries()
+
+    def save(self, file_path):
+        with codecs.open(file_path, 'w', 'utf-8') as f:
+            for line in self.lines:
+                f.write('%s\n' % line.text)
+
+    def to_lines(self):
+        lines = []
+
+        for line in self.lines:
+            lines.append(line.text)
+
+        return lines

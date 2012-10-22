@@ -3,30 +3,6 @@ import datetime
 import os
 import subprocess
 
-from taxi.parser import ParseError, TaxiParser
-
-def prefill(file, direction, auto_fill_days, limit=None, date_format='%d/%m/%Y'):
-    parser = TaxiParser(file)
-    entries = parser.get_entries()
-
-    if len(entries) == 0:
-        today = datetime.date.today()
-        cur_date = datetime.date(today.year, today.month, 1)
-    else:
-        cur_date = max([date for (date, entries) in entries])
-        cur_date += datetime.timedelta(days = 1)
-
-    if limit is None:
-        limit = datetime.date.today()
-
-    while cur_date <= limit:
-        if cur_date.weekday() in auto_fill_days:
-            parser.auto_add(direction, cur_date, date_format=date_format)
-
-        cur_date = cur_date + datetime.timedelta(days = 1)
-
-    parser.update_file()
-
 def create_file(filepath):
     if not os.path.exists(os.path.dirname(filepath)):
         os.makedirs(os.path.dirname(filepath))

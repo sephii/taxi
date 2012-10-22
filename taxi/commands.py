@@ -7,7 +7,7 @@ import subprocess
 
 from taxi.exceptions import CancelException, ProjectNotFoundError, UsageError
 from taxi.models import Entry, Project, Timesheet
-from taxi.parser import ParseError, TaxiParser
+from taxi.parser import ParseError, TaxiParser, PlainFileReader
 from taxi.pusher import Pusher
 from taxi.settings import Settings
 from taxi.utils import file, terminal, date as date_utils
@@ -28,10 +28,7 @@ class Command(object):
 
 class TestCommand(Command):
     def run(self):
-        with codecs.open(self.options.file, 'r', 'utf-8') as file:
-            contents = file.readlines()
-
-        p = TaxiParser(contents)
+        p = TaxiParser(PlainFileReader(self.options.file))
         t = Timesheet(p.parsed_lines, self.settings.get_projects(),
                 self.settings.get('default', 'date_format'))
 
@@ -208,9 +205,16 @@ class AutofillCommand(Command):
                 today = datetime.date.today()
                 last_day = calendar.monthrange(today.year, today.month)
                 last_date = datetime.date(today.year, today.month, last_day[1])
+                add_to_bottom = direction == Settings.AUTO_ADD_OPTIONS['BOTTOM']
+
+                p = TaxiParser(PlainFileIo(self.options.file))
+                t = Timesheet(p.parsed_lines, self.settings.get_projects(),
+                        self.settings.get('default', 'date_format'))
 
                 file.create_file(self.options.file)
-                file.prefill(self.options.file, direction, auto_fill_days, last_date)
+                t.prefill(auto_fill_days, last_date, add_to_bottom)
+                t.save(self.options.file)
+                print(t.to_lines())
 
                 self.view.msg(u"Your entries file has been filled.")
             else:
