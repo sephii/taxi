@@ -7,7 +7,7 @@ from taxi.parser import DateLine, EntryLine, TextLine
 from taxi.exceptions import UndefinedAliasError
 
 class Entry:
-    def __init__(self, date, project_name, hours, description):
+    def __init__(self, date, project_name, hours, description, id=None):
         self.project_name = project_name
         self.duration = hours
         self.description = description
@@ -16,6 +16,7 @@ class Entry:
         self.ignored = False
         self.project_id = None
         self.activity_id = None
+        self.id = id
 
     def __unicode__(self):
         if self.is_ignored():
@@ -210,14 +211,15 @@ class Timesheet:
         self.entries = {}
         current_date = None
 
-        for line in self.parser.parsed_lines:
+        for (i, line) in enumerate(self.parser.parsed_lines):
             if isinstance(line, DateLine):
                 current_date = line.date
 
                 if line.date not in self.entries:
                     self.entries[line.date] = []
             elif isinstance(line, EntryLine):
-                entry = Entry(current_date, line.alias, line.time, line.description)
+                entry = Entry(current_date, line.alias, line.time,
+                              line.description, i)
 
                 if line.is_ignored():
                     entry.ignored = True
@@ -383,3 +385,18 @@ class Timesheet:
                     non_workday_entries.append((date, date_entries))
 
         return non_workday_entries
+
+    def comment_entries(self, entries):
+        for entry in entries:
+            if entry.id is None:
+                # TODO
+                raise Exception()
+
+            l = self.parser.parsed_lines[entry.id]
+
+            if not isinstance(l, EntryLine):
+                raise Exception()
+
+            l = TextLine('# %s' % l.text)
+
+        print self.parser.parsed_lines

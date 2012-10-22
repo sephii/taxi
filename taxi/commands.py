@@ -291,8 +291,7 @@ class CommitCommand(Command):
                         self.settings.get('default', 'password'))
         pushed_entries = pusher.push(t.get_entries(self.options.date,
                                      exclude_ignored=True))
-        # TODO
-        parser.update_file()
+        t.comment_entries(pushed_entries)
 
         total_hours = 0
         ignored_hours = 0
