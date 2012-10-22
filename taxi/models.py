@@ -3,7 +3,8 @@ import codecs
 import datetime
 import re
 
-from taxi import parser
+from taxi.parser import DateLine, EntryLine, TextLine
+from taxi.exceptions import UndefinedAliasError
 
 class Entry:
     def __init__(self, date, project_name, hours, description):
@@ -173,12 +174,13 @@ class Activity:
         self.price = float(price)
 
 class Timesheet:
-    """
+    r"""
+    >>> from taxi.parser.io import StreamIo
+    >>> from taxi.parser.parsers.plaintext import PlainTextParser
     >>> m = {'foo': (123, 456), 'bar': (12, 34)}
-    >>> l = [parser.DateLine(datetime.date(2012, 10, 10)),
-    ... parser.EntryLine('foo', (datetime.time(9, 0), datetime.time(10, 0)),
-    ... 'baz')]
-    >>> t = Timesheet(l, m, '%d.%m.%Y')
+    >>> si = StreamIo("10.10.2012\nfoo 09:00-10:00 baz")
+    >>> p = PlainTextParser(si)
+    >>> t = Timesheet(p, m, '%d.%m.%Y')
     >>> t.get_entries() # doctest: +ELLIPSIS
     [(datetime.date(2012, 10, 10), [<models.Entry instance at 0x...>])]
     >>> t.to_lines()
@@ -192,11 +194,14 @@ class Timesheet:
     >>> e = Entry(datetime.date(2012, 10, 21), 'baz', (datetime.time(9, 0),
     ... None), 'baz')
     >>> t.add_entry(e)
+    Traceback (most recent call last):
+    ...
+    UndefinedAliasError: baz
     >>> t.to_lines()
-    ['10.10.2012', 'foo 09:00-10:00 baz', 'bar 2 baz', '21.10.2012', '', 'baz 09:00-? baz']
+    ['10.10.2012', 'foo 09:00-10:00 baz', 'bar 2 baz']
     """
-    def __init__(self, lines, mappings, date_format='%d.%m.%Y'):
-        self.lines = lines
+    def __init__(self, parser, mappings, date_format='%d.%m.%Y'):
+        self.parser = parser
         self.mappings = mappings
         self.date_format = date_format
         self._update_entries()
@@ -205,13 +210,13 @@ class Timesheet:
         self.entries = {}
         current_date = None
 
-        for line in self.lines:
-            if isinstance(line, parser.DateLine):
+        for line in self.parser.parsed_lines:
+            if isinstance(line, DateLine):
                 current_date = line.date
 
                 if line.date not in self.entries:
                     self.entries[line.date] = []
-            elif isinstance(line, parser.EntryLine):
+            elif isinstance(line, EntryLine):
                 entry = Entry(current_date, line.alias, line.time, line.description)
 
                 if line.is_ignored():
@@ -221,8 +226,7 @@ class Timesheet:
                     entry.project_id = self.mappings[entry.project_name][0]
                     entry.activity_id = self.mappings[entry.project_name][1]
                 else:
-                    raise Exception("Alias %s is not defined" %
-                                    line.get_alias())
+                    raise UndefinedAliasError(line.get_alias())
 
                 if isinstance(line.time, tuple) and line.time[0] is None:
                     if len(self.entries[current_date]) == 0:
@@ -259,40 +263,45 @@ class Timesheet:
         date_line = None
         last_entry_line = None
 
-        for (i, line) in enumerate(self.lines):
-            if isinstance(line, parser.DateLine) and line.date == date:
+        for (i, line) in enumerate(self.parser.parsed_lines):
+            if isinstance(line, DateLine) and line.date == date:
                 date_line = i
             elif date_line is not None:
-                if isinstance(line, parser.EntryLine):
+                if isinstance(line, EntryLine):
                     last_entry_line = i
-                elif isinstance(line, parser.DateLine):
-                    break
+                elif isinstance(line, DateLine):
+                    # Reset date_line in the case the date is twice in the
+                    # timesheet, once without any entry
+                    date_line = None
 
         return last_entry_line
 
     def add_entry(self, entry, add_to_bottom=True):
-        new_entry = parser.EntryLine(entry.project_name, entry.duration,
-                                     entry.description)
+        new_entry = EntryLine(entry.project_name, entry.duration,
+                              entry.description)
+
+        if new_entry.get_alias() not in self.mappings:
+            raise UndefinedAliasError(new_entry.get_alias())
 
         last_entry_line = self._get_latest_entry_for_date(entry.date)
 
         if last_entry_line is not None:
-            self.lines.insert(last_entry_line + 1, new_entry)
+            self.parser.parsed_lines.insert(last_entry_line + 1, new_entry)
         else:
             if add_to_bottom:
-                index = len(self.lines)
+                index = len(self.parser.parsed_lines)
             else:
                 index = 0
 
-            date_line = parser.DateLine(entry.date, date_format=self.date_format)
-            blank_line = parser.TextLine('')
+            date_line = DateLine(entry.date, date_format=self.date_format)
+            blank_line = TextLine('')
 
             if not add_to_bottom:
-                self.lines.insert(index, blank_line)
+                self.parser.parsed_lines.insert(index, blank_line)
 
-            self.lines.insert(index, new_entry)
-            self.lines.insert(index, blank_line)
-            self.lines.insert(index, date_line)
+            self.parser.parsed_lines.insert(index, new_entry)
+            self.parser.parsed_lines.insert(index, blank_line)
+            self.parser.parsed_lines.insert(index, date_line)
 
         self._update_entries()
 
@@ -300,11 +309,11 @@ class Timesheet:
         last_entry_line = self._get_latest_entry_for_date(date)
 
         if (last_entry_line is None or not
-                isinstance(self.lines[last_entry_line].date, tuple) or
-                self.lines[last_entry_line].duration[1] is not None):
+                isinstance(self.parser.parsed_lines[last_entry_line].date, tuple) or
+                self.parser.parsed_lines[last_entry_line].duration[1] is not None):
             raise ParseError("No activity in progress found")
 
-        last_entry = self.lines[last_entry_line]
+        last_entry = self.parser.parsed_lines[last_entry_line]
 
         t = (datetime.datetime.now() -
             (datetime.datetime.combine(datetime.datetime.today(),
@@ -316,7 +325,7 @@ class Timesheet:
         last_entry.duration = (found_entry.duration[0], rounded_time)
         last_entry.description = description or '?'
 
-        self.lines[last_entry_line] = last_entry
+        self.parser.parsed_lines[last_entry_line] = last_entry
 
     def prefill(self, auto_fill_days, limit=None, add_to_bottom=True):
         entries = self.get_entries()
@@ -343,23 +352,34 @@ class Timesheet:
             return
 
         if add_to_bottom:
-            index = len(self.lines)
+            index = len(self.parser.parsed_lines)
         else:
             index = 0
 
-        self.lines.insert(index, parser.TextLine(''))
-        self.lines.insert(index, parser.DateLine(date, date_format=self.date_format))
+        self.parser.parsed_lines.insert(index, TextLine(''))
+        self.parser.parsed_lines.insert(index, DateLine(date, date_format=self.date_format))
         self._update_entries()
 
-    def save(self, file_path):
-        with codecs.open(file_path, 'w', 'utf-8') as f:
-            for line in self.lines:
-                f.write('%s\n' % line.text)
+    def save(self):
+        self.parser.save()
 
     def to_lines(self):
         lines = []
 
-        for line in self.lines:
+        for line in self.parser.parsed_lines:
             lines.append(line.text)
 
         return lines
+
+    def get_non_current_workday_entries(self, limit_date=None):
+        non_workday_entries = []
+        entries = self.get_entries(limit_date, exclude_ignored=True)
+        today = datetime.date.today()
+        yesterday = date_utils.get_previous_working_day(today)
+
+        for (date, date_entries) in entries:
+            if date not in (today, yesterday) or date.strftime('%w') in [6, 0]:
+                if date_entries:
+                    non_workday_entries.append((date, date_entries))
+
+        return non_workday_entries

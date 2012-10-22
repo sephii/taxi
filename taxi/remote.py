@@ -93,9 +93,10 @@ class ZebraRemote(Remote):
     def send_entries(self, entries):
         post_url = '/timesheet/create/.json'
 
+        pushed_entries = []
         self._login()
 
-        for date, entries in entries:
+        for (date, entries) in entries:
             for entry in entries:
                 parameters_dict = {
                     'time':         entry.get_duration(),
@@ -126,7 +127,6 @@ class ZebraRemote(Remote):
                     continue
 
                 if 'exception' in json_response:
-                    entry.pushed = False
                     print(u'Unable to push entry "%s". Error was: %s' %
                           (entry, json_response['exception']['message']))
                 elif 'error' in json_response['command']:
@@ -136,8 +136,6 @@ class ZebraRemote(Remote):
                             error = element['Project']
                             break
 
-                    entry.pushed = False
-
                     if error:
                         print(u'Unable to push entry "%s". Error was: %s' %
                               (entry, error))
@@ -146,10 +144,10 @@ class ZebraRemote(Remote):
                               ' message. (sorry that\'s not very useful !)' %
                               (entry))
                 else:
-                    entry.pushed = True
+                    pushed_entries.append(entry)
                     print(entry)
 
-        return entries
+        return pushed_entries
 
     def get_projects(self):
         projects_url = 'project/all.json'

@@ -7,7 +7,9 @@ import subprocess
 
 from taxi.exceptions import CancelException, ProjectNotFoundError, UsageError
 from taxi.models import Entry, Project, Timesheet
-from taxi.parser import ParseError, TaxiParser, PlainFileReader
+from taxi.parser import ParseError
+from taxi.parser.parsers.plaintext import PlainTextParser
+from taxi.parser.io import PlainFileIo
 from taxi.pusher import Pusher
 from taxi.settings import Settings
 from taxi.utils import file, terminal, date as date_utils
@@ -28,16 +30,16 @@ class Command(object):
 
 class TestCommand(Command):
     def run(self):
-        p = TaxiParser(PlainFileReader(self.options.file))
-        t = Timesheet(p.parsed_lines, self.settings.get_projects(),
-                self.settings.get('default', 'date_format'))
+        p = PlainTextParser(PlainFileIo(self.options.file))
+        t = Timesheet(p, self.settings.get_projects(),
+                      self.settings.get('default', 'date_format'))
 
-        e = Entry(datetime.date.today(), 'foobar', (datetime.time(10, 15),
+        e = Entry(datetime.date.today(), 'liip_internal', (datetime.time(10, 15),
             datetime.time(11, 0)), 'description')
-        t.add_entry(e, Settings.AUTO_ADD_OPTIONS['BOTTOM'])
-        e = Entry(datetime.date.today(), 'baz', (datetime.time(10, 15),
+        t.add_entry(e, True)
+        e = Entry(datetime.date.today(), 'liip_sick', (datetime.time(10, 15),
             None), 'description')
-        t.add_entry(e, Settings.AUTO_ADD_OPTIONS['BOTTOM'])
+        t.add_entry(e, True)
         print(t.to_lines())
 
 class AddCommand(Command):
@@ -207,14 +209,13 @@ class AutofillCommand(Command):
                 last_date = datetime.date(today.year, today.month, last_day[1])
                 add_to_bottom = direction == Settings.AUTO_ADD_OPTIONS['BOTTOM']
 
-                p = TaxiParser(PlainFileIo(self.options.file))
-                t = Timesheet(p.parsed_lines, self.settings.get_projects(),
-                        self.settings.get('default', 'date_format'))
-
                 file.create_file(self.options.file)
+                p = PlainTextParser(PlainFileIo(self.options.file))
+                t = Timesheet(p, self.settings.get_projects(),
+                              self.settings.get('default', 'date_format'))
+
                 t.prefill(auto_fill_days, last_date, add_to_bottom)
-                t.save(self.options.file)
-                print(t.to_lines())
+                t.save()
 
                 self.view.msg(u"Your entries file has been filled.")
             else:
@@ -272,33 +273,37 @@ class CommitCommand(Command):
     """
 
     def run(self):
-        parser = TaxiParser(self.options.file)
-        parser.check_mappings(self.settings.get_projects().keys())
+        p = PlainTextParser(PlainFileIo(self.options.file))
+        t = Timesheet(p, self.settings.get_projects(),
+                      self.settings.get('default', 'date_format'))
 
         if self.options.date is None and not self.options.ignore_date_error:
-            non_workday_entries = parser.get_non_current_workday_entries()
+            non_workday_entries = t.get_non_current_workday_entries()
 
             if non_workday_entries:
                 dates = [d[0] for d in non_workday_entries]
                 self.view.non_working_dates_commit_error(dates)
+
                 return
 
         pusher = Pusher(self.settings.get('default', 'site'),
                         self.settings.get('default', 'username'),
                         self.settings.get('default', 'password'))
-        pusher.push(parser.get_entries(self.options.date, exclude_ignored=True))
+        pushed_entries = pusher.push(t.get_entries(self.options.date,
+                                     exclude_ignored=True))
+        # TODO
+        parser.update_file()
 
         total_hours = 0
         ignored_hours = 0
-        for (date, entries) in parser.get_entries(date=options.date):
-            for entry in entries:
-                if entry.pushed:
-                    total_hours += entry.get_duration()
-                elif entry.is_ignored():
-                    ignored_hours += entry.get_duration()
+        for entry in pushed_entries:
+            # TODO
+            if entry.pushed:
+                total_hours += entry.get_duration()
+            elif entry.is_ignored():
+                ignored_hours += entry.get_duration()
 
         self.view.pushed_hours_total(total_hours, ignored_hours)
-        parser.update_file()
 
 class EditCommand(Command):
     """

@@ -6,4 +6,4 @@ class Pusher:
         self.remote = ZebraRemote(base_url, username, password)
 
     def push(self, entries):
-        self.remote.send_entries(entries)
+        return self.remote.send_entries(entries)
