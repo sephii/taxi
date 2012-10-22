@@ -121,11 +121,20 @@ class BaseUi(object):
 
         return confirm == 'y'
 
-    def pushed_hours_total(self, pushed_hours, ignored_hours):
-        self.msg(u'\n%-29s %5.2f' % ('Total', pushed_hours))
+    def pushed_entries_total(self, pushed_entries):
+        total_hours = 0
+        for entry in pushed_entries:
+            total_hours += entry.get_duration()
 
-        if ignored_hours > 0:
-            self.msg(u'%-29s %5.2f' % ('Total ignored', ignored_hours))
+        self.msg(u'\n%-29s %5.2f' % ('Total pushed', total_hours))
+
+    def ignored_entries_list(self, ignored_entries):
+        ignored_hours = 0
+        for entry in ignored_entries:
+            ignored_hours += entry.get_duration()
+            self.msg(unicode(entry))
+
+        self.msg(u'\n%-29s %5.2f' % ('Total ignored', ignored_hours))
 
     def non_working_dates_commit_error(self, dates):
         dates = [d.strftime('%A %d %B') for d in dates]
@@ -154,3 +163,24 @@ class BaseUi(object):
 
         self.pushed_hours_total(total_hours, 0)
         self.msg(u'\nUse `taxi ci` to commit staging changes to the server')
+
+    def pushed_entry(self, entry, error):
+        if error:
+            self.msg(u"%s - Failed, reason: %s " % (unicode(entry), error))
+        else:
+            self.msg(unicode(entry))
+
+    def failed_entries_list(self, failed_entries):
+        for failed_entry in failed_entries:
+            self.msg(u"%s, reason: %s" % failed_entry)
+
+    def pushed_entries_summary(self, pushed_entries, failed_entries,
+                               ignored_entries):
+        self.pushed_entries_total(pushed_entries)
+
+        if ignored_entries:
+            self.msg(u"\nIgnored entries:\n")
+            self.ignored_entries_list(ignored_entries)
+
+    def pushing_entries(self):
+        self.msg(u"Pushing entries...\n")

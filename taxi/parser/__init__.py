@@ -10,6 +10,10 @@ class TextLine(object):
     def __str__(self):
         return self.text
 
+    def comment(self):
+        if not self.text.startswith('#'):
+            self.text = u'# %s' % (self.text)
+
 class EntryLine(TextLine):
     def __init__(self, alias, time, description, text=None):
         self.alias = alias

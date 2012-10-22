@@ -11,7 +11,7 @@ def create_file(filepath):
         myfile = open(filepath, 'w')
         myfile.close()
 
-def get_auto_add_direction(filepath, unparsed_filepath):
+def get_auto_add_direction(t1, t2):
     if os.path.exists(filepath):
         auto_add = TaxiParser(filepath).get_entries_direction()
     else:

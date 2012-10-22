@@ -3,8 +3,9 @@ import codecs
 import datetime
 import re
 
+from taxi.exceptions import UndefinedAliasError, UnknownDirectionError
 from taxi.parser import DateLine, EntryLine, TextLine
-from taxi.exceptions import UndefinedAliasError
+from taxi.utils import date as date_utils
 
 class Entry:
     def __init__(self, date, project_name, hours, description, id=None):
@@ -218,7 +219,7 @@ class Timesheet:
                 if line.date not in self.entries:
                     self.entries[line.date] = []
             elif isinstance(line, EntryLine):
-                entry = Entry(current_date, line.alias, line.time,
+                entry = Entry(current_date, line.get_alias(), line.time,
                               line.description, i)
 
                 if line.is_ignored():
@@ -260,6 +261,22 @@ class Timesheet:
                     entries_list.append((entrydate, d_list))
 
         return entries_list
+
+    def get_ignored_entries(self, date=None):
+        entries_list = self.get_entries(date, False)
+        ignored_entries = []
+
+        for (date, entries) in entries_list:
+            ignored_entries_list = []
+            for entry in entries:
+                if entry.is_ignored():
+                    ignored_entries_list.append(entry)
+
+            if ignored_entries_list:
+                ignored_entries.append((date, ignored_entries_list))
+
+        return ignored_entries
+
 
     def _get_latest_entry_for_date(self, date):
         date_line = None
@@ -397,6 +414,22 @@ class Timesheet:
             if not isinstance(l, EntryLine):
                 raise Exception()
 
-            l = TextLine('# %s' % l.text)
+            l.comment()
+            self.parser.parsed_lines[entry.id] = l
 
-        print self.parser.parsed_lines
+    def is_top_down(self):
+        """
+        Returns True if the most recent entries are on the bottom of the file,
+        False otherwise. Raises UnknownDirectionError if it's unable to detect
+        it.
+        """
+        date = None
+        for line in self.parser.parsed_lines:
+            if isinstance(line, DateLine):
+                if date is None:
+                    date = line.date
+                else:
+                    if date != line.date:
+                        return date < line.date
+
+        raise UnknownDirectionError()

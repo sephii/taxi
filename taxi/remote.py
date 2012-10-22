@@ -35,7 +35,7 @@ class Remote(object):
     def login(self):
         pass
 
-    def send_entries(self, entries):
+    def send_entries(self, entries, callback=None):
         pass
 
     def get_projects(self):
@@ -90,10 +90,11 @@ class ZebraRemote(Remote):
         else:
             self.logged_in = True
 
-    def send_entries(self, entries):
+    def send_entries(self, entries, callback=None):
         post_url = '/timesheet/create/.json'
 
         pushed_entries = []
+        failed_entries = []
         self._login()
 
         for (date, entries) in entries:
@@ -107,47 +108,46 @@ class ZebraRemote(Remote):
                     'year':         date.year,
                     'description':  entry.description,
                 }
+                error = None
 
                 parameters = self._encode_parameters(parameters_dict)
 
                 try:
                     response = self._request(post_url, parameters)
                     response_body = response.read()
-                except Exception as e:
-                    entry.pushed = False
-                    print(u'Unable to send request to Zebra, exception was %s' %
-                          e)
-                    continue
-
-                try :
                     json_response = json.loads(response_body)
                 except ValueError:
-                    print(u'Unable to read response after pushing entry '
-                          '%s, response was %s' % (entry, response_body))
-                    continue
-
-                if 'exception' in json_response:
-                    print(u'Unable to push entry "%s". Error was: %s' %
-                          (entry, json_response['exception']['message']))
-                elif 'error' in json_response['command']:
-                    error = None
-                    for element in json_response['command']['error']:
-                        if 'Project' in element:
-                            error = element['Project']
-                            break
-
-                    if error:
-                        print(u'Unable to push entry "%s". Error was: %s' %
-                              (entry, error))
-                    else:
-                        print(u'Unable to push entry "%s". Unknown error'
-                              ' message. (sorry that\'s not very useful !)' %
-                              (entry))
+                    error = (u"Unable to read response response was %s" %
+                             (response_body))
+                    failed_entries.append((entry, error))
+                except Exception as e:
+                    error = (u"Unable to send request to Zebra, error was %s" %
+                             (e))
+                    failed_entries.append((entry, error))
                 else:
-                    pushed_entries.append(entry)
-                    print(entry)
+                    if 'exception' in json_response:
+                        error = json_response['exception']['message']
+                        failed_entries.append((entry, error))
+                    elif 'error' in json_response['command']:
+                        error = None
+                        for element in json_response['command']['error']:
+                            if 'Project' in element:
+                                error = element['Project']
+                                break
 
-        return pushed_entries
+                        if error:
+                            failed_entries.append((entry, error))
+                        else:
+                            error = (u"Unknown error message. (sorry that's "
+                                     "not very useful!)")
+                            failed_entries.append((entry, error))
+                    else:
+                        pushed_entries.append(entry)
+                finally:
+                    if callback is not None:
+                        callback(entry, error)
+
+        return (pushed_entries, failed_entries)
 
     def get_projects(self):
         projects_url = 'project/all.json'
@@ -208,6 +208,60 @@ class ZebraRemote(Remote):
                     print(u"Cannot import activity %s for project %s"\
                           " because activity id is not an int" %
                           (activity, p.id))
+
+            projects_list.append(p)
+
+        return projects_list
+
+class DummyRemote(Remote):
+    projects = {
+        111: [222, 333],
+        123: [456],
+    }
+
+    def __init__(self):
+        super(DummyRemote, self).__init__('dummy')
+
+    def send_entries(self, entries, callback=None):
+        pushed_entries = []
+        failed_entries = []
+
+        for (date, entries) in entries:
+            for entry in entries:
+                error = None
+                parameters_dict = {
+                    'time':         entry.get_duration(),
+                    'project_id':   entry.project_id,
+                    'activity_id':  entry.activity_id,
+                    'day':          date.day,
+                    'month':        date.month,
+                    'year':         date.year,
+                    'description':  entry.description,
+                }
+
+                if (entry.project_id not in self.projects or
+                        entry.activity_id not in self.projects[entry.project_id]):
+                    error = 'Project doesn\'t exist'
+                    failed_entries.append((entry, error))
+                else:
+                    pushed_entries.append(entry)
+                    success = True
+
+                if callback is not None:
+                    callback(entry, error)
+
+        return (pushed_entries, failed_entries)
+
+    def get_projects(self):
+        projects_list = []
+
+        for (project, activities) in self.projects.iteritems():
+            p = Project(project, 'foo', 1, 'bar', '1000')
+            p.start_date = None
+            p.end_date = None
+
+            for activity in activities:
+                p.add_activity(activity)
 
             projects_list.append(p)
 

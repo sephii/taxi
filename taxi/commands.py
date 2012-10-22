@@ -5,12 +5,12 @@ import datetime
 import inspect
 import subprocess
 
+from taxi import remote
 from taxi.exceptions import CancelException, ProjectNotFoundError, UsageError
 from taxi.models import Entry, Project, Timesheet
 from taxi.parser import ParseError
 from taxi.parser.parsers.plaintext import PlainTextParser
 from taxi.parser.io import PlainFileIo
-from taxi.pusher import Pusher
 from taxi.settings import Settings
 from taxi.utils import file, terminal, date as date_utils
 
@@ -190,37 +190,64 @@ class AutofillCommand(Command):
         except NoOptionError:
             direction = Settings.AUTO_ADD_OPTIONS['AUTO']
 
+        if direction == Settings.AUTO_ADD_OPTIONS['NO']:
+            self.view.err(u"The parameter `auto_add` must have a value that "
+                          "is different than 'no' for this command to work.")
+            return
+
         if direction == Settings.AUTO_ADD_OPTIONS['AUTO']:
-            direction = file.get_auto_add_direction(self.options.file,
-                                                    self.options.unparsed_file)
+            p1 = PlainTextParser(PlainFileIo(self.options.file))
+
+            try:
+                if p1.is_top_down():
+                    direction = Settings.AUTO_ADD_OPTIONS['BOTTOM']
+                else:
+                    direction = Settings.AUTO_ADD_OPTIONS['TOP']
+            except UnknownDirectionError:
+                direction = None
+
+            if direction is None:
+                # Unable to automatically detect the entries direction, we try to get a
+                # previous file to see if we're lucky
+                prev_month = datetime.date.today() - datetime.timedelta(days=30)
+                oldfile = prev_month.strftime(self.options.unparsed_file)
+
+                try:
+                    p2 = PlainTextParser(PlainFileIo(oldfile))
+                except ParseError:
+                    direction = None
+                else:
+                    try:
+                        if p2.is_top_down():
+                            direction = Settings.AUTO_ADD_OPTIONS['BOTTOM']
+                        else:
+                            direction = Settings.AUTO_ADD_OPTIONS['TOP']
+                    except UnknownDirectionError:
+                        direction = None
 
         if direction is None:
             direction = Settings.AUTO_ADD_OPTIONS['TOP']
 
-        if direction == Settings.AUTO_ADD_OPTIONS['NO']:
-            self.view.err(u"The parameter `auto_add` must have a value that "
-                          "is different than 'no' for this command to work.")
+        auto_fill_days = self.settings.get_auto_fill_days()
+
+        if auto_fill_days:
+            today = datetime.date.today()
+            last_day = calendar.monthrange(today.year, today.month)
+            last_date = datetime.date(today.year, today.month, last_day[1])
+            add_to_bottom = direction == Settings.AUTO_ADD_OPTIONS['BOTTOM']
+
+            file.create_file(self.options.file)
+            p = PlainTextParser(PlainFileIo(self.options.file))
+            t = Timesheet(p, self.settings.get_projects(),
+                          self.settings.get('default', 'date_format'))
+
+            t.prefill(auto_fill_days, last_date, add_to_bottom)
+            t.save()
+
+            self.view.msg(u"Your entries file has been filled.")
         else:
-            auto_fill_days = self.settings.get_auto_fill_days()
-
-            if auto_fill_days:
-                today = datetime.date.today()
-                last_day = calendar.monthrange(today.year, today.month)
-                last_date = datetime.date(today.year, today.month, last_day[1])
-                add_to_bottom = direction == Settings.AUTO_ADD_OPTIONS['BOTTOM']
-
-                file.create_file(self.options.file)
-                p = PlainTextParser(PlainFileIo(self.options.file))
-                t = Timesheet(p, self.settings.get_projects(),
-                              self.settings.get('default', 'date_format'))
-
-                t.prefill(auto_fill_days, last_date, add_to_bottom)
-                t.save()
-
-                self.view.msg(u"Your entries file has been filled.")
-            else:
-                self.view.err(u"The parameter `auto_fill_days` must be set to "
-                              "use this command.")
+            self.view.err(u"The parameter `auto_fill_days` must be set to "
+                          "use this command.")
 
 class KittyCommand(Command):
     """
@@ -286,23 +313,27 @@ class CommitCommand(Command):
 
                 return
 
-        pusher = Pusher(self.settings.get('default', 'site'),
-                        self.settings.get('default', 'username'),
-                        self.settings.get('default', 'password'))
-        pushed_entries = pusher.push(t.get_entries(self.options.date,
-                                     exclude_ignored=True))
+        self.view.pushing_entries()
+        r = remote.ZebraRemote(self.settings.get('default', 'site'),
+                               self.settings.get('default', 'username'),
+                               self.settings.get('default', 'password'))
+        entries_to_push = t.get_entries(self.options.date, exclude_ignored=True)
+        (pushed_entries, failed_entries) = r.send_entries(entries_to_push,
+                                                          self._entry_pushed)
+
         t.comment_entries(pushed_entries)
+        t.save()
 
-        total_hours = 0
-        ignored_hours = 0
-        for entry in pushed_entries:
-            # TODO
-            if entry.pushed:
-                total_hours += entry.get_duration()
-            elif entry.is_ignored():
-                ignored_hours += entry.get_duration()
+        ignored_entries = t.get_ignored_entries(self.options.date)
+        ignored_entries_list = []
+        for (date, entries) in ignored_entries:
+            ignored_entries_list.extend(entries)
 
-        self.view.pushed_hours_total(total_hours, ignored_hours)
+        self.view.pushed_entries_summary(pushed_entries, failed_entries,
+                                         ignored_entries_list)
+
+    def _entry_pushed(self, entry, error):
+        self.view.pushed_entry(entry, error)
 
 class EditCommand(Command):
     """
@@ -322,15 +353,18 @@ class EditCommand(Command):
             pass
         else:
             if auto_add is not None and auto_add != Settings.AUTO_ADD_OPTIONS['NO']:
+                p = PlainTextParser(PlainFileIo(self.options.file))
+                t = Timesheet(p, self.settings.get_projects(),
+                              self.settings.get('default', 'date_format'))
+
                 auto_fill_days = self.settings.get_auto_fill_days()
                 if auto_fill_days:
-                    file.prefill(self.options.file, auto_add, auto_fill_days)
+                    add_to_bottom = auto_add == Settings.AUTO_ADD_OPTIONS['BOTTOM']
+                    t.prefill(auto_fill_days, limit=None,
+                              add_to_bottom=add_to_bottom)
 
-                parser = TaxiParser(self.options.file)
-                parser.auto_add(auto_add,
-                                date_format=self.settings.get('default',
-                                    'date_format'))
-                parser.update_file()
+                t.add_date(datetime.date.today(), add_to_bottom)
+                t.save()
 
         try:
             editor = self.settings.get('default', 'editor')
@@ -339,9 +373,9 @@ class EditCommand(Command):
 
         file.spawn_editor(self.options.file, editor)
 
-        parser = TaxiParser(self.options.file)
-        entries = parser.get_entries()
-        self.view.show_status(entries)
+        #parser = TaxiParser(self.options.file)
+        #entries = parser.get_entries()
+        #self.view.show_status(entries)
 
 def search(options, args):
     """Usage: search search_string
