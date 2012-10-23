@@ -14,3 +14,6 @@ class CancelException(Exception):
 
 class UndefinedAliasError(Exception):
     pass
+
+class UnknownDirectionError(Exception):
+    pass

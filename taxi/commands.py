@@ -6,7 +6,12 @@ import inspect
 import subprocess
 
 from taxi import remote
-from taxi.exceptions import CancelException, ProjectNotFoundError, UsageError
+from taxi.exceptions import (
+        CancelException,
+        ProjectNotFoundError,
+        UnknownDirectionError,
+        UsageError
+)
 from taxi.models import Entry, Project, Timesheet
 from taxi.parser import ParseError
 from taxi.parser.parsers.plaintext import PlainTextParser
@@ -14,13 +19,16 @@ from taxi.parser.io import PlainFileIo
 from taxi.settings import Settings
 from taxi.utils import file, terminal, date as date_utils
 
-class Command(object):
-    def setup(self, app_container):
+class BaseCommand(object):
+    def __init__(self, app_container):
         self.options = app_container.options
         self.arguments = app_container.arguments
         self.view = app_container.view
         self.projects_db = app_container.projects_db
         self.settings = app_container.settings
+
+    def setup(self):
+        pass
 
     def validate(self):
         pass
@@ -28,21 +36,53 @@ class Command(object):
     def run(self):
         pass
 
-class TestCommand(Command):
-    def run(self):
+class BaseTimesheetCommand(BaseCommand):
+    def get_timesheet(self, skip_cache=False):
+        timesheet = getattr(self, '_current_timesheet', None)
+        if timesheet is not None and not skip_cache:
+            return timesheet
+
         p = PlainTextParser(PlainFileIo(self.options.file))
         t = Timesheet(p, self.settings.get_projects(),
                       self.settings.get('default', 'date_format'))
+        setattr(self, '_current_timesheet', t)
 
-        e = Entry(datetime.date.today(), 'liip_internal', (datetime.time(10, 15),
-            datetime.time(11, 0)), 'description')
-        t.add_entry(e, True)
-        e = Entry(datetime.date.today(), 'liip_sick', (datetime.time(10, 15),
-            None), 'description')
-        t.add_entry(e, True)
-        print(t.to_lines())
+        return t
 
-class AddCommand(Command):
+    def get_entries_direction(self):
+        is_top_down = None
+
+        try:
+            t = self.get_timesheet()
+        except ParseError:
+            pass
+
+        if self.settings.get('default', 'auto_add') == Settings.AUTO_ADD_OPTIONS['AUTO']:
+            if t is not None:
+                try:
+                    is_top_down = t.is_top_down()
+                except ParseError, UnknownDirectionError:
+                    is_top_down = None
+
+            if is_top_down is None:
+                # Unable to automatically detect the entries direction, we try to get a
+                # previous file to see if we're lucky
+                prev_month = datetime.date.today() - datetime.timedelta(days=30)
+                oldfile = prev_month.strftime(unparsed_filepath)
+
+                try:
+                    p = PlainTextParser(PlainFileIo(oldfile))
+                    t2 = Timesheet(p, self.settings.get_projects(),
+                                   self.settings.get('default', 'date_format'))
+                    is_top_down = t2.is_top_down()
+                except ParseError, UnknownDirectionError:
+                    is_top_down = False
+        else:
+            is_top_down = self.settings.get('default', 'auto_add') == Settings.AUTO_ADD_OPTIONS['BOTTOM']
+
+        return is_top_down
+
+class AddCommand(BaseCommand):
     """
     Usage: add search_string
 
@@ -57,31 +97,33 @@ class AddCommand(Command):
     def run(self):
         search = self.arguments
         projects = self.projects_db.search(search, active_only=True)
+        projects = sorted(projects, key=lambda project: project.name)
 
         if len(projects) == 0:
             view.msg(u"No project matches your search string '%s" %
                      ''.join(search))
             return
 
-        view.projects_list_numbered(projects, True)
+        self.view.projects_list(projects, True)
 
         try:
-            number = view.select_project(projects)
+            number = self.view.select_project(projects)
         except CancelException:
             return
 
         project = projects[number]
-        view.project_with_activities(project, True)
+        mappings = self.settings.get_reversed_projects()
+        self.view.project_with_activities(project, mappings, numbered_activities=True)
 
         try:
-            number = view.select_activity(project.activities)
+            number = self.view.select_activity(project.activities)
         except CancelException:
             return
 
         retry = True
         while retry:
             try:
-                alias = view.select_alias()
+                alias = self.view.select_alias()
             except CancelException:
                 return
 
@@ -102,9 +144,9 @@ class AddCommand(Command):
         activity = project.activities[number]
         self.settings.add_activity(alias, project.id, activity.id)
 
-        view.alias_added(alias, (project.id, activity.id))
+        self.view.alias_added(alias, (project.id, activity.id))
 
-class AliasCommand(Command):
+class AliasCommand(BaseCommand):
     """
     Usage: alias [alias]
        alias [project_id]
@@ -122,31 +164,45 @@ class AliasCommand(Command):
     You can also run this command without any argument to view all your mappings.
     """
 
+    MODE_SHOW_MAPPING = 0
+    MODE_ADD_ALIAS = 1
+    MODE_LIST_ALIASES = 2
+
     def validate(self):
         if len(self.arguments) > 2:
             raise UsageError()
 
+    def setup(self):
+        if len(self.arguments) == 2:
+            self.alias = self.arguments[0]
+            self.mapping = self.arguments[1]
+            self.mode = self.MODE_ADD_ALIAS
+        elif len(self.arguments) == 1:
+            self.alias = self.arguments[0]
+            self.mode = self.MODE_SHOW_MAPPING
+        else:
+            self.alias = None
+            self.mode = self.MODE_LIST_ALIASES
+
     def run(self):
         projects = self.settings.get_projects()
-        alias = None
 
         # 2 arguments, add a new alias
-        if len(self.arguments) == 2:
-            self._add_alias(self.arguments[0], self.arguments[1])
+        if self.mode == self.MODE_ADD_ALIAS:
+            self._add_alias(self.alias, self.mapping)
         # 1 argument, display the alias or the project id/activity id tuple
-        elif len(self.arguments) == 1:
-            alias = self.arguments[0]
-            mapping = Project.str_to_tuple(alias)
+        elif self.mode == self.MODE_SHOW_MAPPING:
+            mapping = Project.str_to_tuple(self.alias)
 
             if mapping is not None:
                 for m in self.settings.search_aliases(mapping):
                     self.view.mapping_detail(m, self.projects_db.get(m[1][0]))
-
-                return
+            else:
+                self.mode = self.MODE_LIST_ALIASES
 
         # No argument, display the mappings
-        if alias is not None or len(self.arguments) == 0:
-            for m in self.settings.search_mappings(alias):
+        if self.mode == self.MODE_LIST_ALIASES:
+            for m in self.settings.search_mappings(self.alias):
                 self.view.alias_detail(m, self.projects_db.get(m[1][0]))
 
     def _add_alias(self, alias_name, mapping):
@@ -178,7 +234,7 @@ class AliasCommand(Command):
 
         self.view.alias_added(alias_name, mapping)
 
-class AutofillCommand(Command):
+class AutofillCommand(BaseCommand):
     """
     Usage: autofill
     """
@@ -249,7 +305,7 @@ class AutofillCommand(Command):
             self.view.err(u"The parameter `auto_fill_days` must be set to "
                           "use this command.")
 
-class KittyCommand(Command):
+class KittyCommand(BaseCommand):
     """
    |\      _,,,---,,_
    /,`.-'`'    -.  ;-;;,_
@@ -265,7 +321,7 @@ class KittyCommand(Command):
     def run(self):
         self.view.msg(self.__doc__)
 
-class CleanAliasesCommand(Command):
+class CleanAliasesCommand(BaseCommand):
     """Usage: clean-aliases
 
     Removes aliases from your config file that point to inactive projects."""
@@ -292,7 +348,7 @@ class CleanAliasesCommand(Command):
             self.settings.remove_activities([item[0] for item in inactive_aliases])
             self.view.msg(u"Inactive aliases have been successfully cleaned.")
 
-class CommitCommand(Command):
+class CommitCommand(BaseTimesheetCommand):
     """
     Usage: commit
 
@@ -300,9 +356,7 @@ class CommitCommand(Command):
     """
 
     def run(self):
-        p = PlainTextParser(PlainFileIo(self.options.file))
-        t = Timesheet(p, self.settings.get_projects(),
-                      self.settings.get('default', 'date_format'))
+        t = self.get_timesheet()
 
         if self.options.date is None and not self.options.ignore_date_error:
             non_workday_entries = t.get_non_current_workday_entries()
@@ -335,7 +389,7 @@ class CommitCommand(Command):
     def _entry_pushed(self, entry, error):
         self.view.pushed_entry(entry, error)
 
-class EditCommand(Command):
+class EditCommand(BaseTimesheetCommand):
     """
     Usage: edit
 
@@ -345,26 +399,18 @@ class EditCommand(Command):
     def run(self):
         # Create the file if it does not exist yet
         file.create_file(self.options.file)
+        is_top_down = None
 
-        try:
-            auto_add = file.get_auto_add_direction(self.options.file,
-                                                   self.options.unparsed_file)
-        except ParseError as e:
-            pass
-        else:
-            if auto_add is not None and auto_add != Settings.AUTO_ADD_OPTIONS['NO']:
-                p = PlainTextParser(PlainFileIo(self.options.file))
-                t = Timesheet(p, self.settings.get_projects(),
-                              self.settings.get('default', 'date_format'))
+        if self.settings.get('default', 'auto_add') != Settings.AUTO_ADD_OPTIONS['NO']:
+            t = self.get_timesheet()
+            is_top_down = self.get_entries_direction()
+            auto_fill_days = self.settings.get_auto_fill_days()
+            if auto_fill_days:
+                t.prefill(auto_fill_days, limit=None,
+                          add_to_bottom=is_top_down)
 
-                auto_fill_days = self.settings.get_auto_fill_days()
-                if auto_fill_days:
-                    add_to_bottom = auto_add == Settings.AUTO_ADD_OPTIONS['BOTTOM']
-                    t.prefill(auto_fill_days, limit=None,
-                              add_to_bottom=add_to_bottom)
-
-                t.add_date(datetime.date.today(), add_to_bottom)
-                t.save()
+            t.add_date(datetime.date.today(), is_top_down)
+            t.save()
 
         try:
             editor = self.settings.get('default', 'editor')
@@ -373,83 +419,80 @@ class EditCommand(Command):
 
         file.spawn_editor(self.options.file, editor)
 
-        #parser = TaxiParser(self.options.file)
-        #entries = parser.get_entries()
-        #self.view.show_status(entries)
+        self.view.show_status(t.get_entries())
 
-def search(options, args):
+class SearchCommand(BaseCommand):
     """Usage: search search_string
 
     Searches for a project by its name. The letter in the first column indicates
     the status of the project: [N]ot started, [A]ctive, [F]inished, [C]ancelled."""
 
-    if len(args) < 2:
-        raise Exception(inspect.cleandoc(search.__doc__))
+    def validate(self):
+        if len(self.arguments) < 1:
+            raise UsageError()
 
-    search = args
-    search = search[1:]
-    projects = projects_db.search(search)
-    for project in projects:
-        print(u'%s %-4s %s' % (project.get_short_status(), project.id, project.name))
+    def run(self):
+        projects = self.projects_db.search(self.arguments)
+        projects = sorted(projects, key=lambda project: project.name.lower())
+        self.view.search_results(projects)
 
-def show(options, args):
+class ShowCommand(BaseCommand):
     """Usage: show project_id
 
     Shows the details of the given project_id (you can find it with the search
     command)."""
 
-    if len(args) < 2:
-        raise Exception(inspect.cleandoc(show.__doc__))
+    def validate(self):
+        if len(self.arguments) < 1:
+            raise UsageError()
 
-    try:
-        project = projects_db.get(int(args[1]))
-    except IOError:
-        print(u'Error: the projects database file doesn\'t exist. Please run '
-              ' `taxi update` to create it')
-    except ValueError:
-        print(u'Error: the project id must be a number')
-    else:
+        try:
+            int(self.arguments[0])
+        except ValueError:
+            raise UsageError("The project id must be a number")
+
+    def setup(self):
+        self.project_id = int(self.arguments[0])
+
+    def run(self):
+        try:
+            project = self.projects_db.get(self.project_id)
+        except IOError:
+            raise Exception("Error: the projects database file doesn't exist. "
+                            "Please run `taxi update` to create it")
+
         if project is None:
-            print(u"Error: the project doesn't exist")
-            return
+            raise Exception("Error: the project doesn't exist")
 
-        print(project)
+        mappings = self.settings.get_reversed_projects()
+        self.view.project_with_activities(project, mappings)
 
-        if project.is_active():
-            print(u"\nActivities:")
-            projects_mapping = settings.get_reversed_projects()
-
-            for activity in project.activities:
-                if (project.id, activity.id) in projects_mapping:
-                    print(u'%-4s %s (mapped to %s)' %
-                          (activity.id, activity.name,
-                          projects_mapping[(project.id, activity.id)]))
-                else:
-                    print(u'%-4s %s' % (activity.id, activity.name))
-
-def start(options, args):
+class StartCommand(BaseTimesheetCommand):
     """Usage: start project_name
 
     Use it when you start working on the project project_name. This will add the
     project name and the current time to your entries file. When you're
     finished, use the stop command."""
 
-    if len(args) < 2:
-        raise Exception(inspect.cleandoc(start.__doc__))
+    def validate(self):
+        if len(self.arguments) != 1:
+            raise UsageError()
 
-    project_name = args[1]
+    def setup(self):
+        self.project_name = self.arguments[0]
 
-    if project_name not in settings.get_projects().keys():
-        raise ProjectNotFoundError(project_name, 'Error: the project \'%s\' doesn\'t exist' %\
-                project_name)
+    def run(self):
+        if self.project_name not in self.settings.get_projects().keys():
+            raise ProjectNotFoundError("Error: the project '%s' doesn't exist" %
+                                       self.project_name)
 
-    file.create_file(options.file)
+        file.create_file(self.options.file)
 
-    parser = TaxiParser(options.file)
-    auto_add = file.get_auto_add_direction(options.file, options.unparsed_file)
-    parser.add_entry(datetime.date.today(), project_name,\
-            (datetime.datetime.now().time(), None), auto_add)
-    parser.update_file()
+        duration = (datetime.datetime.now().time(), None)
+        e = Entry(datetime.date.today(), self.project_name, duration, '?')
+        t = self.get_timesheet()
+        t.add_entry(e, self.get_entries_direction())
+        t.save()
 
 def status(options, args):
     """Usage: status

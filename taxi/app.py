@@ -75,7 +75,9 @@ class Taxi(object):
             'clean-aliases': commands.CleanAliasesCommand,
             'commit': commands.CommitCommand,
             'edit': commands.EditCommand,
-            'test': commands.TestCommand,
+            'search': commands.SearchCommand,
+            'show': commands.ShowCommand,
+            'start': commands.StartCommand,
         }
 
         settings = Settings()
@@ -126,8 +128,8 @@ class Taxi(object):
 
         try:
             #call_action(actions, options, args)
-            action = actions[args[0]]()
-            action.setup(ac)
+            action = actions[args[0]](ac)
+            action.setup()
             action.validate()
             action.run()
         except ProjectNotFoundError as e:

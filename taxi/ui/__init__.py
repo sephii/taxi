@@ -1,4 +1,5 @@
 import re
+import sys
 
 from taxi.utils import terminal
 from taxi.exceptions import CancelException
@@ -6,7 +7,14 @@ from taxi.models import Project
 
 class BaseUi(object):
     def msg(self, message):
-        print(message)
+        # Encoding is None if the output is piped through another command (eg.
+        # grep)
+        if sys.stdout.encoding is None:
+            encoding = 'UTF-8'
+        else:
+            encoding = sys.stdout.encoding
+
+        print(message.encode(encoding))
 
     def err(self, message):
         self.msg(u"Error: %s" % message)
@@ -14,30 +22,41 @@ class BaseUi(object):
     def projects_list(self, projects, numbered=False):
         for (key, project) in enumerate(projects):
             if numbered:
-                self.msg(u"(%d) %-4s %s" % (key, project.id, project.name))
+                self.msg(u"(%d) %4s %s" % (key, project.id, project.name))
             else:
-                self.msg(u"%-4s %s" % (key, project.id, project.name))
+                self.msg(u"%4s %s" % (key, project.id, project.name))
 
-    def project_with_activities(self, project, numbered_activities=False):
-        self.msg(project)
+    def project_with_activities(self, project, mappings={}, numbered_activities=False):
+        self.msg(unicode(project))
         self.msg(u"\nActivities:")
         for (key, activity) in enumerate(project.activities):
-            self.msg(u"(%d) %-4s %s" % (key, activity.id, activity.name))
+            if numbered_activities:
+                activity_number = '(%d) ' % (key)
+            else:
+                activity_number = ''
+
+            if (project.id, activity.id) in mappings:
+                self.msg(u"%s%4s %s (mapped to %s)" % (activity_number,
+                         activity.id, activity.name,
+                         mappings[(project.id, activity.id)]))
+            else:
+                self.msg(u'%s%4s %s' % (activity_number, activity.id,
+                                         activity.name))
 
     def select_project(self, projects):
         try:
             return terminal.select_number(len(projects), u"Choose the project "
                                           "(0-%d), (Ctrl-C) to exit: " %
                                           (len(projects) - 1))
-        except KeyboardError:
+        except KeyboardInterrupt:
             raise CancelException()
 
     def select_activity(self, activities):
         try:
             return terminal.select_number(len(activities), u"Choose the "
                                           "activity (0-%d), (Ctrl-C) to exit: " %
-                                          (len(project.activities) - 1))
-        except KeyboardError:
+                                          (len(activities) - 1))
+        except KeyboardInterrupt:
             raise CancelException()
 
     def select_alias(self):
@@ -45,7 +64,7 @@ class BaseUi(object):
             return terminal.select_string(u"Enter the alias for .tksrc (a-z, - "
                                           "and _ allowed), (Ctrl-C) to exit: ",
                                           r'^[\w-]+$')
-        except KeyboardError:
+        except KeyboardInterrupt:
             raise CancelException()
 
     def overwrite_alias(self, alias, mapping, retry=True):
@@ -147,6 +166,7 @@ class BaseUi(object):
     def show_status(self, entries_list):
         self.msg(u'Staging changes :\n')
         entries_list = sorted(entries_list)
+        total_hours = 0
 
         for (date, entries) in entries_list:
             if len(entries) == 0:
@@ -161,7 +181,7 @@ class BaseUi(object):
             self.msg(u'%-29s %5.2f\n' % ('', subtotal_hours))
             total_hours += subtotal_hours
 
-        self.pushed_hours_total(total_hours, 0)
+        self.msg(u'\n%-29s %5.2f' % ('Total', total_hours))
         self.msg(u'\nUse `taxi ci` to commit staging changes to the server')
 
     def pushed_entry(self, entry, error):
@@ -184,3 +204,7 @@ class BaseUi(object):
 
     def pushing_entries(self):
         self.msg(u"Pushing entries...\n")
+
+    def search_results(self, projects):
+        for project in projects:
+            self.msg(u'%s %4s %s' % (project.get_short_status(), project.id, project.name))
