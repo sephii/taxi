@@ -8,7 +8,7 @@ import subprocess
 from taxi import remote
 from taxi.exceptions import (
         CancelException,
-        ProjectNotFoundError,
+        UndefinedAliasError,
         UnknownDirectionError,
         UsageError
 )
@@ -88,8 +88,8 @@ class AddCommand(BaseCommand):
 
     Searches and prompts for project, activity and alias and adds that as a new
     entry to .tksrc.
-    """
 
+    """
     def validate(self):
         if len(self.arguments) < 1:
             raise UsageError()
@@ -162,8 +162,8 @@ class AliasCommand(BaseCommand):
     - The last form will add a new alias in your configuration file
 
     You can also run this command without any argument to view all your mappings.
-    """
 
+    """
     MODE_SHOW_MAPPING = 0
     MODE_ADD_ALIAS = 1
     MODE_LIST_ALIASES = 2
@@ -234,12 +234,13 @@ class AliasCommand(BaseCommand):
 
         self.view.alias_added(alias_name, mapping)
 
-class AutofillCommand(BaseCommand):
+class AutofillCommand(BaseTimesheetCommand):
     """
     Usage: autofill
-    """
-    # TODO add description
 
+    Fills your timesheet up to today, for the defined auto_fill_days.
+
+    """
     def run(self):
         try:
             direction = self.settings.get('default', 'auto_add')
@@ -252,34 +253,10 @@ class AutofillCommand(BaseCommand):
             return
 
         if direction == Settings.AUTO_ADD_OPTIONS['AUTO']:
-            p1 = PlainTextParser(PlainFileIo(self.options.file))
-
             try:
-                if p1.is_top_down():
-                    direction = Settings.AUTO_ADD_OPTIONS['BOTTOM']
-                else:
-                    direction = Settings.AUTO_ADD_OPTIONS['TOP']
+                direction = self.get_entries_direction()
             except UnknownDirectionError:
                 direction = None
-
-            if direction is None:
-                # Unable to automatically detect the entries direction, we try to get a
-                # previous file to see if we're lucky
-                prev_month = datetime.date.today() - datetime.timedelta(days=30)
-                oldfile = prev_month.strftime(self.options.unparsed_file)
-
-                try:
-                    p2 = PlainTextParser(PlainFileIo(oldfile))
-                except ParseError:
-                    direction = None
-                else:
-                    try:
-                        if p2.is_top_down():
-                            direction = Settings.AUTO_ADD_OPTIONS['BOTTOM']
-                        else:
-                            direction = Settings.AUTO_ADD_OPTIONS['TOP']
-                    except UnknownDirectionError:
-                        direction = None
 
         if direction is None:
             direction = Settings.AUTO_ADD_OPTIONS['TOP']
@@ -317,15 +294,16 @@ class KittyCommand(BaseCommand):
           Happy kitty, sleepy kitty
               Purr, purr, purr
     """
-
     def run(self):
         self.view.msg(self.__doc__)
 
 class CleanAliasesCommand(BaseCommand):
-    """Usage: clean-aliases
+    """
+    Usage: clean-aliases
 
-    Removes aliases from your config file that point to inactive projects."""
+    Removes aliases from your config file that point to inactive projects.
 
+    """
     def run(self):
         aliases = self.settings.get_projects()
         inactive_aliases = []
@@ -353,8 +331,8 @@ class CommitCommand(BaseTimesheetCommand):
     Usage: commit
 
     Commits your work to the server.
-    """
 
+    """
     def run(self):
         t = self.get_timesheet()
 
@@ -394,23 +372,31 @@ class EditCommand(BaseTimesheetCommand):
     Usage: edit
 
     Opens your zebra file in your favourite editor.
-    """
 
+    """
     def run(self):
         # Create the file if it does not exist yet
         file.create_file(self.options.file)
         is_top_down = None
 
         if self.settings.get('default', 'auto_add') != Settings.AUTO_ADD_OPTIONS['NO']:
-            t = self.get_timesheet()
-            is_top_down = self.get_entries_direction()
-            auto_fill_days = self.settings.get_auto_fill_days()
-            if auto_fill_days:
-                t.prefill(auto_fill_days, limit=None,
-                          add_to_bottom=is_top_down)
+            try:
+                t = self.get_timesheet()
+            except UndefinedAliasError, ParseError:
+                pass
+            else:
+                try:
+                    is_top_down = self.get_entries_direction()
+                except UnknownDirectionError:
+                    is_top_down = True
 
-            t.add_date(datetime.date.today(), is_top_down)
-            t.save()
+                auto_fill_days = self.settings.get_auto_fill_days()
+                if auto_fill_days:
+                    t.prefill(auto_fill_days, limit=None,
+                              add_to_bottom=is_top_down)
+
+                t.add_date(datetime.date.today(), is_top_down)
+                t.save()
 
         try:
             editor = self.settings.get('default', 'editor')
@@ -419,14 +405,44 @@ class EditCommand(BaseTimesheetCommand):
 
         file.spawn_editor(self.options.file, editor)
 
-        self.view.show_status(t.get_entries())
+        t = self.get_timesheet(True)
+        self.view.show_status(sorted(t.get_entries()))
+
+class HelpCommand(BaseCommand):
+    """
+    YO DAWG you asked for help for the help command. Try to search Google in
+    Google instead.
+
+    """
+    def __init__(self, application_container):
+        super(HelpCommand, self).__init__(application_container)
+        self.commands_mapping = application_container.commands_mapping
+
+    def setup(self):
+        if len(self.arguments) == 0:
+            self.command = None
+        else:
+            self.command = self.arguments[0]
+
+    def run(self):
+        if self.command is None:
+            raise UsageError()
+        elif self.command == 'help':
+            self.view.command_usage(self)
+        else:
+            if self.command in self.commands_mapping:
+                self.view.command_usage(self.commands_mapping[self.command])
+            else:
+                self.view.err(u"Command %s doesn't exist." % self.command)
 
 class SearchCommand(BaseCommand):
-    """Usage: search search_string
+    """
+    Usage: search search_string
 
     Searches for a project by its name. The letter in the first column indicates
-    the status of the project: [N]ot started, [A]ctive, [F]inished, [C]ancelled."""
+    the status of the project: [N]ot started, [A]ctive, [F]inished, [C]ancelled.
 
+    """
     def validate(self):
         if len(self.arguments) < 1:
             raise UsageError()
@@ -437,11 +453,13 @@ class SearchCommand(BaseCommand):
         self.view.search_results(projects)
 
 class ShowCommand(BaseCommand):
-    """Usage: show project_id
+    """
+    Usage: show project_id
 
     Shows the details of the given project_id (you can find it with the search
-    command)."""
+    command).
 
+    """
     def validate(self):
         if len(self.arguments) < 1:
             raise UsageError()
@@ -468,12 +486,14 @@ class ShowCommand(BaseCommand):
         self.view.project_with_activities(project, mappings)
 
 class StartCommand(BaseTimesheetCommand):
-    """Usage: start project_name
+    """
+    Usage: start project_name
 
     Use it when you start working on the project project_name. This will add the
     project name and the current time to your entries file. When you're
-    finished, use the stop command."""
+    finished, use the stop command.
 
+    """
     def validate(self):
         if len(self.arguments) != 1:
             raise UsageError()
@@ -483,8 +503,7 @@ class StartCommand(BaseTimesheetCommand):
 
     def run(self):
         if self.project_name not in self.settings.get_projects().keys():
-            raise ProjectNotFoundError("Error: the project '%s' doesn't exist" %
-                                       self.project_name)
+            raise UndefinedAliasError(self.project_name)
 
         file.create_file(self.options.file)
 
@@ -494,60 +513,52 @@ class StartCommand(BaseTimesheetCommand):
         t.add_entry(e, self.get_entries_direction())
         t.save()
 
-def status(options, args):
-    """Usage: status
+class StatusCommand(BaseTimesheetCommand):
+    """
+    Usage: status
 
-    Shows the summary of what's going to be committed to the server."""
+    Shows the summary of what's going to be committed to the server.
 
-    total_hours = 0
+    """
 
-    parser = TaxiParser(options.file)
-    parser.check_entries_mapping(settings.get_projects().keys())
+    def setup(self):
+        self.date = self.options.date
 
-    print(u'Staging changes :\n')
-    entries_list = sorted(parser.get_entries(date=options.date))
+    def run(self):
+        t = self.get_timesheet()
+        self.view.show_status(sorted(t.get_entries()))
 
-    for date, entries in entries_list:
-        if len(entries) == 0:
-            continue
-
-        subtotal_hours = 0
-        print(u'# %s #' % date.strftime('%A %d %B').capitalize())
-        for entry in entries:
-            print(entry)
-            subtotal_hours += entry.get_duration() or 0
-
-        print(u'%-29s %5.2f' % ('', subtotal_hours))
-        print('')
-
-        total_hours += subtotal_hours
-
-    print(u'%-29s %5.2f' % ('Total', total_hours))
-    print(u'\nUse `taxi ci` to commit staging changes to the server')
-
-def stop(options, args):
-    """Usage: stop [description]
+class StopCommand(BaseTimesheetCommand):
+    """
+    Usage: stop [description]
 
     Use it when you stop working on the current task. You can add a description
-    to what you've done."""
+    to what you've done.
 
-    if len(args) == 2:
-        description = args[1]
-    else:
-        description = None
+    """
+    def setup(self):
+        if len(self.arguments) == 0:
+            self.description = None
+        else:
+            self.description = ' '.join(self.arguments)
 
-    parser = TaxiParser(options.file)
-    parser.continue_entry(datetime.date.today(), \
-            datetime.datetime.now().time(), description)
-    parser.update_file()
+    def run(self):
+        t = self.get_timesheet()
+        t.continue_entry(datetime.date.today(), datetime.datetime.now().time(),
+                         self.description)
+        t.save()
 
-def update(options, args):
-    """Usage: update
+class UpdateCommand(BaseCommand):
+    """
+    Usage: update
 
-    Synchronizes your project database with the server."""
+    Synchronizes your project database with the server.
 
-    projects_db.update(
-            settings.get('default', 'site'),
-            settings.get('default', 'username'),
-            settings.get('default', 'password')
-    )
+    """
+    def setup(self):
+        self.site = self.settings.get('default', 'site')
+        self.username = self.settings.get('default', 'username')
+        self.password = self.settings.get('default', 'password')
+
+    def run(self):
+        self.projects_db.update(self.site, self.username, self.password)

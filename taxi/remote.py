@@ -26,6 +26,7 @@ class Remote(object):
         """Encodes parameters to use them in a request"""
         for key, value in parameters.iteritems():
             if isinstance(value, unicode):
+                # TODO use utf-8 here
                 # According to the HTTP spec, parameters are encoded in
                 # iso-8859-1
                 parameters[key] = value.encode('iso-8859-1')

@@ -1,3 +1,4 @@
+import inspect
 import re
 import sys
 
@@ -175,13 +176,13 @@ class BaseUi(object):
             subtotal_hours = 0
             self.msg(u'# %s #' % date.strftime('%A %d %B').capitalize())
             for entry in entries:
-                self.msg(entry)
+                self.msg(unicode(entry))
                 subtotal_hours += entry.get_duration() or 0
 
             self.msg(u'%-29s %5.2f\n' % ('', subtotal_hours))
             total_hours += subtotal_hours
 
-        self.msg(u'\n%-29s %5.2f' % ('Total', total_hours))
+        self.msg(u'%-29s %5.2f' % ('Total', total_hours))
         self.msg(u'\nUse `taxi ci` to commit staging changes to the server')
 
     def pushed_entry(self, entry, error):
@@ -208,3 +209,14 @@ class BaseUi(object):
     def search_results(self, projects):
         for project in projects:
             self.msg(u'%s %4s %s' % (project.get_short_status(), project.id, project.name))
+
+    def suggest_aliases(self, not_found_alias, aliases):
+        self.err(u"The alias `%s` is not mapped in your configuration file." %
+                 not_found_alias)
+
+        if len(aliases) > 0:
+            self.msg(u"Did you mean one of the following?\n\n\t%s" %
+                     "\n\t".join(aliases))
+
+    def command_usage(self, command):
+        self.msg(inspect.getdoc(command))

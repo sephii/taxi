@@ -148,8 +148,11 @@ Description: %s""" % (
 
     @classmethod
     def str_to_tuple(cls, string):
-        """Converts a string in the format xxx/yyy to a (project, activity)
-        tuple"""
+        """
+        Converts a string in the format xxx/yyy to a (project, activity)
+        tuple
+
+        """
         matches = re.match(cls.STR_TUPLE_REGEXP, string)
 
         if not matches or len(matches.groups()) != 2:
@@ -159,8 +162,11 @@ Description: %s""" % (
 
     @classmethod
     def tuple_to_str(cls, t):
-        """Converts a (project, activity) tuple to a string in the format
-        xxx/yyy"""
+        """
+        Converts a (project, activity) tuple to a string in the format
+        xxx/yyy
+
+        """
         if len(t) != 2:
             return None
 
@@ -328,23 +334,24 @@ class Timesheet:
         last_entry_line = self._get_latest_entry_for_date(date)
 
         if (last_entry_line is None or not
-                isinstance(self.parser.parsed_lines[last_entry_line].date, tuple) or
-                self.parser.parsed_lines[last_entry_line].duration[1] is not None):
+                isinstance(self.parser.parsed_lines[last_entry_line].time, tuple) or
+                self.parser.parsed_lines[last_entry_line].time[1] is not None):
             raise ParseError("No activity in progress found")
 
         last_entry = self.parser.parsed_lines[last_entry_line]
 
         t = (datetime.datetime.now() -
             (datetime.datetime.combine(datetime.datetime.today(),
-                last_entry.duration[0]))).seconds / 60
+                last_entry.time[0]))).seconds / 60
         r = t % 15
         t += 15 - r if r != 0 else 0
         rounded_time = (datetime.datetime.combine(datetime.datetime.today(),
-            last_entry.duration[0]) + datetime.timedelta(minutes = t))
-        last_entry.duration = (found_entry.duration[0], rounded_time)
-        last_entry.description = description or '?'
+            last_entry.time[0]) + datetime.timedelta(minutes = t))
 
-        self.parser.parsed_lines[last_entry_line] = last_entry
+        new_entry = EntryLine(last_entry.alias, (last_entry.time[0],
+            rounded_time), description or '?')
+
+        self.parser.parsed_lines[last_entry_line] = new_entry
 
     def prefill(self, auto_fill_days, limit=None, add_to_bottom=True):
         entries = self.get_entries()
@@ -422,6 +429,7 @@ class Timesheet:
         Returns True if the most recent entries are on the bottom of the file,
         False otherwise. Raises UnknownDirectionError if it's unable to detect
         it.
+
         """
         date = None
         for line in self.parser.parsed_lines:
