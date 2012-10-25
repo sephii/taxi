@@ -29,7 +29,7 @@ class Settings:
         except IOError:
             raise IOError('The specified configuration file `%s` doesn\'t exist' % file)
 
-    def get(self, section, key):
+    def get(self, key, section='default'):
         try:
             return self.config.get(section, key)
         except ConfigParser.NoOptionError:
@@ -39,7 +39,7 @@ class Settings:
             raise
 
     def get_auto_fill_days(self):
-        auto_fill_days = self.get('default', 'auto_fill_days')
+        auto_fill_days = self.get('auto_fill_days')
 
         if not auto_fill_days:
             return []

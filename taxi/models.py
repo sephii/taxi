@@ -2,7 +2,7 @@
 import datetime
 import re
 
-from taxi.exceptions import UndefinedAliasError, UnknownDirectionError
+from taxi.exceptions import NoActivityInProgressError, UndefinedAliasError, UnknownDirectionError
 from taxi.parser import DateLine, EntryLine, TextLine
 from taxi.utils import date as date_utils
 
@@ -355,7 +355,7 @@ class Timesheet:
         if (last_entry_line is None or not
                 isinstance(self.parser.parsed_lines[last_entry_line].time, tuple) or
                 self.parser.parsed_lines[last_entry_line].time[1] is not None):
-            raise ParseError("No activity in progress found")
+            raise NoActivityInProgressError()
 
         last_entry = self.parser.parsed_lines[last_entry_line]
 

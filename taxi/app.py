@@ -74,7 +74,7 @@ Available commands:
 
         if options.file is None:
             try:
-                options.file = settings.get('default', 'file')
+                options.file = settings.get('file')
             except ConfigParser.NoOptionError:
                 raise Exception("Error: no file to parse. You must either "
                                 "define one in your config file with the "

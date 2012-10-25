@@ -167,12 +167,11 @@ class ZebraRemote(Remote):
 
         projects_list = []
         i = 0
-        print(u'%d projects found' % len(projects))
 
         for project in projects:
-            p = Project(int(project['id']), project['name'],\
-                    project['status'], project['description'],\
-                    project['budget'])
+            p = Project(int(project['id']), project['name'],
+                        project['status'], project['description'],
+                        project['budget'])
 
             try:
                 p.start_date = datetime.strptime(project['startdate'], '%Y-%m-%d')

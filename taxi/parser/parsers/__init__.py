@@ -1,3 +1,5 @@
+from taxi.parser import ParseError
+
 class BaseParser(object):
     def __init__(self, io):
         self.io = io
@@ -14,11 +16,9 @@ class BaseParser(object):
             for line in self.lines:
                 self.parsed_lines.append(self.parse_line())
                 self.current_line_number += 1
-        except Exception as e:
-            # TODO
+        except ParseError as e:
+            e.line_number = self.current_line_number
             raise
-            raise ParseError("Line #%s is not correctly formatted (error was "
-                             " '%s')" % (self.current_line_number, e.message))
 
     def parse_line(self):
         raise NotImplementedError()

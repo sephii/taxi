@@ -41,7 +41,7 @@ class BaseTimesheetCommand(BaseCommand):
 
         p = PlainTextParser(PlainFileIo(self.options.file))
         t = Timesheet(p, self.settings.get_projects(),
-                      self.settings.get('default', 'date_format'))
+                      self.settings.get('date_format'))
         setattr(self, '_current_timesheet', t)
 
         return t
@@ -54,8 +54,7 @@ class BaseTimesheetCommand(BaseCommand):
         except ParseError:
             pass
 
-        if (self.settings.get('default', 'auto_add') ==
-                Settings.AUTO_ADD_OPTIONS['AUTO']):
+        if self.settings.get('auto_add') == Settings.AUTO_ADD_OPTIONS['AUTO']:
             if t is not None:
                 try:
                     is_top_down = t.is_top_down()
@@ -71,12 +70,12 @@ class BaseTimesheetCommand(BaseCommand):
                 try:
                     p = PlainTextParser(PlainFileIo(oldfile))
                     t2 = Timesheet(p, self.settings.get_projects(),
-                                   self.settings.get('default', 'date_format'))
+                                   self.settings.get('date_format'))
                     is_top_down = t2.is_top_down()
                 except ParseError, UnknownDirectionError:
                     is_top_down = False
         else:
-            is_top_down = (self.settings.get('default', 'auto_add') ==
+            is_top_down = (self.settings.get('auto_add') ==
                            Settings.AUTO_ADD_OPTIONS['BOTTOM'])
 
         return is_top_down
@@ -242,7 +241,7 @@ class AutofillCommand(BaseTimesheetCommand):
     """
     def run(self):
         try:
-            direction = self.settings.get('default', 'auto_add')
+            direction = self.settings.get('auto_add')
         except NoOptionError:
             direction = Settings.AUTO_ADD_OPTIONS['AUTO']
 
@@ -271,7 +270,7 @@ class AutofillCommand(BaseTimesheetCommand):
             file.create_file(self.options.file)
             p = PlainTextParser(PlainFileIo(self.options.file))
             t = Timesheet(p, self.settings.get_projects(),
-                          self.settings.get('default', 'date_format'))
+                          self.settings.get('date_format'))
 
             t.prefill(auto_fill_days, last_date, add_to_bottom)
             t.save()
@@ -345,9 +344,9 @@ class CommitCommand(BaseTimesheetCommand):
                 return
 
         self.view.pushing_entries()
-        r = remote.ZebraRemote(self.settings.get('default', 'site'),
-                               self.settings.get('default', 'username'),
-                               self.settings.get('default', 'password'))
+        r = remote.ZebraRemote(self.settings.get('site'),
+                               self.settings.get('username'),
+                               self.settings.get('password'))
         entries_to_push = t.get_entries(self.options.date, exclude_ignored=True)
         (pushed_entries, failed_entries) = r.send_entries(entries_to_push,
                                                           self._entry_pushed)
@@ -378,7 +377,7 @@ class EditCommand(BaseTimesheetCommand):
         file.create_file(self.options.file)
         is_top_down = None
 
-        if self.settings.get('default', 'auto_add') != Settings.AUTO_ADD_OPTIONS['NO']:
+        if self.settings.get('auto_add') != Settings.AUTO_ADD_OPTIONS['NO']:
             try:
                 t = self.get_timesheet()
             except UndefinedAliasError, ParseError:
@@ -398,7 +397,7 @@ class EditCommand(BaseTimesheetCommand):
                 t.save()
 
         try:
-            editor = self.settings.get('default', 'editor')
+            editor = self.settings.get('editor')
         except NoOptionError:
             editor = None
 
@@ -555,15 +554,15 @@ class UpdateCommand(BaseCommand):
 
     """
     def setup(self):
-        self.site = self.settings.get('default', 'site')
-        self.username = self.settings.get('default', 'username')
-        self.password = self.settings.get('default', 'password')
+        self.site = self.settings.get('site')
+        self.username = self.settings.get('username')
+        self.password = self.settings.get('password')
 
     def run(self):
         self.view.updating_projects_database()
 
-        remote = ZebraRemote(self.site, self.username, self.password)
-        projects = remote.get_projects()
+        r = remote.ZebraRemote(self.site, self.username, self.password)
+        projects = r.get_projects()
         self.projects_db.update(projects)
 
         self.view.projects_database_update_success()

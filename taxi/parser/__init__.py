@@ -1,7 +1,15 @@
 # -*- coding: utf-8 -*-
 
 class ParseError(Exception):
-    pass
+    def __init__(self, message, line_number=None):
+        self.message = message
+        self.line_number = line_number
+
+    def __str__(self):
+        if self.line_number is not None:
+            return "Parse error at line %s: %s" % (self.line_number, self.message)
+        else:
+            return self.message
 
 class TextLine(object):
     def __init__(self, text):

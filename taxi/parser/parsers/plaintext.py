@@ -40,6 +40,11 @@ class PlainTextParser(BaseParser):
     (None, datetime.time(11, 0))
     >>> t.parsed_lines[4].description
     'bar'
+    >>> sr = StreamIo("01.01.2013\n\nfoobar 0u900-1000 baz\n# comment\nfoo -1100 bar")
+    >>> t = PlainTextParser(sr)
+    Traceback (most recent call last):
+        ...
+    ParseError: Parse error at line 3: The duration must be a float number or a HH:mm string
     """
 
     def __init__(self, file):
@@ -60,7 +65,8 @@ class PlainTextParser(BaseParser):
             return DateLine(date, line)
         else:
             if self.current_date is None:
-                raise ParseError('Entries must be defined inside a date section')
+                raise ParseError("Entries must be defined inside a date "
+                                 "section")
 
             return self._parse_entry_line(line)
 
@@ -68,7 +74,7 @@ class PlainTextParser(BaseParser):
         split_line = line.split(None, 2)
 
         if len(split_line) != 3:
-            raise ParseError()
+            raise ParseError("Couldn't split line into 3 chunks")
 
         alias = self._process_alias(split_line[0])
         time = self._process_time(split_line[1])
