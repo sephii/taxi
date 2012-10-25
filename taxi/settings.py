@@ -16,15 +16,12 @@ class Settings:
     DEFAULTS = {
             'auto_fill_days': '',
             'date_format': '%d/%m/%Y',
+            'auto_add': 'auto',
     }
 
-    def __init__(self):
-        self.config = None
-        self.filepath = None
-
-    def load(self, file):
+    def __init__(self, file):
         self.config = ConfigParser.RawConfigParser()
-        self.filepath = file
+        self.filepath = os.path.expanduser(file)
 
         try:
             with open(self.filepath, 'r') as fp:
@@ -122,16 +119,10 @@ class Settings:
                                          cutoff=0.2)
 
     def add_activity(self, alias, projectid, activityid):
-        if self.config is None:
-            raise Exception('Trying to add an activity before loading the settings file')
-
         self.config.set('wrmap', alias, '%s/%s' % (projectid, activityid))
         self.write_config()
 
     def remove_activities(self, aliases):
-        if self.config is None:
-            raise Exception('Trying to add an activity before loading the settings file')
-
         for alias in aliases:
             self.config.remove_option('wrmap', alias)
 

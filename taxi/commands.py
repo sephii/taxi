@@ -1,9 +1,6 @@
 from ConfigParser import NoOptionError
 import calendar
-import codecs
 import datetime
-import inspect
-import subprocess
 
 from taxi import remote
 from taxi.exceptions import (
@@ -57,7 +54,8 @@ class BaseTimesheetCommand(BaseCommand):
         except ParseError:
             pass
 
-        if self.settings.get('default', 'auto_add') == Settings.AUTO_ADD_OPTIONS['AUTO']:
+        if (self.settings.get('default', 'auto_add') ==
+                Settings.AUTO_ADD_OPTIONS['AUTO']):
             if t is not None:
                 try:
                     is_top_down = t.is_top_down()
@@ -78,7 +76,8 @@ class BaseTimesheetCommand(BaseCommand):
                 except ParseError, UnknownDirectionError:
                     is_top_down = False
         else:
-            is_top_down = self.settings.get('default', 'auto_add') == Settings.AUTO_ADD_OPTIONS['BOTTOM']
+            is_top_down = (self.settings.get('default', 'auto_add') ==
+                           Settings.AUTO_ADD_OPTIONS['BOTTOM'])
 
         return is_top_down
 
@@ -561,4 +560,10 @@ class UpdateCommand(BaseCommand):
         self.password = self.settings.get('default', 'password')
 
     def run(self):
-        self.projects_db.update(self.site, self.username, self.password)
+        self.view.updating_projects_database()
+
+        remote = ZebraRemote(self.site, self.username, self.password)
+        projects = remote.get_projects()
+        self.projects_db.update(projects)
+
+        self.view.projects_database_update_success()

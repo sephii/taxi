@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import codecs
 import datetime
 import re
 
@@ -26,9 +25,6 @@ class Entry:
             project_name = u'%s (%s/%s)' % (self.project_name, self.project_id, self.activity_id)
 
         return u'%-30s %-5.2f %s' % (project_name, self.get_duration() or 0, self.description)
-
-    def __str__(self):
-        return unicode(self).encode('utf-8')
 
     def is_ignored(self):
         return self.ignored or self.get_duration() == 0
@@ -108,9 +104,6 @@ Description: %s""" % (
         self.budget,
         self.description
     )
-
-    def __str__(self):
-        return unicode(self).encode('utf-8')
 
     def get_formatted_date(self, date):
         if date is not None:
@@ -283,7 +276,6 @@ class Timesheet:
 
         return ignored_entries
 
-
     def _get_latest_entry_for_date(self, date):
         date_line = None
         last_entry_line = None
@@ -301,6 +293,13 @@ class Timesheet:
 
         return last_entry_line
 
+    def _get_date_line(self, date):
+        for (i, line) in enumerate(self.parser.parsed_lines):
+            if isinstance(line, DateLine) and line.date == date:
+                return i
+
+        return None
+
     def add_entry(self, entry, add_to_bottom=True):
         new_entry = EntryLine(entry.project_name, entry.duration,
                               entry.description)
@@ -310,23 +309,43 @@ class Timesheet:
 
         last_entry_line = self._get_latest_entry_for_date(entry.date)
 
+        # An entry already exists for this date, we'll just add the new one
+        # after that one
         if last_entry_line is not None:
             self.parser.parsed_lines.insert(last_entry_line + 1, new_entry)
         else:
-            if add_to_bottom:
-                index = len(self.parser.parsed_lines)
-            else:
-                index = 0
-
-            date_line = DateLine(entry.date, date_format=self.date_format)
+            date_line_number = self._get_date_line(entry.date)
             blank_line = TextLine('')
 
-            if not add_to_bottom:
-                self.parser.parsed_lines.insert(index, blank_line)
+            # The date is already in the timesheet but it doesn't have any entry
+            if date_line_number is not None:
+                index = date_line_number + 1
 
-            self.parser.parsed_lines.insert(index, new_entry)
-            self.parser.parsed_lines.insert(index, blank_line)
-            self.parser.parsed_lines.insert(index, date_line)
+                try:
+                    if (isinstance(self.parser.parsed_lines[index], TextLine)
+                            and self.parser.parsed_lines[index].text == ''):
+                        self.parser.parsed_lines.insert(index + 1, blank_line)
+                        self.parser.parsed_lines.insert(index + 1, new_entry)
+                    else:
+                        self.parser.parsed_lines.insert(index, blank_line)
+                        self.parser.parsed_lines.insert(index, new_entry)
+                        self.parser.parsed_lines.insert(index, blank_line)
+                except ValueError:
+                    self.parser.parsed_lines.insert(index, blank_line)
+                    self.parser.parsed_lines.insert(index, new_entry)
+            else:
+                if add_to_bottom:
+                    index = len(self.parser.parsed_lines)
+                else:
+                    index = 0
+
+                if not add_to_bottom:
+                    self.parser.parsed_lines.insert(index, blank_line)
+
+                date_line = DateLine(entry.date, date_format=self.date_format)
+                self.parser.parsed_lines.insert(index, new_entry)
+                self.parser.parsed_lines.insert(index, blank_line)
+                self.parser.parsed_lines.insert(index, date_line)
 
         self._update_entries()
 
@@ -413,13 +432,14 @@ class Timesheet:
     def comment_entries(self, entries):
         for entry in entries:
             if entry.id is None:
-                # TODO
-                raise Exception()
+                raise Exception(u"Couldn't comment entry `%s` because it "
+                                "doesn't have an id" % unicode(entry))
 
             l = self.parser.parsed_lines[entry.id]
 
             if not isinstance(l, EntryLine):
-                raise Exception()
+                raise Exception(u"Couldn't comment entry `%s` because it "
+                                "is not an EntryLine" % unicode(l))
 
             l.comment()
             self.parser.parsed_lines[entry.id] = l

@@ -33,16 +33,11 @@ class ProjectsDb:
         except IOError:
             raise Exception('Error: the projects database file doesn\'t exist.  Please run `taxi update` to create it')
 
-    def update(self, base_url, username, password):
-        remote = ZebraRemote(base_url, username, password)
-        print(u'Updating database, this may take some time...')
-        projects = remote.get_projects()
+    def update(self, projects):
         lpdb = LocalProjectsDb(projects)
 
         output = open(self.path, 'w')
         pickle.dump(lpdb, output)
-
-        print(u'Projects database updated successfully')
 
     def search(self, search, active_only=False):
         projects = self._get_projects()

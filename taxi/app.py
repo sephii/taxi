@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 import datetime
 import inspect
-import locale
 from optparse import OptionParser
 import os
 import sys
@@ -69,8 +68,7 @@ Available commands:
             'update': commands.UpdateCommand,
         }
 
-        settings = Settings()
-        settings.load(options.config)
+        settings = Settings(options.config)
         if not os.path.exists(settings.TAXI_PATH):
             os.mkdir(settings.TAXI_PATH)
 

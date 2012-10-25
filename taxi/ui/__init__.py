@@ -220,3 +220,9 @@ class BaseUi(object):
 
     def command_usage(self, command):
         self.msg(inspect.getdoc(command))
+
+    def updating_projects_database(self):
+        self.msg(u"Updating database, this may take some time...")
+
+    def projects_database_update_success(self):
+        self.msg(u"Projects database updated successfully.")
