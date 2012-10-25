@@ -7,46 +7,6 @@ from taxi.parser import DateLine, EntryLine, ParseError, TextLine
 from taxi.parser.parsers import BaseParser
 
 class PlainTextParser(BaseParser):
-    r"""
-    >>> from taxi.parser.io import StreamIo
-    >>> sr = StreamIo("01.01.2013\n\nfoobar 0900-1000 baz\n# comment\nfoo -1100 bar")
-    >>> t = PlainTextParser(sr)
-    ...
-    >>> len(t.parsed_lines)
-    5
-    >>> type(t.parsed_lines[0])
-    <class 'taxi.parser.DateLine'>
-    >>> t.parsed_lines[0].date
-    datetime.date(2013, 1, 1)
-    >>> type(t.parsed_lines[1])
-    <class 'taxi.parser.TextLine'>
-    >>> t.parsed_lines[1].text
-    ''
-    >>> type(t.parsed_lines[2])
-    <class 'taxi.parser.EntryLine'>
-    >>> t.parsed_lines[2].alias
-    'foobar'
-    >>> t.parsed_lines[2].time
-    (datetime.time(9, 0), datetime.time(10, 0))
-    >>> t.parsed_lines[2].description
-    'baz'
-    >>> type(t.parsed_lines[3])
-    <class 'taxi.parser.TextLine'>
-    >>> t.parsed_lines[3].text
-    '# comment'
-    >>> t.parsed_lines[4].alias
-    'foo'
-    >>> t.parsed_lines[4].time
-    (None, datetime.time(11, 0))
-    >>> t.parsed_lines[4].description
-    'bar'
-    >>> sr = StreamIo("01.01.2013\n\nfoobar 0u900-1000 baz\n# comment\nfoo -1100 bar")
-    >>> t = PlainTextParser(sr)
-    Traceback (most recent call last):
-        ...
-    ParseError: Parse error at line 3: The duration must be a float number or a HH:mm string
-    """
-
     def __init__(self, file):
         self.current_date = None
         super(PlainTextParser, self).__init__(file)
@@ -159,6 +119,12 @@ class PlainTextParser(BaseParser):
         True
         >>> PlainTextParser.extract_date('05/08') is None
         True
+        >>> PlainTextParser.extract_date('05.082012') is None
+        True
+        >>> PlainTextParser.extract_date('05082012') is None
+        True
+        >>> PlainTextParser.extract_date('2012/0801') is None
+        True
         """
         # Try to match dd/mm/yyyy format
         date_matches = re.match(r'(\d{1,2})\D(\d{1,2})\D(\d{4}|\d{2})', line)
@@ -187,20 +153,3 @@ class PlainTextParser(BaseParser):
 
         return datetime.date(year, int(date_matches.group(2)),
                              int(date_matches.group(1)))
-
-    def get_entries_direction(self):
-        top_date = None
-
-        for line in self.lines:
-            date = self.extract_date(line['text'])
-
-            if date is not None:
-                if top_date is None:
-                    top_date = date
-                else:
-                    if top_date > date:
-                        return Settings.AUTO_ADD_OPTIONS['TOP']
-                    elif top_date < date:
-                        return Settings.AUTO_ADD_OPTIONS['BOTTOM']
-
-        return None

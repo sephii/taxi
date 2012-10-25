@@ -175,32 +175,6 @@ class Activity:
         self.price = float(price)
 
 class Timesheet:
-    r"""
-    >>> from taxi.parser.io import StreamIo
-    >>> from taxi.parser.parsers.plaintext import PlainTextParser
-    >>> m = {'foo': (123, 456), 'bar': (12, 34)}
-    >>> si = StreamIo("10.10.2012\nfoo 09:00-10:00 baz")
-    >>> p = PlainTextParser(si)
-    >>> t = Timesheet(p, m, '%d.%m.%Y')
-    >>> t.get_entries() # doctest: +ELLIPSIS
-    [(datetime.date(2012, 10, 10), [<models.Entry instance at 0x...>])]
-    >>> t.to_lines()
-    ['10.10.2012', 'foo 09:00-10:00 baz']
-    >>> e = Entry(datetime.date(2012, 10, 10), 'bar', 2, 'baz')
-    >>> t.add_entry(e)
-    >>> t.get_entries() # doctest: +ELLIPSIS
-    [(datetime.date(2012, 10, 10), [<models.Entry instance at 0x...>, <models.Entry instance at 0x...])]
-    >>> t.to_lines()
-    ['10.10.2012', 'foo 09:00-10:00 baz', 'bar 2 baz']
-    >>> e = Entry(datetime.date(2012, 10, 21), 'baz', (datetime.time(9, 0),
-    ... None), 'baz')
-    >>> t.add_entry(e)
-    Traceback (most recent call last):
-    ...
-    UndefinedAliasError: baz
-    >>> t.to_lines()
-    ['10.10.2012', 'foo 09:00-10:00 baz', 'bar 2 baz']
-    """
     def __init__(self, parser, mappings, date_format='%d.%m.%Y'):
         self.parser = parser
         self.mappings = mappings
