@@ -95,7 +95,7 @@ class ZebraRemote(Remote):
         failed_entries = []
         self._login()
 
-        for (date, entries) in entries:
+        for (date, entries) in entries.iteritems():
             for entry in entries:
                 parameters_dict = {
                     'time':         entry.get_duration(),

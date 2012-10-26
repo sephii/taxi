@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import inspect
 import re
 import sys
@@ -164,8 +165,9 @@ class BaseUi(object):
         "To ignore this error, re-run taxi with the option "
         "`--ignore-date-error`" % ', '.join(dates))
 
-    def show_status(self, entries_list):
+    def show_status(self, entries_dict):
         self.msg(u'Staging changes :\n')
+        entries_list = entries_dict.items()
         entries_list = sorted(entries_list)
         total_hours = 0
 

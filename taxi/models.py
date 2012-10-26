@@ -218,7 +218,7 @@ class Timesheet:
                 self.entries[current_date].append(entry)
 
     def get_entries(self, date=None, exclude_ignored=False):
-        entries_list = []
+        entries_dict = {}
 
         # Date can either be a single date (only 1 day) or a tuple for a
         # date range
@@ -227,19 +227,22 @@ class Timesheet:
 
         for (entrydate, entries) in self.entries.iteritems():
             if date is None or (entrydate >= date[0] and entrydate <= date[1]):
+                if entrydate not in entries_dict:
+                    entries_dict[entrydate] = []
+
                 if not exclude_ignored:
-                    entries_list.append((entrydate, entries))
+                    entries_dict[entrydate].extend(entries)
                 else:
                     d_list = [entry for entry in entries if not entry.is_ignored()]
-                    entries_list.append((entrydate, d_list))
+                    entries_dict[entrydate].extend(d_list)
 
-        return entries_list
+        return entries_dict
 
     def get_ignored_entries(self, date=None):
-        entries_list = self.get_entries(date, False)
+        entries_dict = self.get_entries(date, False)
         ignored_entries = []
 
-        for (date, entries) in entries_list:
+        for (date, entries) in entries_dict.iteritems():
             ignored_entries_list = []
             for entry in entries:
                 if entry.is_ignored():
@@ -321,6 +324,9 @@ class Timesheet:
                 self.parser.parsed_lines.insert(index, blank_line)
                 self.parser.parsed_lines.insert(index, date_line)
 
+                if add_to_bottom:
+                    self.parser.parsed_lines.insert(index, blank_line)
+
         self._update_entries()
 
     def continue_entry(self, date, end, description=None):
@@ -353,7 +359,7 @@ class Timesheet:
             today = datetime.date.today()
             cur_date = datetime.date(today.year, today.month, 1)
         else:
-            cur_date = max([date for (date, entries) in entries])
+            cur_date = max([date for (date, entries) in entries.iteritems()])
             cur_date += datetime.timedelta(days = 1)
 
         if limit is None:
@@ -396,7 +402,7 @@ class Timesheet:
         today = datetime.date.today()
         yesterday = date_utils.get_previous_working_day(today)
 
-        for (date, date_entries) in entries:
+        for (date, date_entries) in entries.iteritems():
             if date not in (today, yesterday) or date.strftime('%w') in [6, 0]:
                 if date_entries:
                     non_workday_entries.append((date, date_entries))

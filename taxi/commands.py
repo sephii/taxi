@@ -1,9 +1,11 @@
+# -*- coding: utf-8 -*-
 from ConfigParser import NoOptionError
 import calendar
 import datetime
 
 from taxi import remote
 from taxi.exceptions import (
+        NoActivityInProgressError,
         CancelException,
         UndefinedAliasError,
         UnknownDirectionError,
@@ -380,7 +382,7 @@ class EditCommand(BaseTimesheetCommand):
         if self.settings.get('auto_add') != Settings.AUTO_ADD_OPTIONS['NO']:
             try:
                 t = self.get_timesheet()
-            except UndefinedAliasError, ParseError:
+            except (UndefinedAliasError, ParseError):
                 pass
             else:
                 try:
@@ -403,8 +405,12 @@ class EditCommand(BaseTimesheetCommand):
 
         file.spawn_editor(self.options.file, editor)
 
-        t = self.get_timesheet(True)
-        self.view.show_status(sorted(t.get_entries()))
+        try:
+            t = self.get_timesheet(True)
+        except ParseError as e:
+            self.view.err(e)
+        else:
+            self.view.show_status(t.get_entries())
 
 class HelpCommand(BaseCommand):
     """
@@ -507,9 +513,14 @@ class StartCommand(BaseTimesheetCommand):
 
         duration = (datetime.datetime.now().time(), None)
         e = Entry(datetime.date.today(), self.project_name, duration, '?')
-        t = self.get_timesheet()
-        t.add_entry(e, self.get_entries_direction())
-        t.save()
+
+        try:
+            t = self.get_timesheet()
+        except ParseError as e:
+            self.view.err(e)
+        else:
+            t.add_entry(e, self.get_entries_direction())
+            t.save()
 
 class StatusCommand(BaseTimesheetCommand):
     """
@@ -523,8 +534,12 @@ class StatusCommand(BaseTimesheetCommand):
         self.date = self.options.date
 
     def run(self):
-        t = self.get_timesheet()
-        self.view.show_status(sorted(t.get_entries()))
+        try:
+            t = self.get_timesheet()
+        except ParseError as e:
+            self.view.err(e)
+        else:
+            self.view.show_status(t.get_entries())
 
 class StopCommand(BaseTimesheetCommand):
     """
@@ -541,10 +556,16 @@ class StopCommand(BaseTimesheetCommand):
             self.description = ' '.join(self.arguments)
 
     def run(self):
-        t = self.get_timesheet()
-        t.continue_entry(datetime.date.today(), datetime.datetime.now().time(),
-                         self.description)
-        t.save()
+        try:
+            t = self.get_timesheet()
+            t.continue_entry(datetime.date.today(), datetime.datetime.now().time(),
+                             self.description)
+        except ParseError as e:
+            self.view.err(e)
+        except NoActivityInProgressError:
+            self.view.err(u"You don't have any activity in progress for today")
+        else:
+            t.save()
 
 class UpdateCommand(BaseCommand):
     """

@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 class ParseError(Exception):
     def __init__(self, message, line_number=None):
         self.message = message
