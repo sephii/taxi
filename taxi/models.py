@@ -198,11 +198,12 @@ class Timesheet:
                 if line.is_ignored():
                     entry.ignored = True
 
-                if line.get_alias() in self.mappings:
+                if entry.project_name in self.mappings:
                     entry.project_id = self.mappings[entry.project_name][0]
                     entry.activity_id = self.mappings[entry.project_name][1]
                 else:
-                    raise UndefinedAliasError(line.get_alias())
+                    if not entry.is_ignored():
+                        raise UndefinedAliasError(line.get_alias())
 
                 if isinstance(line.time, tuple) and line.time[0] is None:
                     if len(self.entries[current_date]) == 0:
@@ -339,16 +340,17 @@ class Timesheet:
 
         last_entry = self.parser.parsed_lines[last_entry_line]
 
-        t = (datetime.datetime.now() -
-            (datetime.datetime.combine(datetime.datetime.today(),
-                last_entry.time[0]))).seconds / 60
-        r = t % 15
-        t += 15 - r if r != 0 else 0
-        rounded_time = (datetime.datetime.combine(datetime.datetime.today(),
-            last_entry.time[0]) + datetime.timedelta(minutes = t))
+        start_date = datetime.datetime.combine(date, last_entry.time[0])
+        end_date = datetime.datetime.combine(date, end)
+        difference_minutes = (end_date - start_date).seconds / 60
+        remainder = difference_minutes % 15
+        # round up
+        difference_minutes += 15 - remainder if remainder > 0 else 0
+        rounded_time = (start_date +
+                        datetime.timedelta(minutes=difference_minutes))
 
         new_entry = EntryLine(last_entry.alias, (last_entry.time[0],
-            rounded_time), description or '?')
+                              rounded_time), description or '?')
 
         self.parser.parsed_lines[last_entry_line] = new_entry
 
