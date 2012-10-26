@@ -105,3 +105,31 @@ foo 0900-1000 baz"""
 
         lines = t.to_lines()
         self.assertEquals(lines, ['10.10.2012', 'foo 0900-1000 baz'])
+
+    def test_complete_timesheet(self):
+        contents = """10.10.2012
+foo 0900-1000 baz
+
+11.10.2012
+foo 0900-0915 Daily scrum
+bar     -1100 Fooing the bar
+
+12.10.2012
+foobar? 1200-1300 Baring the foo
+foo -1400 Fooed on bar because foo
+foo 1400-? ?"""
+
+        t = self._create_timesheet(contents)
+        lines = t.to_lines()
+
+        self.assertEquals(lines, [
+            "10.10.2012", "foo 0900-1000 baz", "", "11.10.2012",
+            "foo 0900-0915 Daily scrum", "bar     -1100 Fooing the bar",
+            "", "12.10.2012", "foobar? 1200-1300 Baring the foo",
+            "foo -1400 Fooed on bar because foo", "foo 1400-? ?"])
+
+        t.continue_entry(datetime.date(2012, 10, 12), datetime.time(15, 12))
+        lines = t.to_lines()
+
+        self.assertEquals(lines[-1], "foo 14:00-15:15 ?")
+
