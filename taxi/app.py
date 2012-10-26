@@ -136,3 +136,7 @@ Available commands:
 
 def term_unicode(string):
     return unicode(string, sys.stdin.encoding)
+
+def main():
+    app = Taxi()
+    app.run()
