@@ -106,6 +106,39 @@ foo 0900-1000 baz"""
         lines = t.to_lines()
         self.assertEquals(lines, ['10.10.2012', 'foo 0900-1000 baz'])
 
+    def test_no_start_time(self):
+        contents = """10.10.2012
+foo 0900-1000 baz
+bar     -1100 bar
+foo     -1200 bar"""
+
+        t = self._create_timesheet(contents)
+        entries = t.get_entries()
+        entries_list = entries[datetime.date(2012, 10, 10)]
+        self.assertEquals(len(entries_list), 3)
+        self.assertEquals(entries_list[0].duration, (datetime.time(9, 0),
+                                                     datetime.time(10, 0)))
+        self.assertEquals(entries_list[1].duration, (datetime.time(10, 0),
+                                                     datetime.time(11, 0)))
+        self.assertEquals(entries_list[2].duration, (datetime.time(11, 0),
+                                                     datetime.time(12, 0)))
+
+        contents = """10.10.2012
+foo 0900-1000 baz
+bar 2 bar
+foo     -1200 bar"""
+        self.assertRaises(ParseError, self._create_timesheet, contents)
+
+        contents = """10.10.2012
+foo -1000 baz"""
+        self.assertRaises(ParseError, self._create_timesheet, contents)
+
+        contents = """10.10.2012
+foo 0900-1000 baz
+bar 1000-? bar
+foo     -1200 bar"""
+        self.assertRaises(ParseError, self._create_timesheet, contents)
+
     def test_complete_timesheet(self):
         contents = """10.10.2012
 foo 0900-1000 baz
@@ -117,6 +150,7 @@ bar     -1100 Fooing the bar
 12.10.2012
 foobar? 1200-1300 Baring the foo
 foo -1400 Fooed on bar because foo
+foo 0 Ignored foobar
 foo 1400-? ?"""
 
         t = self._create_timesheet(contents)
@@ -126,10 +160,26 @@ foo 1400-? ?"""
             "10.10.2012", "foo 0900-1000 baz", "", "11.10.2012",
             "foo 0900-0915 Daily scrum", "bar     -1100 Fooing the bar",
             "", "12.10.2012", "foobar? 1200-1300 Baring the foo",
-            "foo -1400 Fooed on bar because foo", "foo 1400-? ?"])
+            "foo -1400 Fooed on bar because foo", "foo 0 Ignored foobar",
+            "foo 1400-? ?"])
 
         t.continue_entry(datetime.date(2012, 10, 12), datetime.time(15, 12))
-        lines = t.to_lines()
 
+        lines = t.to_lines()
         self.assertEquals(lines[-1], "foo 14:00-15:15 ?")
+
+        entries = t.get_entries(datetime.date(2012, 10, 12))
+        self.assertEquals(len(entries), 1)
+        entries_list = entries[datetime.date(2012, 10, 12)]
+        self.assertEquals(len(entries_list), 4)
+        self.assertEquals(entries_list[0].project_name, 'foobar')
+        self.assertTrue(entries_list[0].is_ignored())
+        self.assertEquals(entries_list[0].duration, (datetime.time(12, 0),
+                                                     datetime.time(13, 0)))
+        self.assertEquals(entries_list[1].project_name, 'foo')
+        self.assertFalse(entries_list[1].is_ignored())
+        self.assertTrue(entries_list[2].is_ignored())
+        self.assertEquals(entries_list[2].duration, 0)
+        self.assertTrue(entries_list[3].is_ignored())
+        self.assertEquals(entries_list[3].duration, (datetime.time(14, 0), None))
 

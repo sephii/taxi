@@ -539,7 +539,7 @@ class StatusCommand(BaseTimesheetCommand):
         except ParseError as e:
             self.view.err(e)
         else:
-            self.view.show_status(t.get_entries())
+            self.view.show_status(t.get_entries(self.date))
 
 class StopCommand(BaseTimesheetCommand):
     """

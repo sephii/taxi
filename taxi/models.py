@@ -2,8 +2,12 @@
 import datetime
 import re
 
-from taxi.exceptions import NoActivityInProgressError, UndefinedAliasError, UnknownDirectionError
-from taxi.parser import DateLine, EntryLine, TextLine
+from taxi.exceptions import (
+        NoActivityInProgressError,
+        UndefinedAliasError,
+        UnknownDirectionError
+)
+from taxi.parser import DateLine, EntryLine, TextLine, ParseError
 from taxi.utils import date as date_utils
 
 class Entry:
@@ -205,12 +209,16 @@ class Timesheet:
                     if not entry.is_ignored():
                         raise UndefinedAliasError(line.get_alias())
 
+                # No start time defined, take the end time of the previous entry
                 if isinstance(line.time, tuple) and line.time[0] is None:
                     if len(self.entries[current_date]) == 0:
-                        raise Exception("no previous date")
-                    if not isinstance(self.entries[current_date][-1].duration,
-                                      tuple):
-                        raise Exception("not a tuple")
+                        raise ParseError("-HH:mm notation used but no previous "
+                                         "entry to take start time from", i)
+                    if (not isinstance(self.entries[current_date][-1].duration,
+                                      tuple) or
+                            self.entries[current_date][-1].duration[1] is None):
+                        raise ParseError("-HH:mm notation used but previous "
+                                         "entry doesn't have a start time", i)
 
                     prev_entry = self.entries[current_date][-1]
                     line.time = (prev_entry.duration[1], line.time[1])
