@@ -249,7 +249,7 @@ class Timesheet:
 
     def get_ignored_entries(self, date=None):
         entries_dict = self.get_entries(date, False)
-        ignored_entries = []
+        ignored_entries = {}
 
         for (date, entries) in entries_dict.iteritems():
             ignored_entries_list = []
@@ -258,7 +258,7 @@ class Timesheet:
                     ignored_entries_list.append(entry)
 
             if ignored_entries_list:
-                ignored_entries.append((date, ignored_entries_list))
+                ignored_entries[date] = ignored_entries_list
 
         return ignored_entries
 
@@ -431,8 +431,11 @@ class Timesheet:
                 raise Exception(u"Couldn't comment entry `%s` because it "
                                 "is not an EntryLine" % unicode(l))
 
-            l.comment()
-            self.parser.parsed_lines[entry.id] = l
+            new_text_line = TextLine(unicode(l))
+            new_text_line.comment()
+            self.parser.parsed_lines[entry.id] = new_text_line
+
+        self._update_entries()
 
     def is_top_down(self):
         """

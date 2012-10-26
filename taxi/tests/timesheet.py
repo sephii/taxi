@@ -2,7 +2,7 @@
 import datetime
 import unittest
 
-from taxi.exceptions import UndefinedAliasError
+from taxi.exceptions import UndefinedAliasError, UnknownDirectionError
 from taxi.models import Entry, Timesheet
 from taxi.parser import DateLine, EntryLine, ParseError, TextLine
 from taxi.parser.io import StreamIo
@@ -163,6 +163,10 @@ foo 1400-? ?"""
             "foo -1400 Fooed on bar because foo", "foo 0 Ignored foobar",
             "foo 1400-? ?"])
 
+        ignored_entries = t.get_ignored_entries()
+        self.assertEquals(len(ignored_entries), 1)
+        self.assertEquals(len(ignored_entries[datetime.date(2012, 10, 12)]), 3)
+
         t.continue_entry(datetime.date(2012, 10, 12), datetime.time(15, 12))
 
         lines = t.to_lines()
@@ -183,3 +187,84 @@ foo 1400-? ?"""
         self.assertTrue(entries_list[3].is_ignored())
         self.assertEquals(entries_list[3].duration, (datetime.time(14, 0), None))
 
+    def test_is_top_down(self):
+        contents = """31.03.2013
+foo 2 bar
+bar 0900-1000 bar"""
+
+        t = self._create_timesheet(contents)
+        self.assertRaises(UnknownDirectionError, t.is_top_down)
+
+        contents = """31.03.2013
+foo 2 bar
+bar 0900-1000 bar
+31.03.2013
+foo 1 bar"""
+
+        t = self._create_timesheet(contents)
+        self.assertRaises(UnknownDirectionError, t.is_top_down)
+
+        contents = """31.03.2013
+foo 2 bar
+bar 0900-1000 bar
+01.04.2013
+foo 1 bar"""
+
+        t = self._create_timesheet(contents)
+        self.assertTrue(t.is_top_down())
+
+        contents = """01.04.2013
+foo 2 bar
+bar 0900-1000 bar
+31.03.2013
+foo 1 bar"""
+
+        t = self._create_timesheet(contents)
+        self.assertFalse(t.is_top_down())
+
+        contents = """01.04.2013
+31.03.2013"""
+
+        t = self._create_timesheet(contents)
+        self.assertFalse(t.is_top_down())
+
+    def test_comment_entries(self):
+        contents = """01.04.2013
+foo 2 bar
+bar 0900-1000 bar
+31.03.2013
+foo 1 bar"""
+
+        t = self._create_timesheet(contents)
+        entries = t.get_entries(datetime.date(2013, 4, 1))
+
+        for (date, entries_list) in entries.iteritems():
+            t.comment_entries(entries_list)
+
+        entries = t.get_entries()
+        self.assertEquals(entries[datetime.date(2013, 4, 1)], [])
+        self.assertEquals(len(entries[datetime.date(2013, 3, 31)]), 1)
+
+        lines = t.to_lines()
+        self.assertEquals(lines, ["01.04.2013", "# foo 2 bar",
+                                  "# bar 0900-1000 bar", "31.03.2013",
+                                  "foo 1 bar"])
+
+    def test_add_date(self):
+        t = self._create_timesheet('')
+        t.add_date(datetime.date(2013, 1, 1))
+        self.assertEquals(len(t.get_entries()), 1)
+        t.add_date(datetime.date(2013, 1, 1))
+        self.assertEquals(len(t.get_entries()), 1)
+        t.add_date(datetime.date(2013, 1, 2))
+        self.assertEquals(len(t.get_entries()), 2)
+
+        lines = t.to_lines()
+        self.assertEquals(lines, ["", "01.01.2013", "", "02.01.2013", ""])
+
+        t = self._create_timesheet('')
+        t.add_date(datetime.date(2013, 1, 1), False)
+        t.add_date(datetime.date(2013, 1, 2), False)
+
+        lines = t.to_lines()
+        self.assertEquals(lines, ["02.01.2013", "", "01.01.2013", "", ""])

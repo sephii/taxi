@@ -358,7 +358,7 @@ class CommitCommand(BaseTimesheetCommand):
 
         ignored_entries = t.get_ignored_entries(self.options.date)
         ignored_entries_list = []
-        for (date, entries) in ignored_entries:
+        for (date, entries) in ignored_entries.iteritems():
             ignored_entries_list.extend(entries)
 
         self.view.pushed_entries_summary(pushed_entries, failed_entries,
