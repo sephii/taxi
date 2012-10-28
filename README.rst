@@ -101,12 +101,12 @@ Now, if you're satisfied with this, commit your hours to the server with the
 Entries file syntax
 ===================
 
-The syntax of the entries file is the following:
+The syntax of the entries file is the following::
 
-date_line
-activity_alias time description
-activity_alias time description
-...
+    date_line
+    activity_alias time description
+    activity_alias time description
+    ...
 
 date_line is a date in one of the following formats:
 
@@ -142,3 +142,10 @@ undefined end time. Now do your meeting, and when it's finished, just type::
 
 And taxi will add the end time, rounded to 15 minutes, and the description to
 the previously created entry.
+
+Getting help
+============
+
+Run taxi without any argument to get an overview of available commands and
+options. You can also use the ``help`` command followed by the name of a command
+to get detailed help on any command.
