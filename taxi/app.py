@@ -21,7 +21,7 @@ class Taxi(object):
 Available commands:
   add    \t\tsearches, prompts for project, activity and alias, adds to .tksrc
   autofill \t\tautofills the current timesheet with all the days of the month
-  clean-aliases\tremoves aliases that point to inactive projects
+  clean-aliases\t\tremoves aliases that point to inactive projects
   commit \t\tcommits the changes to the server
   edit   \t\topens your zebra file in your favourite editor
   help   \t\tprints this help or the one of the given command
@@ -45,6 +45,7 @@ Available commands:
                 ' you\'re trying to commit a date that\'s on a week-end or on another'\
                 ' day than the current day or the day before', action='store_true', default=False)
         (options, args) = opt.parse_args()
+        args = [term_unicode(arg) for arg in args]
 
         actions = {
             'add': commands.AddCommand,
@@ -123,7 +124,8 @@ Available commands:
             action.setup()
             action.validate()
         except UsageError:
-            if action is not None:
+            if (action is not None and
+                    not isinstance(action, commands.HelpCommand)):
                 view.msg(inspect.getdoc(action))
             else:
                 view.msg(opt.format_help())

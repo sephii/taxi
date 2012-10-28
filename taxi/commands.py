@@ -424,14 +424,12 @@ class HelpCommand(BaseCommand):
 
     def setup(self):
         if len(self.arguments) == 0:
-            self.command = None
+            raise UsageError()
         else:
             self.command = self.arguments[0]
 
     def run(self):
-        if self.command is None:
-            raise UsageError()
-        elif self.command == 'help':
+        if self.command == 'help':
             self.view.command_usage(self)
         else:
             if self.command in self.commands_mapping:
