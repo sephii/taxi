@@ -149,9 +149,9 @@ class AddCommand(BaseCommand):
 class AliasCommand(BaseCommand):
     """
     Usage: alias [alias]
-       alias [project_id]
-       alias [project_id/activity_id]
-       alias [alias] [project_id/activity_id]
+           alias [project_id]
+           alias [project_id/activity_id]
+           alias [alias] [project_id/activity_id]
 
     - The first form will display the mappings whose aliases start with the
       search string you entered
