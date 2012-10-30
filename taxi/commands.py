@@ -323,7 +323,7 @@ class CleanAliasesCommand(BaseCommand):
         confirm = self.view.clean_inactive_aliases(inactive_aliases)
 
         if confirm:
-            self.settings.remove_activities([item[0] for item in inactive_aliases])
+            self.settings.remove_activities([item[0][0] for item in inactive_aliases])
             self.view.msg(u"Inactive aliases have been successfully cleaned.")
 
 class CommitCommand(BaseTimesheetCommand):
