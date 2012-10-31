@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import datetime
 import inspect
+import locale
 from optparse import OptionParser
 import os
 import sys
@@ -141,5 +142,7 @@ def term_unicode(string):
     return unicode(string, sys.stdin.encoding)
 
 def main():
+    locale.setlocale(locale.LC_ALL, '')
+
     app = Taxi()
     app.run()
