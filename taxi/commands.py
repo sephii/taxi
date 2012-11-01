@@ -41,7 +41,13 @@ class BaseTimesheetCommand(BaseCommand):
         if timesheet is not None and not skip_cache:
             return timesheet
 
-        p = PlainTextParser(PlainFileIo(self.options.file))
+        try:
+            p = PlainTextParser(PlainFileIo(self.options.file))
+        except IOError:
+            # The timesheet doesn't exist, create it
+            file.create_file(self.options.file)
+            p = PlainTextParser(PlainFileIo(self.options.file))
+
         t = Timesheet(p, self.settings.get_projects(),
                       self.settings.get('date_format'))
         setattr(self, '_current_timesheet', t)
@@ -269,11 +275,7 @@ class AutofillCommand(BaseTimesheetCommand):
             last_date = datetime.date(today.year, today.month, last_day[1])
             add_to_bottom = direction == Settings.AUTO_ADD_OPTIONS['BOTTOM']
 
-            file.create_file(self.options.file)
-            p = PlainTextParser(PlainFileIo(self.options.file))
-            t = Timesheet(p, self.settings.get_projects(),
-                          self.settings.get('date_format'))
-
+            t = self.get_timesheet()
             t.prefill(auto_fill_days, last_date, add_to_bottom)
             t.save()
 
@@ -506,8 +508,6 @@ class StartCommand(BaseTimesheetCommand):
     def run(self):
         if self.project_name not in self.settings.get_projects().keys():
             raise UndefinedAliasError(self.project_name)
-
-        file.create_file(self.options.file)
 
         duration = (datetime.datetime.now().time(), None)
         e = Entry(datetime.date.today(), self.project_name, duration, '?')
