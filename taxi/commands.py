@@ -66,21 +66,21 @@ class BaseTimesheetCommand(BaseCommand):
             if t is not None:
                 try:
                     is_top_down = t.is_top_down()
-                except ParseError, UnknownDirectionError:
+                except (ParseError, UnknownDirectionError):
                     is_top_down = None
 
             if is_top_down is None:
                 # Unable to automatically detect the entries direction, we try to get a
                 # previous file to see if we're lucky
                 prev_month = datetime.date.today() - datetime.timedelta(days=30)
-                oldfile = prev_month.strftime(unparsed_filepath)
+                oldfile = prev_month.strftime(self.options.unparsed_file)
 
                 try:
                     p = PlainTextParser(PlainFileIo(oldfile))
                     t2 = Timesheet(p, self.settings.get_projects(),
                                    self.settings.get('date_format'))
                     is_top_down = t2.is_top_down()
-                except ParseError, UnknownDirectionError:
+                except (ParseError, UnknownDirectionError):
                     is_top_down = False
         else:
             is_top_down = (self.settings.get('auto_add') ==
