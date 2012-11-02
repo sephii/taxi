@@ -484,10 +484,10 @@ class ShowCommand(BaseCommand):
                             "Please run `taxi update` to create it")
 
         if project is None:
-            raise Exception("Error: the project doesn't exist")
-
-        mappings = self.settings.get_reversed_projects()
-        self.view.project_with_activities(project, mappings)
+            self.view.err(u"The project `%s` doesn't exist" % (self.project_id))
+        else:
+            mappings = self.settings.get_reversed_projects()
+            self.view.project_with_activities(project, mappings)
 
 class StartCommand(BaseTimesheetCommand):
     """
