@@ -133,13 +133,13 @@ class AddCommand(BaseCommand):
             except CancelException:
                 return
 
-            if settings.activity_exists(alias):
-                mapping = settings.get_projects()[alias]
-                overwrite = terminal.overwrite_alias(alias, mapping)
+            if self.settings.activity_exists(alias):
+                mapping = self.settings.get_projects()[alias]
+                overwrite = self.view.overwrite_alias(alias, mapping)
 
                 if overwrite == False:
                     return
-                elif ovewrite == True:
+                elif overwrite == True:
                     retry = False
                 # User chose "retry"
                 else:

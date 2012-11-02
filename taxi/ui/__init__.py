@@ -97,7 +97,7 @@ class BaseUi(object):
         mapping_name = Project.tuple_to_str(mapping)
 
         self.msg(u"The following alias has been added to your configuration "
-                 "file: %s = %s" % ((alias) + mapping_name))
+                 "file: %s = %s" % (alias, mapping_name))
 
     def _show_mapping(self, mapping, project, alias_first=True):
         (alias, t) = mapping
