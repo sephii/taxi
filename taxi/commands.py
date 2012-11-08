@@ -218,7 +218,7 @@ class AliasCommand(BaseCommand):
             raise UsageError("The mapping must be in the format xxxx/yyyy")
 
         activity = None
-        project = projects_db.get(project_activity[0])
+        project = self.projects_db.get(project_activity[0])
 
         if project:
             activity = project.get_activity(project_activity[1])
