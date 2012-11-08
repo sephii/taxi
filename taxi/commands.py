@@ -106,7 +106,7 @@ class AddCommand(BaseCommand):
         projects = sorted(projects, key=lambda project: project.name)
 
         if len(projects) == 0:
-            view.msg(u"No project matches your search string '%s" %
+            self.view.msg(u"No active project matches your search string '%s'" %
                      ''.join(search))
             return
 

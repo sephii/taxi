@@ -48,7 +48,8 @@ class ProjectsDb:
 
             for s in search:
                 s = s.lower()
-                found = project.name.lower().find(s) > -1
+                found = (project.name.lower().find(s) > -1 or
+                         str(project.id) == s)
 
                 if not found:
                     break
