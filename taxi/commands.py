@@ -229,16 +229,16 @@ class AliasCommand(BaseCommand):
                     " projects database.")
 
         if self.settings.activity_exists(alias_name):
-            existing_mapping = settings.get_projects()[alias_name]
-            confirm = self.view.confirm_alias(alias_name, existing_mapping, False)
+            existing_mapping = self.settings.get_projects()[alias_name]
+            confirm = self.view.overwrite_alias(alias_name, existing_mapping, False)
 
             if not confirm:
                 return
 
-        settings.add_activity(alias_name, project_activity[0],
-                              project_activity[1])
+        self.settings.add_activity(alias_name, project_activity[0],
+                                   project_activity[1])
 
-        self.view.alias_added(alias_name, mapping)
+        self.view.alias_added(alias_name, project_activity)
 
 class AutofillCommand(BaseTimesheetCommand):
     """
