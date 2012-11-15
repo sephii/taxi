@@ -1,3 +1,4 @@
+import codecs
 import os
 import subprocess
 
@@ -6,7 +7,7 @@ def create_file(filepath):
         os.makedirs(os.path.dirname(filepath))
 
     if not os.path.exists(filepath):
-        myfile = open(filepath, 'w')
+        myfile = codecs.open(filepath, 'w', 'utf-8')
         myfile.close()
 
 def spawn_editor(filepath, editor=None):

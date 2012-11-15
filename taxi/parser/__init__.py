@@ -39,11 +39,11 @@ class EntryLine(TextLine):
                 end = (self.time[1].strftime('%H:%M') if self.time[1] is not
                         None else '?')
 
-                time = '%s-%s' % (start, end)
+                time = u'%s-%s' % (start, end)
             else:
                 time = self.time
 
-            self.text = '%s %s %s' % (self.alias, time, self.description)
+            self.text = u'%s %s %s' % (self.alias, time, self.description)
 
     def is_ignored(self):
         return self.alias.endswith('?')

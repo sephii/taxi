@@ -21,7 +21,7 @@ class PlainFileIo(BasicIo):
     def write(self, lines):
         with codecs.open(self.file_path, 'w', 'utf-8') as f:
             for line in lines:
-                f.write('%s\n' % line)
+                f.write(u'%s\n' % line)
 
 class StreamIo(BasicIo):
     def __init__(self, text):
