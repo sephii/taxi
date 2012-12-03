@@ -123,8 +123,8 @@ Available commands:
                 ac.commands_mapping = actions
 
             action = actions[args[0]](ac)
-            action.setup()
             action.validate()
+            action.setup()
         except UsageError:
             if (action is not None and
                     not isinstance(action, commands.HelpCommand)):
