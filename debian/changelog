@@ -1,11 +1,5 @@
-taxi (2.4+gca876a5-1~OdyX1.1) UNRELEASED; urgency=low
-
-  * Update to upstream version 2.4
-
- -- Sylvain Fankhauser <sylvain.fankhauser@liip.ch>  Mon, 15 Oct 2012 15:26:26 +0200
-
-taxi (2.2+ga995f15-1~OdyX1) UNRELEASED; urgency=low
+taxi (3.0~beta4-1) liip; urgency=low
 
   * Initial release.
 
- -- Didier Raboud <didier.raboud@liip.ch>  Thu, 16 Aug 2012 18:51:01 +0200
+ -- Didier Raboud <didier.raboud@liip.ch>  Tue, 04 Dec 2012 15:19:24 +0100
