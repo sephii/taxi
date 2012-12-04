@@ -1,21 +1,26 @@
 # -*- coding: utf-8 -*-
 import datetime
-from taxi.settings import settings
+import re
+
+from taxi.exceptions import (
+        NoActivityInProgressError,
+        UndefinedAliasError,
+        UnknownDirectionError
+)
+from taxi.parser import DateLine, EntryLine, TextLine, ParseError
+from taxi.utils import date as date_utils
 
 class Entry:
-    def __init__(self, date, project_name, hours, description):
+    def __init__(self, date, project_name, hours, description, id=None):
         self.project_name = project_name
         self.duration = hours
         self.description = description
         self.date = date
         self.pushed = False
-
-        if project_name in settings.get_projects():
-            self.project_id = settings.get_projects()[project_name][0]
-            self.activity_id = settings.get_projects()[project_name][1]
-        else:
-            self.project_id = None
-            self.activity_id = None
+        self.ignored = False
+        self.project_id = None
+        self.activity_id = None
+        self.id = id
 
     def __unicode__(self):
         if self.is_ignored():
@@ -25,11 +30,8 @@ class Entry:
 
         return u'%-30s %-5.2f %s' % (project_name, self.get_duration() or 0, self.description)
 
-    def __str__(self):
-        return unicode(self).encode('utf-8')
-
     def is_ignored(self):
-        return self.project_name[-1] == '?' or self.get_duration() == 0
+        return self.ignored or self.get_duration() == 0
 
     def get_duration(self):
         if isinstance(self.duration, tuple):
@@ -68,6 +70,8 @@ class Project:
             STATUS_CANCELLED: 'C',
     }
 
+    STR_TUPLE_REGEXP = r'^(\d{1,4})(?:/(\d{1,4}))?$'
+
     def __init__(self, id, name, status = None, description = None, budget = None):
         self.id = int(id)
         self.name = name
@@ -105,9 +109,6 @@ Description: %s""" % (
         self.description
     )
 
-    def __str__(self):
-        return unicode(self).encode('utf-8')
-
     def get_formatted_date(self, date):
         if date is not None:
             try:
@@ -142,8 +143,314 @@ Description: %s""" % (
 
         return self.SHORT_STATUSES[self.status]
 
+    @classmethod
+    def str_to_tuple(cls, string):
+        """
+        Converts a string in the format xxx/yyy to a (project, activity)
+        tuple
+
+        """
+        matches = re.match(cls.STR_TUPLE_REGEXP, string)
+
+        if not matches or len(matches.groups()) != 2:
+            return None
+
+        return tuple([int(item) if item else None for item in matches.groups()])
+
+    @classmethod
+    def tuple_to_str(cls, t):
+        """
+        Converts a (project, activity) tuple to a string in the format
+        xxx/yyy
+
+        """
+        if len(t) != 2:
+            return None
+
+        if t[1] is not None:
+            return u'%s/%s' % t
+        else:
+            return unicode(t[0])
+
 class Activity:
     def __init__(self, id, name, price):
         self.id = int(id)
         self.name = name
         self.price = float(price)
+
+class Timesheet:
+    def __init__(self, parser, mappings, date_format='%d.%m.%Y'):
+        self.parser = parser
+        self.mappings = mappings
+        self.date_format = date_format
+        self._update_entries()
+
+    def _update_entries(self):
+        self.entries = {}
+        current_date = None
+
+        for (i, line) in enumerate(self.parser.parsed_lines):
+            if isinstance(line, DateLine):
+                current_date = line.date
+
+                if line.date not in self.entries:
+                    self.entries[line.date] = []
+            elif isinstance(line, EntryLine):
+                entry = Entry(current_date, line.get_alias(), line.time,
+                              line.description, i)
+
+                if line.is_ignored():
+                    entry.ignored = True
+
+                if entry.project_name in self.mappings:
+                    entry.project_id = self.mappings[entry.project_name][0]
+                    entry.activity_id = self.mappings[entry.project_name][1]
+                else:
+                    if not entry.is_ignored():
+                        raise UndefinedAliasError(line.get_alias())
+
+                # No start time defined, take the end time of the previous entry
+                if isinstance(line.time, tuple) and line.time[0] is None:
+                    if len(self.entries[current_date]) == 0:
+                        raise ParseError("-HH:mm notation used but no previous "
+                                         "entry to take start time from", i)
+                    if (not isinstance(self.entries[current_date][-1].duration,
+                                      tuple) or
+                            self.entries[current_date][-1].duration[1] is None):
+                        raise ParseError("-HH:mm notation used but previous "
+                                         "entry doesn't have a start time", i)
+
+                    prev_entry = self.entries[current_date][-1]
+                    line.time = (prev_entry.duration[1], line.time[1])
+                    entry.duration = line.time
+
+                self.entries[current_date].append(entry)
+
+    def get_entries(self, date=None, exclude_ignored=False):
+        entries_dict = {}
+
+        # Date can either be a single date (only 1 day) or a tuple for a
+        # date range
+        if date is not None and not isinstance(date, tuple):
+            date = (date, date)
+
+        for (entrydate, entries) in self.entries.iteritems():
+            if date is None or (entrydate >= date[0] and entrydate <= date[1]):
+                if entrydate not in entries_dict:
+                    entries_dict[entrydate] = []
+
+                if not exclude_ignored:
+                    entries_dict[entrydate].extend(entries)
+                else:
+                    d_list = [entry for entry in entries if not entry.is_ignored()]
+                    entries_dict[entrydate].extend(d_list)
+
+        return entries_dict
+
+    def get_ignored_entries(self, date=None):
+        entries_dict = self.get_entries(date, False)
+        ignored_entries = {}
+
+        for (date, entries) in entries_dict.iteritems():
+            ignored_entries_list = []
+            for entry in entries:
+                if entry.is_ignored():
+                    ignored_entries_list.append(entry)
+
+            if ignored_entries_list:
+                ignored_entries[date] = ignored_entries_list
+
+        return ignored_entries
+
+    def _get_latest_entry_for_date(self, date):
+        date_line = None
+        last_entry_line = None
+
+        for (i, line) in enumerate(self.parser.parsed_lines):
+            if isinstance(line, DateLine) and line.date == date:
+                date_line = i
+            elif date_line is not None:
+                if isinstance(line, EntryLine):
+                    last_entry_line = i
+                elif isinstance(line, DateLine):
+                    # Reset date_line in the case the date is twice in the
+                    # timesheet, once without any entry
+                    date_line = None
+
+        return last_entry_line
+
+    def _get_date_line(self, date):
+        for (i, line) in enumerate(self.parser.parsed_lines):
+            if isinstance(line, DateLine) and line.date == date:
+                return i
+
+        return None
+
+    def add_entry(self, entry, add_to_bottom=True):
+        new_entry = EntryLine(entry.project_name, entry.duration,
+                              entry.description)
+
+        if new_entry.get_alias() not in self.mappings:
+            raise UndefinedAliasError(new_entry.get_alias())
+
+        last_entry_line = self._get_latest_entry_for_date(entry.date)
+
+        # An entry already exists for this date, we'll just add the new one
+        # after that one
+        if last_entry_line is not None:
+            self.parser.parsed_lines.insert(last_entry_line + 1, new_entry)
+        else:
+            date_line_number = self._get_date_line(entry.date)
+            blank_line = TextLine('')
+
+            # The date is already in the timesheet but it doesn't have any entry
+            if date_line_number is not None:
+                index = date_line_number + 1
+
+                try:
+                    if (isinstance(self.parser.parsed_lines[index], TextLine)
+                            and self.parser.parsed_lines[index].text == ''):
+                        self.parser.parsed_lines.insert(index + 1, blank_line)
+                        self.parser.parsed_lines.insert(index + 1, new_entry)
+                    else:
+                        self.parser.parsed_lines.insert(index, blank_line)
+                        self.parser.parsed_lines.insert(index, new_entry)
+                        self.parser.parsed_lines.insert(index, blank_line)
+                except ValueError:
+                    self.parser.parsed_lines.insert(index, blank_line)
+                    self.parser.parsed_lines.insert(index, new_entry)
+            else:
+                if add_to_bottom:
+                    index = len(self.parser.parsed_lines)
+                else:
+                    index = 0
+
+                if not add_to_bottom:
+                    self.parser.parsed_lines.insert(index, blank_line)
+
+                date_line = DateLine(entry.date, date_format=self.date_format)
+                self.parser.parsed_lines.insert(index, new_entry)
+                self.parser.parsed_lines.insert(index, blank_line)
+                self.parser.parsed_lines.insert(index, date_line)
+
+                if add_to_bottom:
+                    self.parser.parsed_lines.insert(index, blank_line)
+
+        self._update_entries()
+
+    def continue_entry(self, date, end, description=None):
+        last_entry_line = self._get_latest_entry_for_date(date)
+
+        if (last_entry_line is None or not
+                isinstance(self.parser.parsed_lines[last_entry_line].time, tuple) or
+                self.parser.parsed_lines[last_entry_line].time[1] is not None):
+            raise NoActivityInProgressError()
+
+        last_entry = self.parser.parsed_lines[last_entry_line]
+
+        start_date = datetime.datetime.combine(date, last_entry.time[0])
+        end_date = datetime.datetime.combine(date, end)
+        difference_minutes = (end_date - start_date).seconds / 60
+        remainder = difference_minutes % 15
+        # round up
+        difference_minutes += 15 - remainder if remainder > 0 else 0
+        rounded_time = (start_date +
+                        datetime.timedelta(minutes=difference_minutes))
+
+        new_entry = EntryLine(last_entry.alias, (last_entry.time[0],
+                              rounded_time), description or '?')
+
+        self.parser.parsed_lines[last_entry_line] = new_entry
+
+    def prefill(self, auto_fill_days, limit=None, add_to_bottom=True):
+        entries = self.get_entries()
+
+        if len(entries) == 0:
+            today = datetime.date.today()
+            cur_date = datetime.date(today.year, today.month, 1)
+        else:
+            cur_date = max([date for (date, entries) in entries.iteritems()])
+            cur_date += datetime.timedelta(days = 1)
+
+        if limit is None:
+            limit = datetime.date.today()
+
+        while cur_date <= limit:
+            if cur_date.weekday() in auto_fill_days:
+                self.add_date(cur_date, add_to_bottom)
+
+            cur_date = cur_date + datetime.timedelta(days = 1)
+
+    def add_date(self, date, add_to_bottom=True):
+        # Check if we already have the current date in the file
+        if date in self.entries:
+            return
+
+        if add_to_bottom:
+            index = len(self.parser.parsed_lines)
+        else:
+            index = 0
+
+        self.parser.parsed_lines.insert(index, TextLine(''))
+        self.parser.parsed_lines.insert(index, DateLine(date, date_format=self.date_format))
+        self._update_entries()
+
+    def save(self):
+        self.parser.save()
+
+    def to_lines(self):
+        lines = []
+
+        for line in self.parser.parsed_lines:
+            lines.append(line.text)
+
+        return lines
+
+    def get_non_current_workday_entries(self, limit_date=None):
+        non_workday_entries = []
+        entries = self.get_entries(limit_date, exclude_ignored=True)
+        today = datetime.date.today()
+        yesterday = date_utils.get_previous_working_day(today)
+
+        for (date, date_entries) in entries.iteritems():
+            if date not in (today, yesterday) or date.strftime('%w') in [6, 0]:
+                if date_entries:
+                    non_workday_entries.append((date, date_entries))
+
+        return non_workday_entries
+
+    def comment_entries(self, entries):
+        for entry in entries:
+            if entry.id is None:
+                raise Exception(u"Couldn't comment entry `%s` because it "
+                                "doesn't have an id" % unicode(entry))
+
+            l = self.parser.parsed_lines[entry.id]
+
+            if not isinstance(l, EntryLine):
+                raise Exception(u"Couldn't comment entry `%s` because it "
+                                "is not an EntryLine" % unicode(l))
+
+            new_text_line = TextLine(unicode(l))
+            new_text_line.comment()
+            self.parser.parsed_lines[entry.id] = new_text_line
+
+        self._update_entries()
+
+    def is_top_down(self):
+        """
+        Returns True if the most recent entries are on the bottom of the file,
+        False otherwise. Raises UnknownDirectionError if it's unable to detect
+        it.
+
+        """
+        date = None
+        for line in self.parser.parsed_lines:
+            if isinstance(line, DateLine):
+                if date is None:
+                    date = line.date
+                else:
+                    if date != line.date:
+                        return date < line.date
+
+        raise UnknownDirectionError()

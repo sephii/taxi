@@ -1,7 +1,15 @@
-class ProjectNotFoundError(Exception):
-    def __init__(self, project_name, description):
-        self.project_name = project_name
-        self.description = description
+# -*- coding: utf-8 -*-
+class UsageError(Exception):
+    pass
 
-    def __str__(self):
-        return repr(self.description)
+class CancelException(Exception):
+    pass
+
+class NoActivityInProgressError(Exception):
+    pass
+
+class UndefinedAliasError(Exception):
+    pass
+
+class UnknownDirectionError(Exception):
+    pass

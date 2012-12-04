@@ -16,15 +16,12 @@ class Settings:
     DEFAULTS = {
             'auto_fill_days': '',
             'date_format': '%d/%m/%Y',
+            'auto_add': 'auto',
     }
 
-    def __init__(self):
-        self.config = None
-        self.filepath = None
-
-    def load(self, file):
+    def __init__(self, file):
         self.config = ConfigParser.RawConfigParser()
-        self.filepath = file
+        self.filepath = os.path.expanduser(file)
 
         try:
             with open(self.filepath, 'r') as fp:
@@ -32,7 +29,7 @@ class Settings:
         except IOError:
             raise IOError('The specified configuration file `%s` doesn\'t exist' % file)
 
-    def get(self, section, key):
+    def get(self, key, section='default'):
         try:
             return self.config.get(section, key)
         except ConfigParser.NoOptionError:
@@ -42,7 +39,7 @@ class Settings:
             raise
 
     def get_auto_fill_days(self):
-        auto_fill_days = self.get('default', 'auto_fill_days')
+        auto_fill_days = self.get('auto_fill_days')
 
         if not auto_fill_days:
             return []
@@ -93,6 +90,27 @@ class Settings:
 
         return projects
 
+    def search_aliases(self, mapping):
+        aliases = []
+
+        for (user_alias, mapped_alias) in self.get_projects().iteritems():
+            if (mapped_alias[0] != mapping[0] or
+                    (mapping[1] is not None and mapped_alias[1] != mapping[1])):
+                continue
+
+            aliases.append((user_alias, mapped_alias))
+
+        return aliases
+
+    def search_mappings(self, search_alias):
+        aliases = []
+
+        for (user_alias, mapped_alias) in self.get_projects().iteritems():
+            if search_alias is None or user_alias.startswith(search_alias):
+                aliases.append((user_alias, mapped_alias))
+
+        return aliases
+
     def project_exists(self, project_name):
         return project_name[-1] == '?' or project_name in self.get_projects()
 
@@ -101,16 +119,10 @@ class Settings:
                                          cutoff=0.2)
 
     def add_activity(self, alias, projectid, activityid):
-        if self.config is None:
-            raise Exception('Trying to add an activity before loading the settings file')
-
         self.config.set('wrmap', alias, '%s/%s' % (projectid, activityid))
         self.write_config()
 
     def remove_activities(self, aliases):
-        if self.config is None:
-            raise Exception('Trying to add an activity before loading the settings file')
-
         for alias in aliases:
             self.config.remove_option('wrmap', alias)
 
@@ -122,5 +134,3 @@ class Settings:
 
     def activity_exists(self, activity_name):
         return self.config.has_option('wrmap', activity_name)
-
-settings = Settings()

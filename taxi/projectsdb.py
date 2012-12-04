@@ -4,10 +4,10 @@ import pickle
 import os
 
 from taxi.remote import ZebraRemote
-from taxi.settings import settings
 
 class ProjectsDb:
-    DB_PATH = 'projects.db'
+    def __init__(self, path):
+        self.path = path
 
     def _get_projects(self):
         projects_cache = getattr(self, '_projects_cache', None)
@@ -15,7 +15,7 @@ class ProjectsDb:
             return projects_cache
 
         try:
-            input = open(os.path.join(settings.TAXI_PATH, self.DB_PATH), 'r')
+            input = open(self.path, 'r')
 
             try:
                 lpdb = pickle.load(input)
@@ -33,16 +33,11 @@ class ProjectsDb:
         except IOError:
             raise Exception('Error: the projects database file doesn\'t exist.  Please run `taxi update` to create it')
 
-    def update(self, base_url, username, password):
-        remote = ZebraRemote(base_url, username, password)
-        print(u'Updating database, this may take some time...')
-        projects = remote.get_projects()
+    def update(self, projects):
         lpdb = LocalProjectsDb(projects)
 
-        output = open(os.path.join(settings.TAXI_PATH, self.DB_PATH), 'w')
+        output = open(self.path, 'w')
         pickle.dump(lpdb, output)
-
-        print(u'Projects database updated successfully')
 
     def search(self, search, active_only=False):
         projects = self._get_projects()
@@ -53,7 +48,8 @@ class ProjectsDb:
 
             for s in search:
                 s = s.lower()
-                found = project.name.lower().find(s) > -1
+                found = (project.name.lower().find(s) > -1 or
+                         str(project.id) == s)
 
                 if not found:
                     break
@@ -83,5 +79,3 @@ class LocalProjectsDb:
 
     def __init__(self, projects):
         self.projects = projects
-
-projects_db = ProjectsDb()
