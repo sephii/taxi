@@ -1,3 +1,9 @@
+taxi (3.0-1) liip; urgency=low
+
+  * New 3.0 upstream release, « The Release of Aaaaarrrrrrggghhh ».
+
+ -- Didier Raboud <didier.raboud@liip.ch>  Mon, 10 Dec 2012 17:18:22 +0100
+
 taxi (3.0~beta4-1) liip; urgency=low
 
   * Initial release.
