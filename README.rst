@@ -1,4 +1,3 @@
-==============
 What is taxi ?
 ==============
 
@@ -16,7 +15,6 @@ Basically, Taxi allows you to do the following :
 * Search for projects and their activities
 * Record time spent on an activity
 
-============
 Installation
 ============
 
@@ -24,12 +22,26 @@ The main prerequesite for Taxi to work is to have python installed, you don't
 need anything else. Taxi has been tested on Python 2.6.6 and I don't know if it
 works on other versions, so feedback is welcome.
 
-The installation is done through the setup.py script. Basically, all you have to
-do is the following (as root or with sudo) ::
+The easiest way to install taxi is by using ``pip``. This will fetch the latest
+stable version and install it on your system (this can also be used to upgrade
+an existing taxi install) ::
 
-    python setup.py install
+    sudo pip install git+git://github.com/sephii/taxi@stable
 
-=============
+That's it! You can now skip to the `Configuration`_ section.
+
+If you don't have ``pip``, you should be able to install it with
+``easy_install`` ::
+
+    sudo easy_install pip
+
+Installing without pip
+------------------------
+
+Fetch the source, extract it, and run the following command ::
+
+    sudo python setup.py install
+
 Configuration
 =============
 
@@ -40,7 +52,6 @@ username/password.
 
 That's it, you're ready to go!
 
-============
 What's next?
 ============
 
@@ -87,16 +98,15 @@ Now, if you're satisfied with this, commit your hours to the server with the
 
     taxi ci
 
-===================
 Entries file syntax
 ===================
 
-The syntax of the entries file is the following:
+The syntax of the entries file is the following::
 
-date_line
-activity_alias time description
-activity_alias time description
-...
+    date_line
+    activity_alias time description
+    activity_alias time description
+    ...
 
 date_line is a date in one of the following formats:
 
@@ -117,7 +127,6 @@ time is the duration of the activity in one of the following format:
 
 description is the description of the entry.
 
-================
 Start/stop usage
 ================
 
@@ -133,3 +142,10 @@ undefined end time. Now do your meeting, and when it's finished, just type::
 
 And taxi will add the end time, rounded to 15 minutes, and the description to
 the previously created entry.
+
+Getting help
+============
+
+Run taxi without any argument to get an overview of available commands and
+options. You can also use the ``help`` command followed by the name of a command
+to get detailed help on any command.
