@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from taxi.utils import date as date_utils
+
 class ParseError(Exception):
     def __init__(self, message, line_number=None):
         self.message = message
@@ -61,5 +63,5 @@ class DateLine(TextLine):
         if text is not None:
             self.text = text
         else:
-            self.text = self.date.strftime(date_format)
+            self.text = date_utils.unicode_strftime(self.date, date_format)
 
