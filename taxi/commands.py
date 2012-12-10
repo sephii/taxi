@@ -80,7 +80,7 @@ class BaseTimesheetCommand(BaseCommand):
                     t2 = Timesheet(p, self.settings.get_projects(),
                                    self.settings.get('date_format'))
                     is_top_down = t2.is_top_down()
-                except (ParseError, UnknownDirectionError):
+                except (IOError, ParseError, UnknownDirectionError):
                     is_top_down = False
         else:
             is_top_down = (self.settings.get('auto_add') ==
