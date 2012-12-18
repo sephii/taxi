@@ -60,7 +60,7 @@ class BaseTimesheetCommand(BaseCommand):
         try:
             t = self.get_timesheet()
         except ParseError:
-            pass
+            t = None
 
         if self.settings.get('auto_add') == Settings.AUTO_ADD_OPTIONS['AUTO']:
             if t is not None:
