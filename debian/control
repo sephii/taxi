@@ -2,7 +2,8 @@ Source: taxi
 Section: comm
 Priority: extra
 Maintainer: Didier Raboud <didier.raboud@liip.ch>
-Build-Depends: debhelper (>= 9), python
+Uploaders: Gilles Meier <gilles.meier@liip.ch>
+Build-Depends: debhelper (>= 9), python, help2man
 Standards-Version: 3.9.3
 Homepage: https://github.com/sephii/taxi
 Vcs-Git: git://github.com/sephii/taxi.git
@@ -11,4 +12,18 @@ Vcs-Browser: https://github.com/sephii/taxi
 Package: taxi
 Architecture: all
 Depends: ${misc:Depends}, ${python:Depends}
-Description: That's Liip's taxi
+X-Python-Version: >= 2.6
+Description: Interface to Liip's Zebra
+ Taxi is a new interface for Zebra, based on TKS.
+ .
+ Its main advantages are :
+   - Easy to install
+   - Written in Python (yes, that's an advantage !)
+   - Quite extensible
+   - More complete
+ .
+ Basically, Taxi allows you to do the following :
+   - Parse timesheets and have a summary for each day
+   - Create new timesheets
+   - Search for projects and their activities
+   - Record time spent on an activity

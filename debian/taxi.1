@@ -1,0 +1,73 @@
+.TH TAXI "1" "January 2013" "Gilles Meier for Debian package" "User Commands"
+.SH NAME
+taxi \- Taxi is an interface for Liip's Zebra timesheeting tool
+.SH SYNOPSIS
+.B taxi
+[\fIoptions\fR] \fIcommand\fR
+.SH DESCRIPTION
+.SS "Available commands:"
+.TP
+add
+searches, prompts for project, activity and alias, adds to .tksrc
+.TP
+alias
+shows your mappings and allows you to create new ones
+.TP
+autofill
+autofills the current timesheet with all the days of the month
+.TP
+clean\-aliases
+removes aliases that point to inactive projects
+.TP
+commit
+commits the changes to the server
+.TP
+edit
+opens your zebra file in your favourite editor
+.TP
+help
+prints this help or the one of the given command
+.TP
+search
+searches for a project
+.TP
+show
+shows the activities and other details of a project
+.TP
+start
+starts the counter on a given activity
+.TP
+status
+shows the status of your entries file
+.TP
+stop
+stops the counter and record the elapsed time
+.TP
+update
+updates your project database with the one on the server
+.SH OPTIONS
+.TP
+\fB\-\-version\fR
+show program's version number and exit
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+show this help message and exit
+.TP
+\fB\-c\fR CONFIG, \fB\-\-config\fR=\fICONFIG\fR
+use CONFIG file instead of ~/.tksrc
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+make taxi verbose
+.TP
+\fB\-f\fR FILE, \fB\-\-file\fR=\fIFILE\fR
+parse FILE instead of the one defined in your CONFIG
+file
+.TP
+\fB\-d\fR DATE, \fB\-\-date\fR=\fIDATE\fR
+only process entries for date DATE (eg. 31.01.2011,
+31.01.2011\-05.02.2011)
+.TP
+\fB\-\-ignore\-date\-error\fR
+suppresses the error if you're trying to commit a date
+that's on a week\-end or on another day than the
+current day or the day before
