@@ -1,3 +1,15 @@
+taxi (3.0-2) liip; urgency=low
+
+  [ Gilles Meier ]
+  * Enhance debian package:
+    - Add help2man generated initial manpage
+    - Update long description
+    - Add copyright file
+    - Install documentation
+    - Add debian/.gitignore file
+
+ -- Didier Raboud <didier.raboud@liip.ch>  Mon, 14 Jan 2013 12:55:41 +0100
+
 taxi (3.0-1) liip; urgency=low
 
   * New 3.0 upstream release, « The Release of Aaaaarrrrrrggghhh ».
