@@ -3,7 +3,7 @@ Section: comm
 Priority: extra
 Maintainer: Didier Raboud <didier.raboud@liip.ch>
 Uploaders: Gilles Meier <gilles.meier@liip.ch>
-Build-Depends: debhelper (>= 9), python, help2man
+Build-Depends: debhelper (>= 9), python
 Standards-Version: 3.9.3
 Homepage: https://github.com/sephii/taxi
 Vcs-Git: git://github.com/sephii/taxi.git
