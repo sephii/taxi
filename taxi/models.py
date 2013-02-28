@@ -134,7 +134,7 @@ Description: %s""" % (
         return (self.status == self.STATUS_ACTIVE and
                 (self.start_date is None or
                     self.start_date <= datetime.datetime.now()) and
-                (self.end_date is None or self.end_date >
+                (self.end_date is None or self.end_date >=
                     datetime.datetime.now()))
 
     def get_short_status(self):
