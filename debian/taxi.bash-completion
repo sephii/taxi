@@ -1,0 +1,33 @@
+_taxi()
+{
+    local cur prev words cword
+    _init_completion || return
+
+    case $prev in
+        -f|--file|-c|--config)
+		# FIXME: --file, --config and --date doesn't work
+             _filedir
+             return 0
+             ;;
+        -d|--date=)
+	     # FIXME: find a way to autocomplete on dates
+             return 0
+             ;;
+	commit|ci)
+        	COMPREPLY=( $( compgen -W '--ignore-date-error' -- "$cur" ) )
+		return 0
+    esac
+
+    if [[ "$cur" == -* ]]; then
+        COMPREPLY=( $( compgen -W '-h -c -v -f -d \
+	   --version --help --config= --verbose --file= --date= \
+	   --ignore-date-error' -- "$cur" ) )
+	[[ $COMPREPLY == *= ]] && compopt -o nospace
+    else
+        COMPREPLY=( $( compgen -W 'add alias autofill clean-aliases commit \
+	    edit help search show start status stop update' -- "$cur" ) )
+    fi
+
+    return 0
+} &&
+complete -F _taxi taxi
