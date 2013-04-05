@@ -4,15 +4,11 @@ import locale
 import re
 import sys
 
-from taxi.utils import terminal
+from taxi.utils import date as date_utils, terminal
 from taxi.exceptions import CancelException
 from taxi.models import Project
 
 class BaseUi(object):
-    @staticmethod
-    def _get_locale_encoding():
-        return locale.getlocale()[1]
-
     @staticmethod
     def _get_encoding():
         # Encoding is None if the output is piped through another command (eg.
@@ -167,7 +163,7 @@ class BaseUi(object):
         self.msg(u'\n%-29s %5.2f' % ('Total ignored', ignored_hours))
 
     def non_working_dates_commit_error(self, dates):
-        dates = [d.strftime('%A %d %B').decode(self._get_locale_encoding()) for d in dates]
+        dates = [date_utils.unicode_strftime(d, '%A %d %B') for d in dates]
 
         self.err(u"You're trying to commit for a day that's "
         " on a week-end or that's not yesterday nor today (%s).\n"
@@ -188,8 +184,7 @@ class BaseUi(object):
             # The encoding of date.strftime output depends on the current
             # locale, so we decode it to get a unicode string
             self.msg(u'# %s #' %
-                     date.strftime('%A %d %B') .capitalize()
-                     .decode(self._get_locale_encoding()))
+                     date_utils.unicode_strftime(date, '%A %d %B').capitalize())
             for entry in entries:
                 self.msg(unicode(entry))
                 subtotal_hours += entry.get_duration() or 0
