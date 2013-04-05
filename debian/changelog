@@ -1,3 +1,12 @@
+taxi (3.0.2-1) liip; urgency=low
+
+  [ Gilles Meier ]
+  * New upstream release:
+    - Fix the add command for projects finishing on the current day
+    - Fix an error when the current timesheet doesn't exists
+
+ -- Didier Raboud <didier.raboud@liip.ch>  Fri, 5 Apr 2013 09:30:00 +0100
+
 taxi (3.0-2) liip; urgency=low
 
   [ Gilles Meier ]
