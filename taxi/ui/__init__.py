@@ -48,23 +48,35 @@ class BaseUi(object):
                          mappings[(project.id, activity.id)]))
             else:
                 self.msg(u'%s%4s %s' % (activity_number, activity.id,
-                                         activity.name))
+                                        activity.name))
 
     def select_project(self, projects):
-        try:
-            return terminal.select_number(len(projects), u"Choose the project "
-                                          "(0-%d), (Ctrl-C) to exit: " %
-                                          (len(projects) - 1))
-        except KeyboardInterrupt:
-            raise CancelException()
+        if len(projects) > 1:
+            try:
+                return terminal.select_number(
+                    len(projects),
+                    u"Choose the project (0-%d), (Ctrl-C) to exit: " %
+                    (len(projects) - 1)
+                )
+            except KeyboardInterrupt:
+                raise CancelException()
+        else:
+            self.msg(u'Selecting unique choice 0\n')
+            return 0
 
     def select_activity(self, activities):
-        try:
-            return terminal.select_number(len(activities), u"Choose the "
-                                          "activity (0-%d), (Ctrl-C) to exit: " %
-                                          (len(activities) - 1))
-        except KeyboardInterrupt:
-            raise CancelException()
+        if len(activities) > 1:
+            try:
+                return terminal.select_number(
+                    len(activities),
+                    u"Choose the activity (0-%d), (Ctrl-C) to exit: " %
+                    (len(activities) - 1)
+                )
+            except KeyboardInterrupt:
+                raise CancelException()
+        else:
+            self.msg(u'Selecting unique choice 0\n')
+            return 0
 
     def select_alias(self):
         try:
