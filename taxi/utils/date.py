@@ -15,5 +15,9 @@ def get_previous_working_day(date):
 
 def unicode_strftime(date, format):
     locale_encoding = locale.getlocale()[1]
-    return date.strftime(format).decode(locale_encoding)
+    formatted_date = date.strftime(format)
 
+    if locale_encoding is not None:
+        formatted_date = formatted_date.decode(locale_encoding)
+
+    return formatted_date

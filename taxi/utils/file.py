@@ -1,5 +1,6 @@
 import codecs
 import os
+import shlex
 import subprocess
 
 def create_file(filepath):
@@ -14,7 +15,7 @@ def spawn_editor(filepath, editor=None):
     if editor is None:
         editor = 'sensible-editor'
 
-    editor = editor.split()
+    editor = shlex.split(editor)
     editor.append(filepath)
 
     try:
@@ -24,6 +25,6 @@ def spawn_editor(filepath, editor=None):
             raise Exception("Can't find any suitable editor. Check your EDITOR "
                             " env var.")
 
-        editor = os.environ['EDITOR'].split()
+        editor = shlex.split(os.environ['EDITOR'])
         editor.append(filepath)
         subprocess.call(editor)
