@@ -202,13 +202,6 @@ class Timesheet:
                 if line.is_ignored():
                     entry.ignored = True
 
-                if entry.project_name in self.mappings:
-                    entry.project_id = self.mappings[entry.project_name][0]
-                    entry.activity_id = self.mappings[entry.project_name][1]
-                else:
-                    if not entry.is_ignored():
-                        raise UndefinedAliasError(line.get_alias())
-
                 # No start time defined, take the end time of the previous entry
                 if isinstance(line.time, tuple) and line.time[0] is None:
                     if len(self.entries[current_date]) == 0:
@@ -223,6 +216,13 @@ class Timesheet:
                     prev_entry = self.entries[current_date][-1]
                     line.time = (prev_entry.duration[1], line.time[1])
                     entry.duration = line.time
+
+                if entry.project_name in self.mappings:
+                    entry.project_id = self.mappings[entry.project_name][0]
+                    entry.activity_id = self.mappings[entry.project_name][1]
+                else:
+                    if not entry.is_ignored():
+                        raise UndefinedAliasError(line.get_alias())
 
                 self.entries[current_date].append(entry)
 
