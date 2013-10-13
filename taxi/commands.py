@@ -509,16 +509,28 @@ class StartCommand(BaseTimesheetCommand):
         if self.project_name not in self.settings.get_projects().keys():
             raise UndefinedAliasError(self.project_name)
 
-        duration = (datetime.datetime.now().time(), None)
-        e = Entry(datetime.date.today(), self.project_name, duration, '?')
+        today = datetime.date.today()
 
         try:
             t = self.get_timesheet()
         except ParseError as e:
             self.view.err(e)
+            return
+
+        # If there's a previous entry on the same date, check if we can use its
+        # end time as a start time for the newly started entry
+        today_entries = t.get_entries(today)
+        if(today_entries
+                and isinstance(today_entries[today][-1].duration, tuple)
+                and today_entries[today][-1].duration[1] is not None):
+            new_entry_start_time = today_entries[today][-1].duration[1]
         else:
-            t.add_entry(e, self.get_entries_direction())
-            t.save()
+            new_entry_start_time = datetime.datetime.now()
+
+        duration = (new_entry_start_time, None)
+        e = Entry(today, self.project_name, duration, '?')
+        t.add_entry(e, self.get_entries_direction())
+        t.save()
 
 class StatusCommand(BaseTimesheetCommand):
     """
