@@ -455,15 +455,22 @@ class Timesheet:
 
         raise UnknownDirectionError()
 
-    def fix_entries_start_time(self, entries):
-        for entry in entries:
-            next_lineno = entry.id + 1
+    def fix_entries_start_time(self):
+        """
+        Fixes the start time of entries in -HH:mm notation that are not pushed
+        but follow an entry that has been pushed. See
+        https://github.com/sephii/taxi/issues/18 for more details.
+        """
+        for date, entries in self.entries.iteritems():
+            previous_entry = None
 
-            try:
-                next_line = self.parser.parsed_lines[next_lineno]
-            except KeyError:
-                continue
-
-            if(isinstance(next_line, EntryLine)
-                    and isinstance(next_line.time, tuple)):
-                next_line.text = next_line.generate_text()
+            for entry in entries:
+                # Look for an entry that has not been pushed, and that uses
+                # the -HH:mm notation
+                if (previous_entry is not None
+                        and not entry.pushed
+                        and isinstance(entry.duration, tuple)):
+                    entry_line = self.parser.parsed_lines[entry.id]
+                    entry_line.text = entry_line.generate_text()
+                elif entry.pushed:
+                    previous_entry = entry
