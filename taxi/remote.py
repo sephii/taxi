@@ -140,6 +140,7 @@ class ZebraRemote(Remote):
                                      "not very useful!)")
                             failed_entries.append((entry, error))
                     else:
+                        entry.pushed = True
                         pushed_entries.append(entry)
                 finally:
                     if callback is not None:
@@ -223,7 +224,7 @@ class DummyRemote(Remote):
         pushed_entries = []
         failed_entries = []
 
-        for (date, entries) in entries:
+        for (date, entries) in entries.iteritems():
             for entry in entries:
                 error = None
                 parameters_dict = {
@@ -241,8 +242,8 @@ class DummyRemote(Remote):
                     error = 'Project doesn\'t exist'
                     failed_entries.append((entry, error))
                 else:
+                    entry.pushed = True
                     pushed_entries.append(entry)
-                    success = True
 
                 if callback is not None:
                     callback(entry, error)
