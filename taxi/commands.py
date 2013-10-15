@@ -520,7 +520,7 @@ class StartCommand(BaseTimesheetCommand):
         # If there's a previous entry on the same date, check if we can use its
         # end time as a start time for the newly started entry
         today_entries = t.get_entries(today)
-        if(today_entries
+        if(today in today_entries and today_entries[today]
                 and isinstance(today_entries[today][-1].duration, tuple)
                 and today_entries[today][-1].duration[1] is not None):
             new_entry_start_time = today_entries[today][-1].duration[1]
