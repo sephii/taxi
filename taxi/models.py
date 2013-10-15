@@ -454,3 +454,16 @@ class Timesheet:
                         return date < line.date
 
         raise UnknownDirectionError()
+
+    def fix_entries_start_time(self, entries):
+        for entry in entries:
+            next_lineno = entry.id + 1
+
+            try:
+                next_line = self.parser.parsed_lines[next_lineno]
+            except KeyError:
+                continue
+
+            if(isinstance(next_line, EntryLine)
+                    and isinstance(next_line.time, tuple)):
+                next_line.text = next_line.generate_text()

@@ -355,6 +355,7 @@ class CommitCommand(BaseTimesheetCommand):
         (pushed_entries, failed_entries) = r.send_entries(entries_to_push,
                                                           self._entry_pushed)
 
+        t.fix_entries_start_time(pushed_entries)
         t.comment_entries(pushed_entries)
         t.save()
 
