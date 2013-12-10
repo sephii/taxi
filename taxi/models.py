@@ -79,6 +79,7 @@ class Project:
         self.status = int(status)
         self.description = description
         self.budget = budget
+        self.aliases = {}
 
     def __unicode__(self):
         if self.status in self.STATUSES:

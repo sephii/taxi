@@ -48,7 +48,7 @@ class BaseTimesheetCommand(BaseCommand):
             file.create_file(self.options.file)
             p = PlainTextParser(PlainFileIo(self.options.file))
 
-        t = Timesheet(p, self.settings.get_projects(),
+        t = Timesheet(p, self.settings.get_aliases(),
                       self.settings.get('date_format'))
         setattr(self, '_current_timesheet', t)
 
@@ -77,7 +77,7 @@ class BaseTimesheetCommand(BaseCommand):
 
                 try:
                     p = PlainTextParser(PlainFileIo(oldfile))
-                    t2 = Timesheet(p, self.settings.get_projects(),
+                    t2 = Timesheet(p, self.settings.get_aliases(),
                                    self.settings.get('date_format'))
                     is_top_down = t2.is_top_down()
                 except (IOError, ParseError, UnknownDirectionError):
@@ -134,7 +134,7 @@ class AddCommand(BaseCommand):
                 return
 
             if self.settings.activity_exists(alias):
-                mapping = self.settings.get_projects()[alias]
+                mapping = self.settings.get_aliases()[alias]
                 overwrite = self.view.overwrite_alias(alias, mapping)
 
                 if overwrite == False:
@@ -148,7 +148,8 @@ class AddCommand(BaseCommand):
                 retry = False
 
         activity = project.activities[number]
-        self.settings.add_activity(alias, project.id, activity.id)
+        self.settings.add_alias(alias, project.id, activity.id)
+        self.settings.write_config()
 
         self.view.alias_added(alias, (project.id, activity.id))
 
@@ -191,8 +192,6 @@ class AliasCommand(BaseCommand):
             self.mode = self.MODE_LIST_ALIASES
 
     def run(self):
-        projects = self.settings.get_projects()
-
         # 2 arguments, add a new alias
         if self.mode == self.MODE_ADD_ALIAS:
             self._add_alias(self.alias, self.mapping)
@@ -229,14 +228,15 @@ class AliasCommand(BaseCommand):
                     " projects database.")
 
         if self.settings.activity_exists(alias_name):
-            existing_mapping = self.settings.get_projects()[alias_name]
+            existing_mapping = self.settings.get_aliases()[alias_name]
             confirm = self.view.overwrite_alias(alias_name, existing_mapping, False)
 
             if not confirm:
                 return
 
-        self.settings.add_activity(alias_name, project_activity[0],
-                                   project_activity[1])
+        self.settings.add_alias(alias_name, project_activity[0],
+                                project_activity[1])
+        self.settings.write_config()
 
         self.view.alias_added(alias_name, project_activity)
 
@@ -307,7 +307,7 @@ class CleanAliasesCommand(BaseCommand):
 
     """
     def run(self):
-        aliases = self.settings.get_projects()
+        aliases = self.settings.get_aliases()
         inactive_aliases = []
 
         for (alias, mapping) in aliases.iteritems():
@@ -325,7 +325,8 @@ class CleanAliasesCommand(BaseCommand):
         confirm = self.view.clean_inactive_aliases(inactive_aliases)
 
         if confirm:
-            self.settings.remove_activities([item[0][0] for item in inactive_aliases])
+            self.settings.remove_aliases([item[0][0] for item in inactive_aliases])
+            self.settings.write_config()
             self.view.msg(u"Inactive aliases have been successfully cleaned.")
 
 class CommitCommand(BaseTimesheetCommand):
@@ -507,7 +508,7 @@ class StartCommand(BaseTimesheetCommand):
         self.project_name = self.arguments[0]
 
     def run(self):
-        if self.project_name not in self.settings.get_projects().keys():
+        if self.project_name not in self.settings.get_aliases().keys():
             raise UndefinedAliasError(self.project_name)
 
         today = datetime.date.today()
@@ -596,5 +597,11 @@ class UpdateCommand(BaseCommand):
         r = remote.ZebraRemote(self.site, self.username, self.password)
         projects = r.get_projects()
         self.projects_db.update(projects)
+
+        for project in projects:
+            for alias, activity_id in project.aliases.iteritems():
+                self.settings.add_shared_alias(alias, project.id, activity_id)
+
+        self.settings.write_config()
 
         self.view.projects_database_update_success()

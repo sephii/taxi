@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import codecs
 import ConfigParser
 import os
 import difflib
@@ -33,7 +32,7 @@ class Settings:
         try:
             return self.config.get(section, key)
         except ConfigParser.NoOptionError:
-            if self.DEFAULTS.has_key(key):
+            if key in self.DEFAULTS:
                 return self.DEFAULTS[key]
 
             raise
@@ -46,54 +45,30 @@ class Settings:
 
         return [int(e.strip()) for e in auto_fill_days.split(',')]
 
-    def get_projects(self):
-        projects_cache = getattr(self, '_projects_cache', None)
-        if projects_cache is not None:
-            return projects_cache
+    def get_aliases(self):
+        aliases_cache = getattr(self, '_aliases_cache', None)
+        if aliases_cache is not None:
+            return aliases_cache
 
-        config_projects = self.config.items('wrmap')
-        projects = {}
+        aliases = {}
+        config_aliases = self.config.items('wrmap')
+        shared_config_aliases = (self.config.items('shared_wrmap')
+                                 if self.config.has_section('shared_wrmap')
+                                 else {})
 
-        for (project_name, id) in config_projects:
-            parts = id.split('/', 1)
+        for aliases_group in (shared_config_aliases, config_aliases):
+            for (alias, mapping) in aliases_group:
+                (project_id, activity_id) = mapping.split('/', 1)
+                aliases[alias] = (int(project_id), int(activity_id))
 
-            if len(parts) == 2:
-                value = (int(parts[0]), int(parts[1]))
-            else:
-                value = (int(parts[0]), None)
+        setattr(self, '_aliases_cache', aliases)
 
-            projects[project_name] = value
-
-        setattr(self, '_projects_cache', projects)
-
-        return projects
-
-    def get_reversed_projects(self):
-        reversed_projects_cache = getattr(self, '_reversed_projects_cache', None)
-        if reversed_projects_cache is not None:
-            return reversed_projects_cache
-
-        config_projects = self.config.items('wrmap')
-        projects = {}
-
-        for (project_name, id) in config_projects:
-            parts = id.split('/', 1)
-
-            if len(parts) == 2:
-                value = (int(parts[0]), int(parts[1]))
-            else:
-                value = (int(parts[0]), None)
-
-            projects[value] = project_name
-
-        setattr(self, '_reversed_projects_cache', projects)
-
-        return projects
+        return aliases
 
     def search_aliases(self, mapping):
         aliases = []
 
-        for (user_alias, mapped_alias) in self.get_projects().iteritems():
+        for (user_alias, mapped_alias) in self.get_aliases().iteritems():
             if (mapped_alias[0] != mapping[0] or
                     (mapping[1] is not None and mapped_alias[1] != mapping[1])):
                 continue
@@ -105,28 +80,22 @@ class Settings:
     def search_mappings(self, search_alias):
         aliases = []
 
-        for (user_alias, mapped_alias) in self.get_projects().iteritems():
+        for (user_alias, mapped_alias) in self.get_aliases().iteritems():
             if search_alias is None or user_alias.startswith(search_alias):
                 aliases.append((user_alias, mapped_alias))
 
         return aliases
 
-    def project_exists(self, project_name):
-        return project_name[-1] == '?' or project_name in self.get_projects()
-
     def get_close_matches(self, project_name):
-        return difflib.get_close_matches(project_name, self.get_projects().keys(),
+        return difflib.get_close_matches(project_name, self.get_aliases().keys(),
                                          cutoff=0.2)
 
-    def add_activity(self, alias, projectid, activityid):
+    def add_alias(self, alias, projectid, activityid):
         self.config.set('wrmap', alias, '%s/%s' % (projectid, activityid))
-        self.write_config()
 
-    def remove_activities(self, aliases):
+    def remove_aliases(self, aliases):
         for alias in aliases:
             self.config.remove_option('wrmap', alias)
-
-        self.write_config()
 
     def write_config(self):
         with open(self.filepath, 'w') as file:
@@ -134,3 +103,10 @@ class Settings:
 
     def activity_exists(self, activity_name):
         return self.config.has_option('wrmap', activity_name)
+
+    def add_shared_alias(self, alias, project_id, activity_id):
+        if not self.config.has_section('shared_wrmap'):
+            self.config.add_section('shared_wrmap')
+
+        self.config.set('shared_wrmap', alias,
+                        '%s/%s' % (project_id, activity_id))
