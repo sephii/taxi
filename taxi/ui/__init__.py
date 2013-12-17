@@ -246,5 +246,42 @@ class BaseUi(object):
     def updating_projects_database(self):
         self.msg(u"Updating database, this may take some time...")
 
-    def projects_database_update_success(self):
+    def projects_database_update_success(self, aliases_before_update,
+                                         aliases_after_update, local_aliases,
+                                         shared_aliases):
         self.msg(u"Projects database updated successfully.")
+
+        deleted_aliases = (set(aliases_before_update.keys()) -
+                           set(aliases_after_update.keys()))
+        added_aliases = (set(aliases_after_update.keys()) -
+                         set(aliases_before_update.keys()))
+
+        modified_aliases = set()
+        for alias, mapping in aliases_after_update.iteritems():
+            if (alias in aliases_before_update
+                    and aliases_before_update[alias] != mapping):
+                modified_aliases.add(alias)
+
+        clashing_aliases = (set(local_aliases.keys()) &
+                            set(shared_aliases.keys()))
+
+        if added_aliases:
+            self.msg(u"\nThe following aliases have been added:\n")
+            for alias in added_aliases:
+                self.msg(alias)
+
+        if deleted_aliases:
+            self.msg(u"\nThe following aliases have been removed:\n")
+            for alias in deleted_aliases:
+                self.msg(alias)
+
+        if modified_aliases:
+            self.msg(u"\nThe following aliases have been modified:\n")
+            for alias in modified_aliases:
+                self.msg(alias)
+
+        if clashing_aliases:
+            self.msg(u"\nWarning: the following aliases are clashing:\n")
+            for alias in clashing_aliases:
+                self.msg(u"%s mapped to %s locally, is mapped to %s remotely" %
+                         (alias, local_aliases[alias], shared_aliases[alias]))

@@ -207,7 +207,8 @@ class ZebraRemote(Remote):
                           " because activity id is not an int" %
                           (activity, p.id))
 
-            p.aliases = project['aliases']
+            if 'activity_aliases' in project and project['activity_aliases']:
+                p.aliases = project['activity_aliases']
 
             projects_list.append(p)
 

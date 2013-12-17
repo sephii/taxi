@@ -118,7 +118,7 @@ class AddCommand(BaseCommand):
             return
 
         project = projects[number]
-        mappings = self.settings.get_reversed_projects()
+        mappings = self.settings.get_reversed_aliases()
         self.view.project_with_activities(project, mappings, numbered_activities=True)
 
         try:
@@ -488,7 +488,7 @@ class ShowCommand(BaseCommand):
         if project is None:
             self.view.err(u"The project `%s` doesn't exist" % (self.project_id))
         else:
-            mappings = self.settings.get_reversed_projects()
+            mappings = self.settings.get_reversed_aliases()
             self.view.project_with_activities(project, mappings)
 
 class StartCommand(BaseTimesheetCommand):
@@ -594,14 +594,25 @@ class UpdateCommand(BaseCommand):
     def run(self):
         self.view.updating_projects_database()
 
+        aliases_before_update = self.settings.get_aliases()
+        local_aliases = self.settings.get_aliases(include_shared=False)
+
         r = remote.ZebraRemote(self.site, self.username, self.password)
         projects = r.get_projects()
         self.projects_db.update(projects)
 
+        # Put the shared aliases in the config file
+        shared_aliases = {}
         for project in projects:
             for alias, activity_id in project.aliases.iteritems():
                 self.settings.add_shared_alias(alias, project.id, activity_id)
+                shared_aliases[alias] = (project.id, activity_id)
+
+        aliases_after_update = self.settings.get_aliases()
 
         self.settings.write_config()
 
-        self.view.projects_database_update_success()
+        self.view.projects_database_update_success(aliases_before_update,
+                                                   aliases_after_update,
+                                                   local_aliases,
+                                                   shared_aliases)

@@ -45,25 +45,28 @@ class Settings:
 
         return [int(e.strip()) for e in auto_fill_days.split(',')]
 
-    def get_aliases(self):
-        aliases_cache = getattr(self, '_aliases_cache', None)
-        if aliases_cache is not None:
-            return aliases_cache
-
+    def get_aliases(self, include_shared=True):
         aliases = {}
         config_aliases = self.config.items('wrmap')
         shared_config_aliases = (self.config.items('shared_wrmap')
                                  if self.config.has_section('shared_wrmap')
                                  else {})
+        aliases_sections = [config_aliases]
 
-        for aliases_group in (shared_config_aliases, config_aliases):
+        if include_shared:
+            aliases_sections.insert(0, shared_config_aliases)
+
+        for aliases_group in aliases_sections:
             for (alias, mapping) in aliases_group:
                 (project_id, activity_id) = mapping.split('/', 1)
                 aliases[alias] = (int(project_id), int(activity_id))
 
-        setattr(self, '_aliases_cache', aliases)
-
         return aliases
+
+    def get_reversed_aliases(self, include_shared=True):
+        aliases = self.get_aliases(include_shared)
+
+        return dict((v, k) for k, v in aliases.iteritems())
 
     def search_aliases(self, mapping):
         aliases = []
