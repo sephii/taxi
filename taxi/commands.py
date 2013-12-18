@@ -583,7 +583,8 @@ class UpdateCommand(BaseCommand):
     """
     Usage: update
 
-    Synchronizes your project database with the server.
+    Synchronizes your project database with the server and updates the shared
+    aliases.
 
     """
     def setup(self):
@@ -615,4 +616,5 @@ class UpdateCommand(BaseCommand):
         self.view.projects_database_update_success(aliases_before_update,
                                                    aliases_after_update,
                                                    local_aliases,
-                                                   shared_aliases)
+                                                   shared_aliases,
+                                                   self.projects_db)

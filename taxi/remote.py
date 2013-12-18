@@ -208,7 +208,8 @@ class ZebraRemote(Remote):
                           (activity, p.id))
 
             if 'activity_aliases' in project and project['activity_aliases']:
-                p.aliases = project['activity_aliases']
+                for alias, mapping in project['activity_aliases'].iteritems():
+                    p.aliases[alias] = int(mapping)
 
             projects_list.append(p)
 

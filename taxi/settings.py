@@ -58,8 +58,15 @@ class Settings:
 
         for aliases_group in aliases_sections:
             for (alias, mapping) in aliases_group:
-                (project_id, activity_id) = mapping.split('/', 1)
-                aliases[alias] = (int(project_id), int(activity_id))
+                try:
+                    (project_id, activity_id) = mapping.split('/', 1)
+                    aliases[alias] = (int(project_id), int(activity_id))
+                except ValueError:
+                    raise ValueError(
+                        "The alias '%s' is mapped to an incorrect activity"
+                        " (%s). The format must be project_id/activity_id" %
+                        (alias, mapping)
+                    )
 
         return aliases
 
