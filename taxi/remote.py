@@ -203,9 +203,13 @@ class ZebraRemote(Remote):
                     if int(activity) in activities_dict:
                         p.add_activity(activities_dict[int(activity)])
                 except ValueError:
-                    print(u"Cannot import activity %s for project %s"\
+                    print(u"Cannot import activity %s for project %s"
                           " because activity id is not an int" %
                           (activity, p.id))
+
+            if 'activity_aliases' in project and project['activity_aliases']:
+                for alias, mapping in project['activity_aliases'].iteritems():
+                    p.aliases[alias] = int(mapping)
 
             projects_list.append(p)
 
