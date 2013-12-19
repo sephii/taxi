@@ -177,7 +177,7 @@ class Activity:
     def __init__(self, id, name, price):
         self.id = int(id)
         self.name = name
-        self.price = float(price)
+        self.price = price
 
 class Timesheet:
     def __init__(self, parser, mappings, date_format='%d.%m.%Y'):
