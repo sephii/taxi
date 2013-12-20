@@ -140,6 +140,7 @@ class ZebraRemote(Remote):
                                      "not very useful!)")
                             failed_entries.append((entry, error))
                     else:
+                        entry.pushed = True
                         pushed_entries.append(entry)
                 finally:
                     if callback is not None:
@@ -202,9 +203,13 @@ class ZebraRemote(Remote):
                     if int(activity) in activities_dict:
                         p.add_activity(activities_dict[int(activity)])
                 except ValueError:
-                    print(u"Cannot import activity %s for project %s"\
+                    print(u"Cannot import activity %s for project %s"
                           " because activity id is not an int" %
                           (activity, p.id))
+
+            if 'activity_aliases' in project and project['activity_aliases']:
+                for alias, mapping in project['activity_aliases'].iteritems():
+                    p.aliases[alias] = int(mapping)
 
             projects_list.append(p)
 
@@ -223,7 +228,7 @@ class DummyRemote(Remote):
         pushed_entries = []
         failed_entries = []
 
-        for (date, entries) in entries:
+        for (date, entries) in entries.iteritems():
             for entry in entries:
                 error = None
                 parameters_dict = {
@@ -241,8 +246,8 @@ class DummyRemote(Remote):
                     error = 'Project doesn\'t exist'
                     failed_entries.append((entry, error))
                 else:
+                    entry.pushed = True
                     pushed_entries.append(entry)
-                    success = True
 
                 if callback is not None:
                     callback(entry, error)
