@@ -37,6 +37,11 @@ auto_add = auto
 # empty
 # auto_fill_days = 0,1,2,3,4
 
+
+# Defines a list of local aliases that you will be able to use in your timesheets
+# but that will never be pushed to Zebra
+local_aliases = _lunch, _coffee_break
+
 # This section contains your project name <-> id mapping. The format is:
 # project_name = project_id/activity_id
 [wrmap]
