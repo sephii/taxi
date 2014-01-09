@@ -45,7 +45,7 @@ class Settings:
 
         return [int(e.strip()) for e in auto_fill_days.split(',')]
 
-    def get_aliases(self, include_shared=True):
+    def get_aliases(self, include_shared=True, include_local=True):
         aliases = {}
         config_aliases = self.config.items('wrmap')
         shared_config_aliases = (self.config.items('shared_wrmap')
@@ -67,6 +67,10 @@ class Settings:
                         " (%s). The format must be project_id/activity_id" %
                         (alias, mapping)
                     )
+
+        if include_local:
+            for(alias) in self.config.get('default', 'local_aliases').split(','):
+                aliases[alias.strip()] = (-1, -1)
 
         return aliases
 

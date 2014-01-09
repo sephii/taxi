@@ -10,6 +10,7 @@ from taxi.exceptions import (
 from taxi.parser import DateLine, EntryLine, TextLine, ParseError
 from taxi.utils import date as date_utils
 
+
 class Entry:
     def __init__(self, date, project_name, hours, description, id=None):
         self.project_name = project_name
@@ -18,6 +19,7 @@ class Entry:
         self.date = date
         self.pushed = False
         self.ignored = False
+        self.local = False
         self.project_id = None
         self.activity_id = None
         self.id = id
@@ -25,6 +27,8 @@ class Entry:
     def __unicode__(self):
         if self.is_ignored():
             project_name = u'%s (ignored)' % (self.project_name)
+        elif self.is_local():
+            project_name = u'%s (local)' % (self.project_name)
         else:
             project_name = u'%s (%s/%s)' % (self.project_name, self.project_id, self.activity_id)
 
@@ -32,6 +36,12 @@ class Entry:
 
     def is_ignored(self):
         return self.ignored or self.get_duration() == 0
+
+    def is_local(self):
+        return self.local
+
+    def is_selected(self, exclude_ignored, exclude_local):
+        return not (exclude_ignored and self.is_ignored()) and not (exclude_local and self.is_local())
 
     def get_duration(self):
         if isinstance(self.duration, tuple):
@@ -49,6 +59,7 @@ class Entry:
             return total_hours
 
         return self.duration
+
 
 class Project:
     STATUS_NOT_STARTED = 0
@@ -221,13 +232,15 @@ class Timesheet:
                 if entry.project_name in self.mappings:
                     entry.project_id = self.mappings[entry.project_name][0]
                     entry.activity_id = self.mappings[entry.project_name][1]
+                    if(entry.project_id < 0 or entry.activity_id < 0):
+                        entry.local = True
                 else:
                     if not entry.is_ignored():
                         raise UndefinedAliasError(line.get_alias())
 
                 self.entries[current_date].append(entry)
 
-    def get_entries(self, date=None, exclude_ignored=False):
+    def get_entries(self, date=None, exclude_ignored=False, exclude_local=False):
         entries_dict = {}
 
         # Date can either be a single date (only 1 day) or a tuple for a
@@ -240,11 +253,8 @@ class Timesheet:
                 if entrydate not in entries_dict:
                     entries_dict[entrydate] = []
 
-                if not exclude_ignored:
-                    entries_dict[entrydate].extend(entries)
-                else:
-                    d_list = [entry for entry in entries if not entry.is_ignored()]
-                    entries_dict[entrydate].extend(d_list)
+                d_list = [entry for entry in entries if entry.is_selected(exclude_ignored, exclude_local)]
+                entries_dict[entrydate].extend(d_list)
 
         return entries_dict
 
