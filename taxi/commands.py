@@ -352,9 +352,15 @@ class CommitCommand(BaseTimesheetCommand):
         r = remote.ZebraRemote(self.settings.get('site'),
                                self.settings.get('username'),
                                self.settings.get('password'))
-        entries_to_push = t.get_entries(self.options.date, exclude_ignored=True)
+        entries_to_push = t.get_entries(self.options.date, exclude_ignored=True, exclude_local=True)
         (pushed_entries, failed_entries) = r.send_entries(entries_to_push,
                                                           self._entry_pushed)
+
+        local_entries = t.get_local_entries(self.options.date)
+        local_entries_list = []
+        for (date, entries) in local_entries.iteritems():
+            local_entries_list.extend(entries)
+        t.comment_entries(local_entries_list)
 
         t.fix_entries_start_time()
         t.comment_entries(pushed_entries)

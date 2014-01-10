@@ -258,6 +258,21 @@ class Timesheet:
 
         return entries_dict
 
+    def get_local_entries(self, date=None):
+        entries_dict = self.get_entries(date, False)
+        local_entries = {}
+
+        for (date, entries) in entries_dict.iteritems():
+            local_entries_list = []
+            for entry in entries:
+                if entry.is_local():
+                    local_entries_list.append(entry)
+
+            if local_entries_list:
+                local_entries[date] = local_entries_list
+
+        return local_entries
+
     def get_ignored_entries(self, date=None):
         entries_dict = self.get_entries(date, False)
         ignored_entries = {}
