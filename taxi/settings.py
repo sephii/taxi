@@ -69,8 +69,8 @@ class Settings:
                     )
 
         if include_local:
-            for(alias) in self.config.get('default', 'local_aliases').split(','):
-                aliases[alias.strip()] = (-1, -1)
+            for alias in self.config.get('default', 'local_aliases').split(','):
+                aliases[alias.strip()] = (None, None)
 
         return aliases
 

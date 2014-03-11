@@ -37,6 +37,9 @@ class Entry:
     def is_ignored(self):
         return self.ignored or self.get_duration() == 0
 
+    """ return true if the entry is local, ie we don't have to push it
+        to Zebra
+    """
     def is_local(self):
         return self.local
 
@@ -232,7 +235,8 @@ class Timesheet:
                 if entry.project_name in self.mappings:
                     entry.project_id = self.mappings[entry.project_name][0]
                     entry.activity_id = self.mappings[entry.project_name][1]
-                    if(entry.project_id < 0 or entry.activity_id < 0):
+
+                    if(entry.project_id is None or entry.activity_id is None):
                         entry.local = True
                 else:
                     if not entry.is_ignored():
@@ -263,10 +267,7 @@ class Timesheet:
         local_entries = {}
 
         for (date, entries) in entries_dict.iteritems():
-            local_entries_list = []
-            for entry in entries:
-                if entry.is_local():
-                    local_entries_list.append(entry)
+            local_entries_list = [entry for entry in entries if entry.is_local()]
 
             if local_entries_list:
                 local_entries[date] = local_entries_list
