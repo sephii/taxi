@@ -72,6 +72,14 @@ class PlainTextParser(BaseParser):
         Traceback (most recent call last):
             ...
         ParseError: The duration must be a float number or a HH:mm string
+        >>> PlainTextParser.parse_time('-2500')
+        Traceback (most recent call last):
+            ...
+        ParseError: hour must be in 0..23
+        >>> PlainTextParser.parse_time('-1061')
+        Traceback (most recent call last):
+            ...
+        ParseError: minute must be in 0..59
         >>> PlainTextParser.parse_time('-')
         Traceback (most recent call last):
             ...
@@ -84,17 +92,20 @@ class PlainTextParser(BaseParser):
 
         # HH:mm-HH:mm syntax found
         if time is not None:
-            # -HH:mm syntax found
-            if time.group(1) is None and time.group(2) is None:
-                if time.group(3) is not None and time.group(4) is not None:
-                    time_end = datetime.time(int(time.group(3)), int(time.group(4)))
+            try:
+                # -HH:mm syntax found
+                if time.group(1) is None and time.group(2) is None:
+                    if time.group(3) is not None and time.group(4) is not None:
+                        time_end = datetime.time(int(time.group(3)), int(time.group(4)))
 
-                total_hours = (None, time_end)
-            else:
-                time_start = datetime.time(int(time.group(1)), int(time.group(2)))
-                if time.group(3) is not None and time.group(4) is not None:
-                    time_end = datetime.time(int(time.group(3)), int(time.group(4)))
-                total_hours = (time_start, time_end)
+                    total_hours = (None, time_end)
+                else:
+                    time_start = datetime.time(int(time.group(1)), int(time.group(2)))
+                    if time.group(3) is not None and time.group(4) is not None:
+                        time_end = datetime.time(int(time.group(3)), int(time.group(4)))
+                    total_hours = (time_start, time_end)
+            except ValueError as e:
+                raise ParseError(e.message)
         else:
             try:
                 total_hours = float(str_time)

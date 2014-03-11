@@ -73,6 +73,19 @@ class ProjectsDb:
 
         return projects_hash[id] if id in projects_hash else None
 
+    def mapping_to_project(self, mapping_tuple):
+        project = self.get(mapping_tuple[0])
+
+        if not project:
+            return (None, None)
+
+        activity = project.get_activity(mapping_tuple[1])
+
+        if not activity:
+            return (project, None)
+
+        return (project, activity)
+
 class LocalProjectsDb:
     projects = []
     VERSION = 2

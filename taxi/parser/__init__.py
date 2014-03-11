@@ -35,20 +35,23 @@ class EntryLine(TextLine):
         if text is not None:
             self.text = text
         else:
-            if isinstance(self.time, tuple):
-                start = (self.time[0].strftime('%H:%M') if self.time[0] is not
-                         None else '')
-                end = (self.time[1].strftime('%H:%M') if self.time[1] is not
-                        None else '?')
+            self.text = self.generate_text()
 
-                time = u'%s-%s' % (start, end)
-            else:
-                time = self.time
+    def generate_text(self):
+        if isinstance(self.time, tuple):
+            start = (self.time[0].strftime('%H:%M') if self.time[0] is not
+                     None else '')
+            end = (self.time[1].strftime('%H:%M') if self.time[1] is not
+                    None else '?')
 
-            self.text = u'%s %s %s' % (self.alias, time, self.description)
+            time = u'%s-%s' % (start, end)
+        else:
+            time = self.time
+
+        return u'%s %s %s' % (self.alias, time, self.description)
 
     def is_ignored(self):
-        return self.alias.endswith('?')
+        return self.alias.endswith('?') or self.alias.startswith('?')
 
     def get_alias(self):
         if self.alias.endswith('?'):
