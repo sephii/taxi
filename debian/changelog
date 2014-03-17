@@ -1,3 +1,11 @@
+taxi (3.1.2-1) liip; urgency=medium
+
+  * New upstream release.
+  * Drop help2man build-dependency, the manpage is created now
+  * Bump Standards-Version to 3.9.5 without changes needed
+
+ -- Didier Raboud <didier.raboud@liip.ch>  Mon, 17 Mar 2014 11:13:19 +0100
+
 taxi (3.1.0) liip; urgency=low
 
   [ Gilles Meier ]
