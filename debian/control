@@ -4,7 +4,7 @@ Priority: extra
 Maintainer: Didier Raboud <didier.raboud@liip.ch>
 Uploaders: Gilles Meier <gilles.meier@liip.ch>
 Build-Depends: debhelper (>= 9), python
-Standards-Version: 3.9.4
+Standards-Version: 3.9.5
 Homepage: https://github.com/sephii/taxi
 Vcs-Git: git://github.com/sephii/taxi.git
 Vcs-Browser: https://github.com/sephii/taxi
