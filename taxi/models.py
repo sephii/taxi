@@ -30,6 +30,14 @@ class Entry:
 
         return u'%-30s %-5.2f %s' % (project_name, self.get_duration() or 0, self.description)
 
+    def get_hash(self):
+        return '%s%s%s%s' % (
+            self.project_name,
+            self.description,
+            self.date,
+            self.ignored
+        )
+
     def is_ignored(self):
         return self.ignored or self.get_duration() == 0
 
@@ -49,6 +57,41 @@ class Entry:
             return total_hours
 
         return self.duration
+
+class AggregatedEntry:
+    def __init__(self):
+        self.entries = []
+
+    def __unicode__(self):
+        project_name = u'%s (%s/%s)' % (self.project_name, self.project_id, self.activity_id)
+        return u'%-30s %-5.2f %s' % (project_name, self.get_duration() or 0, self.description)
+
+    def get_duration(self):
+        return sum([entry.get_duration() for entry in self.entries])
+
+    @property
+    def duration(self):
+        return self.get_duration()
+
+    @property
+    def description(self):
+        return self.entries[0].description
+
+    @property
+    def project_id(self):
+        return self.entries[0].project_id
+
+    @property
+    def activity_id(self):
+        return self.entries[0].activity_id
+
+    @property
+    def ignored(self):
+        return self.entries[0].ignored
+
+    @property
+    def project_name(self):
+        return self.entries[0].project_name
 
 class Project:
     STATUS_NOT_STARTED = 0
@@ -227,7 +270,7 @@ class Timesheet:
 
                 self.entries[current_date].append(entry)
 
-    def get_entries(self, date=None, exclude_ignored=False):
+    def get_entries(self, date=None, exclude_ignored=False, regroup=False):
         entries_dict = {}
 
         # Date can either be a single date (only 1 day) or a tuple for a
@@ -237,14 +280,34 @@ class Timesheet:
 
         for (entrydate, entries) in self.entries.iteritems():
             if date is None or (entrydate >= date[0] and entrydate <= date[1]):
+                aggregated_entries = {}
+
                 if entrydate not in entries_dict:
                     entries_dict[entrydate] = []
 
-                if not exclude_ignored:
-                    entries_dict[entrydate].extend(entries)
+                entries_for_date = []
+
+                if regroup:
+                    for (id, entry) in enumerate(entries):
+                        if exclude_ignored and entry.is_ignored():
+                            continue
+
+                        if entry.get_hash() not in aggregated_entries:
+                            entries_for_date.append(entry)
+                            aggregated_entries[entry.get_hash()] = id
+                        else:
+                            normal_entry = entries_for_date[aggregated_entries[entry.get_hash()]]
+                            aggregated_entry = AggregatedEntry()
+                            aggregated_entry.entries.append(normal_entry)
+                            aggregated_entry.entries.append(entry)
+                            entries_for_date[aggregated_entries[entry.get_hash()]] = aggregated_entry
                 else:
-                    d_list = [entry for entry in entries if not entry.is_ignored()]
-                    entries_dict[entrydate].extend(d_list)
+                    if not exclude_ignored:
+                        entries_for_date = entries
+                    else:
+                        entries_for_date = [entry for entry in entries if not entry.is_ignored()]
+
+                entries_dict[entrydate].extend(entries_for_date)
 
         return entries_dict
 
@@ -421,7 +484,15 @@ class Timesheet:
         return non_workday_entries
 
     def comment_entries(self, entries):
+        flatten_entries = []
+
         for entry in entries:
+            if isinstance(entry, AggregatedEntry):
+                flatten_entries += entry.entries
+            else:
+                flatten_entries.append(entry)
+
+        for entry in flatten_entries:
             if entry.id is None:
                 raise Exception(u"Couldn't comment entry `%s` because it "
                                 "doesn't have an id" % unicode(entry))
