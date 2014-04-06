@@ -50,6 +50,19 @@ Available commands:
         (options, args) = opt.parse_args()
         args = [term_unicode(arg) for arg in args]
 
+        if len(args) == 0:
+            args = ['help']
+
+        command_args = args[1:] if len(args) > 1 else []
+        try:
+            self.run_command(args[0], options.__dict__, command_args)
+        except UsageError as ue:
+            opt.print_help()
+
+            if ue.message:
+                print("\nError: %s" % ue.message)
+
+    def run_command(self, command, options={}, args=[]):
         actions = {
             'add': commands.AddCommand,
             'alias': commands.AliasCommand,
@@ -71,39 +84,37 @@ Available commands:
             'update': commands.UpdateCommand,
         }
 
-        settings = Settings(options.config)
+        settings = Settings(options['config'])
         if not os.path.exists(settings.TAXI_PATH):
             os.mkdir(settings.TAXI_PATH)
 
-        if options.file is None:
+        if options.get('file', None) is None:
             try:
-                options.file = settings.get('file')
+                options['file'] = settings.get('file')
             except ConfigParser.NoOptionError:
                 raise Exception("Error: no file to parse. You must either "
                                 "define one in your config file with the "
                                 "'file' setting, or use the -f option")
 
-        options.unparsed_file = os.path.expanduser(options.file)
-        options.file = datetime.date.today().strftime(os.path.expanduser(options.file))
+        options['unparsed_file'] = os.path.expanduser(options['file'])
+        options['file'] = datetime.date.today().strftime(os.path.expanduser(options['file']))
 
-        if options.date is not None:
+        if options.get('date', None) is not None:
             date_format = '%d.%m.%Y'
-
             try:
-                if '-' in options.date:
-                    split_date = options.date.split('-', 1)
+                if '-' in options['date']:
+                    split_date = options['date'].split('-', 1)
 
-                    options.date = (
+                    options['date'] = (
                             datetime.datetime.strptime(split_date[0],
                                                        date_format).date(),
                             datetime.datetime.strptime(split_date[1],
                                                        date_format).date())
                 else:
-                    options.date = datetime.datetime.strptime(options.date,
+                    options['date'] = datetime.datetime.strptime(options['date'],
                                                               date_format).date()
             except ValueError:
-                opt.print_help()
-                exit()
+                raise UsageError("Invalid date format (must be dd.mm.yyyy)")
 
         projects_db = ProjectsDb(os.path.join(settings.TAXI_PATH, 'projects.db'))
 
@@ -112,26 +123,26 @@ Available commands:
         ac.settings = settings
         ac.options = options
         ac.projects_db = projects_db
-        ac.arguments = args[1:]
+        ac.arguments = args
         ac.view = view
         action = None
 
         try:
-            if len(args) == 0 or args[0] not in actions:
-                raise UsageError()
+            if command not in actions:
+                raise UsageError("Unknown command `%s`" % command)
 
-            if args[0] == 'help':
+            if command == 'help':
                 ac.commands_mapping = actions
 
-            action = actions[args[0]](ac)
+            action = actions[command](ac)
             action.validate()
             action.setup()
-        except UsageError:
+        except UsageError as ue:
             if (action is not None and
                     not isinstance(action, commands.HelpCommand)):
                 view.msg(inspect.getdoc(action))
             else:
-                view.msg(opt.format_help())
+                raise ue
         else:
             try:
                 action.run()
