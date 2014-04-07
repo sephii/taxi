@@ -5,18 +5,19 @@ import datetime
 
 from taxi import remote
 from taxi.exceptions import (
-        NoActivityInProgressError,
-        CancelException,
-        UndefinedAliasError,
-        UnknownDirectionError,
-        UsageError
+    NoActivityInProgressError,
+    CancelException,
+    UndefinedAliasError,
+    UnknownDirectionError,
+    UsageError
 )
 from taxi.models import Entry, Project, Timesheet
 from taxi.parser import ParseError
 from taxi.parser.parsers.plaintext import PlainTextParser
 from taxi.parser.io import PlainFileIo
 from taxi.settings import Settings
-from taxi.utils import file, terminal, date as date_utils
+from taxi.utils import file
+
 
 class BaseCommand(object):
     def __init__(self, app_container):
@@ -34,6 +35,7 @@ class BaseCommand(object):
 
     def run(self):
         pass
+
 
 class BaseTimesheetCommand(BaseCommand):
     def get_timesheet(self, skip_cache=False):
@@ -70,9 +72,11 @@ class BaseTimesheetCommand(BaseCommand):
                     is_top_down = None
 
             if is_top_down is None:
-                # Unable to automatically detect the entries direction, we try to get a
-                # previous file to see if we're lucky
-                prev_month = datetime.date.today() - datetime.timedelta(days=30)
+                # Unable to automatically detect the entries direction, we try
+                # to get a previous file to see if we're lucky
+                prev_month = (
+                    datetime.date.today() - datetime.timedelta(days=30)
+                )
                 oldfile = prev_month.strftime(self.options['unparsed_file'])
 
                 try:
@@ -87,6 +91,7 @@ class BaseTimesheetCommand(BaseCommand):
                            Settings.AUTO_ADD_OPTIONS['BOTTOM'])
 
         return is_top_down
+
 
 class AddCommand(BaseCommand):
     """
@@ -106,8 +111,10 @@ class AddCommand(BaseCommand):
         projects = sorted(projects, key=lambda project: project.name)
 
         if len(projects) == 0:
-            self.view.msg(u"No active project matches your search string '%s'" %
-                     ''.join(search))
+            self.view.msg(
+                u"No active project matches your search string '%s'" %
+                ''.join(search)
+            )
             return
 
         self.view.projects_list(projects, True)
@@ -119,7 +126,8 @@ class AddCommand(BaseCommand):
 
         project = projects[number]
         mappings = self.settings.get_reversed_aliases()
-        self.view.project_with_activities(project, mappings, numbered_activities=True)
+        self.view.project_with_activities(project, mappings,
+                                          numbered_activities=True)
 
         try:
             number = self.view.select_activity(project.activities)
@@ -137,9 +145,9 @@ class AddCommand(BaseCommand):
                 mapping = self.settings.get_aliases()[alias]
                 overwrite = self.view.overwrite_alias(alias, mapping)
 
-                if overwrite == False:
+                if not overwrite:
                     return
-                elif overwrite == True:
+                elif overwrite:
                     retry = False
                 # User chose "retry"
                 else:
@@ -152,6 +160,7 @@ class AddCommand(BaseCommand):
         self.settings.write_config()
 
         self.view.alias_added(alias, (project.id, activity.id))
+
 
 class AliasCommand(BaseCommand):
     """
@@ -168,7 +177,8 @@ class AliasCommand(BaseCommand):
       project/activity tuple
     - The last form will add a new alias in your configuration file
 
-    You can also run this command without any argument to view all your mappings.
+    You can also run this command without any argument to view all your
+    mappings.
 
     """
     MODE_SHOW_MAPPING = 0
@@ -223,13 +233,16 @@ class AliasCommand(BaseCommand):
             activity = project.get_activity(project_activity[1])
 
         if project is None or activity is None:
-            raise Exception("Error: the project/activity tuple was not found"
-                    " in the project database. Check your input or update your"
-                    " projects database.")
+            raise Exception(
+                "Error: the project/activity tuple was not found in the"
+                " project database. Check your input or update your projects"
+                " database."
+            )
 
         if self.settings.activity_exists(alias_name):
             existing_mapping = self.settings.get_aliases()[alias_name]
-            confirm = self.view.overwrite_alias(alias_name, existing_mapping, False)
+            confirm = self.view.overwrite_alias(alias_name, existing_mapping,
+                                                False)
 
             if not confirm:
                 return
@@ -239,6 +252,7 @@ class AliasCommand(BaseCommand):
         self.settings.write_config()
 
         self.view.alias_added(alias_name, project_activity)
+
 
 class AutofillCommand(BaseTimesheetCommand):
     """
@@ -284,6 +298,7 @@ class AutofillCommand(BaseTimesheetCommand):
             self.view.err(u"The parameter `auto_fill_days` must be set to "
                           "use this command.")
 
+
 class KittyCommand(BaseCommand):
     """
    |\      _,,,---,,_
@@ -298,6 +313,7 @@ class KittyCommand(BaseCommand):
     """
     def run(self):
         self.view.msg(self.__doc__)
+
 
 class CleanAliasesCommand(BaseCommand):
     """
@@ -314,8 +330,8 @@ class CleanAliasesCommand(BaseCommand):
             project = self.projects_db.get(mapping[0])
 
             if (project is None or not project.is_active() or
-                    (mapping[1] is not None and
-                    project.get_activity(mapping[1]) is None)):
+                    (mapping[1] is not None
+                     and project.get_activity(mapping[1]) is None)):
                 inactive_aliases.append(((alias, mapping), project))
 
         if not inactive_aliases:
@@ -325,9 +341,12 @@ class CleanAliasesCommand(BaseCommand):
         confirm = self.view.clean_inactive_aliases(inactive_aliases)
 
         if confirm:
-            self.settings.remove_aliases([item[0][0] for item in inactive_aliases])
+            self.settings.remove_aliases(
+                [item[0][0] for item in inactive_aliases]
+            )
             self.settings.write_config()
             self.view.msg(u"Inactive aliases have been successfully cleaned.")
+
 
 class CommitCommand(BaseTimesheetCommand):
     """
@@ -353,7 +372,8 @@ class CommitCommand(BaseTimesheetCommand):
         r = remote.ZebraRemote(self.settings.get('site'),
                                self.settings.get('username'),
                                self.settings.get('password'))
-        entries_to_push = t.get_entries(self.options.get('date', None), exclude_ignored=True)
+        entries_to_push = t.get_entries(self.options.get('date', None),
+                                        exclude_ignored=True)
         (pushed_entries, failed_entries) = r.send_entries(entries_to_push,
                                                           self._entry_pushed)
 
@@ -371,6 +391,7 @@ class CommitCommand(BaseTimesheetCommand):
 
     def _entry_pushed(self, entry, error):
         self.view.pushed_entry(entry, error)
+
 
 class EditCommand(BaseTimesheetCommand):
     """
@@ -417,6 +438,7 @@ class EditCommand(BaseTimesheetCommand):
         else:
             self.view.show_status(t.get_entries())
 
+
 class HelpCommand(BaseCommand):
     """
     YO DAWG you asked for help for the help command. Try to search Google in
@@ -442,12 +464,14 @@ class HelpCommand(BaseCommand):
             else:
                 self.view.err(u"Command %s doesn't exist." % self.command)
 
+
 class SearchCommand(BaseCommand):
     """
     Usage: search search_string
 
-    Searches for a project by its name. The letter in the first column indicates
-    the status of the project: [N]ot started, [A]ctive, [F]inished, [C]ancelled.
+    Searches for a project by its name. The letter in the first column
+    indicates the status of the project: [N]ot started, [A]ctive, [F]inished,
+    [C]ancelled.
 
     """
     def validate(self):
@@ -458,6 +482,7 @@ class SearchCommand(BaseCommand):
         projects = self.projects_db.search(self.arguments)
         projects = sorted(projects, key=lambda project: project.name.lower())
         self.view.search_results(projects)
+
 
 class ShowCommand(BaseCommand):
     """
@@ -487,17 +512,20 @@ class ShowCommand(BaseCommand):
                             "Please run `taxi update` to create it")
 
         if project is None:
-            self.view.err(u"The project `%s` doesn't exist" % (self.project_id))
+            self.view.err(
+                u"The project `%s` doesn't exist" % (self.project_id)
+            )
         else:
             mappings = self.settings.get_reversed_aliases()
             self.view.project_with_activities(project, mappings)
+
 
 class StartCommand(BaseTimesheetCommand):
     """
     Usage: start project_name
 
-    Use it when you start working on the project project_name. This will add the
-    project name and the current time to your entries file. When you're
+    Use it when you start working on the project project_name. This will add
+    the project name and the current time to your entries file. When you're
     finished, use the stop command.
 
     """
@@ -535,6 +563,7 @@ class StartCommand(BaseTimesheetCommand):
         t.add_entry(e, self.get_entries_direction())
         t.save()
 
+
 class StatusCommand(BaseTimesheetCommand):
     """
     Usage: status
@@ -554,6 +583,7 @@ class StatusCommand(BaseTimesheetCommand):
         else:
             self.view.show_status(t.get_entries(self.date))
 
+
 class StopCommand(BaseTimesheetCommand):
     """
     Usage: stop [description]
@@ -571,7 +601,8 @@ class StopCommand(BaseTimesheetCommand):
     def run(self):
         try:
             t = self.get_timesheet()
-            t.continue_entry(datetime.date.today(), datetime.datetime.now().time(),
+            t.continue_entry(datetime.date.today(),
+                             datetime.datetime.now().time(),
                              self.description)
         except ParseError as e:
             self.view.err(e)
@@ -579,6 +610,7 @@ class StopCommand(BaseTimesheetCommand):
             self.view.err(u"You don't have any activity in progress for today")
         else:
             t.save()
+
 
 class UpdateCommand(BaseCommand):
     """
