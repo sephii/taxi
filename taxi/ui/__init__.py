@@ -9,6 +9,9 @@ from taxi.exceptions import CancelException
 from taxi.models import Project
 
 class BaseUi(object):
+    def __init__(self, stdout):
+        self.stdout = stdout
+
     @staticmethod
     def _get_encoding():
         # Encoding is None if the output is piped through another command (eg.
@@ -21,7 +24,7 @@ class BaseUi(object):
         return encoding
 
     def msg(self, message):
-        print(message.encode(self._get_encoding()))
+        self.stdout.write(message.encode(self._get_encoding()) + "\n")
 
     def err(self, message):
         self.msg(u"Error: %s" % message)

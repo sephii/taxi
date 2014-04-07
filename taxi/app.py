@@ -120,7 +120,7 @@ Available commands:
 
         projects_db = ProjectsDb(os.path.join(settings.TAXI_PATH, 'projects.db'))
 
-        view = TtyUi()
+        view = TtyUi(options.get('stdout', sys.stdout))
         ac = AppContainer()
         ac.settings = settings
         ac.options = options
