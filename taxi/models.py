@@ -317,8 +317,7 @@ class Timesheet:
                         self.parser.parsed_lines.insert(index, blank_line)
                         self.parser.parsed_lines.insert(index, new_entry)
                         self.parser.parsed_lines.insert(index, blank_line)
-                except ValueError:
-                    self.parser.parsed_lines.insert(index, blank_line)
+                except IndexError:
                     self.parser.parsed_lines.insert(index, new_entry)
             else:
                 if add_to_bottom:
