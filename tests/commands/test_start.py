@@ -1,31 +1,24 @@
-from contextlib import nested
 from freezegun import freeze_time
-from StringIO import StringIO
 
 from taxi.app import Taxi
 
-from . import CommandTest
+from . import CommandTestCase
 
 
 @freeze_time('2014-01-20')
-class StartCommandTest(CommandTest):
+class StartCommandTestCase(CommandTestCase):
     def compare_entries_with_expected(self, entries, expected):
-        stdout = StringIO()
-        options = {
-            'ignore_date_error': True,
-            'stdout': stdout
-        }
+        options = self.default_options
+        options['ignore_date_error'] = True
 
-        with nested(self.generate_config_file(self.default_config),
-                    self.generate_entries_file(entries)) as (config_file, entries_file):
-            options['config'] = config_file.name
-            options['file'] = entries_file.name
+        self.write_config(self.default_config)
+        self.write_entries(entries)
 
-            app = Taxi()
-            app.run_command('start', options=options, args=['alias_1'])
+        app = Taxi()
+        app.run_command('start', options=options, args=['alias_1'])
 
-            entries_file.seek(0)
-            self.assertEqual(entries_file.read(), expected)
+        with open(self.entries_file, 'r') as f:
+            self.assertEqual(f.read(), expected)
 
     def test_date_present_entry_present(self):
         entries = """20/01/2014
