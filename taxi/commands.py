@@ -42,11 +42,11 @@ class BaseTimesheetCommand(BaseCommand):
             return timesheet
 
         try:
-            p = PlainTextParser(PlainFileIo(self.options.file))
+            p = PlainTextParser(PlainFileIo(self.options['file']))
         except IOError:
             # The timesheet doesn't exist, create it
-            file.create_file(self.options.file)
-            p = PlainTextParser(PlainFileIo(self.options.file))
+            file.create_file(self.options['file'])
+            p = PlainTextParser(PlainFileIo(self.options['file']))
 
         t = Timesheet(p, self.settings.get_aliases(),
                       self.settings.get('date_format'))
@@ -73,7 +73,7 @@ class BaseTimesheetCommand(BaseCommand):
                 # Unable to automatically detect the entries direction, we try to get a
                 # previous file to see if we're lucky
                 prev_month = datetime.date.today() - datetime.timedelta(days=30)
-                oldfile = prev_month.strftime(self.options.unparsed_file)
+                oldfile = prev_month.strftime(self.options['unparsed_file'])
 
                 try:
                     p = PlainTextParser(PlainFileIo(oldfile))
@@ -339,7 +339,8 @@ class CommitCommand(BaseTimesheetCommand):
     def run(self):
         t = self.get_timesheet()
 
-        if self.options.date is None and not self.options.ignore_date_error:
+        if (self.options.get('date', None) is None
+                and not self.options.get('ignore_date_error', False)):
             non_workday_entries = t.get_non_current_workday_entries()
 
             if non_workday_entries:
@@ -352,7 +353,7 @@ class CommitCommand(BaseTimesheetCommand):
         r = remote.ZebraRemote(self.settings.get('site'),
                                self.settings.get('username'),
                                self.settings.get('password'))
-        entries_to_push = t.get_entries(self.options.date, exclude_ignored=True)
+        entries_to_push = t.get_entries(self.options.get('date', None), exclude_ignored=True)
         (pushed_entries, failed_entries) = r.send_entries(entries_to_push,
                                                           self._entry_pushed)
 
@@ -360,7 +361,7 @@ class CommitCommand(BaseTimesheetCommand):
         t.comment_entries(pushed_entries)
         t.save()
 
-        ignored_entries = t.get_ignored_entries(self.options.date)
+        ignored_entries = t.get_ignored_entries(self.options.get('date', None))
         ignored_entries_list = []
         for (date, entries) in ignored_entries.iteritems():
             ignored_entries_list.extend(entries)
@@ -380,7 +381,7 @@ class EditCommand(BaseTimesheetCommand):
     """
     def run(self):
         # Create the file if it does not exist yet
-        file.create_file(self.options.file)
+        file.create_file(self.options['file'])
         is_top_down = None
 
         if self.settings.get('auto_add') != Settings.AUTO_ADD_OPTIONS['NO']:
@@ -407,7 +408,7 @@ class EditCommand(BaseTimesheetCommand):
         except NoOptionError:
             editor = None
 
-        file.spawn_editor(self.options.file, editor)
+        file.spawn_editor(self.options['file'], editor)
 
         try:
             t = self.get_timesheet(True)
@@ -543,7 +544,7 @@ class StatusCommand(BaseTimesheetCommand):
     """
 
     def setup(self):
-        self.date = self.options.date
+        self.date = self.options.get('date', None)
 
     def run(self):
         try:
