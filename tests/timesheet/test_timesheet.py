@@ -220,3 +220,39 @@ foo 1 bar"""
 
         lines = t.to_lines()
         self.assertEquals(lines, ["02.01.2013", "", "01.01.2013", ""])
+
+    def test_regroup(self):
+        contents = """01.04.2013
+foo 2 bar
+bar 0900-1000 bar
+foo 2 bar
+foo 1 barz"""
+
+        t = self._create_timesheet(contents)
+        entries = t.get_entries(regroup=True)[datetime.date(2013, 4, 1)]
+        self.assertEquals(len(entries), 3)
+        self.assertEquals(entries[0].duration, 4)
+        self.assertIsInstance(entries[0], AggregatedEntry)
+
+    def test_regroup_partial_time(self):
+        contents = """01.04.2013
+foo 2 bar
+foo 0800-0900 bar
+bar -1000 bar
+foo -1100 bar"""
+        t = self._create_timesheet(contents)
+        entries = t.get_entries(regroup=True)[datetime.date(2013, 4, 1)]
+        self.assertEquals(len(entries), 2)
+        self.assertEquals(entries[0].duration, 4)
+
+    def test_comment_regrouped_entries(self):
+        contents = """01.04.2013
+foo 2 bar
+bar 0900-1000 bar
+foo 1 bar"""
+        t = self._create_timesheet(contents)
+        entries = t.get_entries(regroup=True)[datetime.date(2013, 4, 1)]
+        t.comment_entries(entries)
+        lines = t.to_lines()
+        self.assertEquals(lines, ["01.04.2013", "# foo 2 bar",
+                                  "# bar 0900-1000 bar", "# foo 1 bar"])
