@@ -319,13 +319,14 @@ class Timesheet:
                         self.parser.parsed_lines.insert(index, blank_line)
                 except IndexError:
                     self.parser.parsed_lines.insert(index, new_entry)
+                    self.parser.parsed_lines.insert(index, blank_line)
             else:
+                is_empty = self.is_empty()
+
                 if add_to_bottom:
                     index = len(self.parser.parsed_lines)
                 else:
                     index = 0
-
-                if not add_to_bottom:
                     self.parser.parsed_lines.insert(index, blank_line)
 
                 date_line = DateLine(entry.date, date_format=self.date_format)
@@ -333,10 +334,18 @@ class Timesheet:
                 self.parser.parsed_lines.insert(index, blank_line)
                 self.parser.parsed_lines.insert(index, date_line)
 
-                if add_to_bottom:
+                # Add a trailing blank line to separate the new date from the
+                # next date
+                if add_to_bottom and not is_empty:
                     self.parser.parsed_lines.insert(index, blank_line)
 
         self._update_entries()
+
+    def is_empty(self):
+        """
+        Return True if the timesheet doesn't contain any line.
+        """
+        return len(self.parser.parsed_lines) == 0
 
     def continue_entry(self, date, end, description=None):
         last_entry_line = self._get_latest_entry_for_date(date)
