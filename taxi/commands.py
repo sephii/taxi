@@ -226,19 +226,6 @@ class AliasCommand(BaseCommand):
         if project_activity is None:
             raise UsageError("The mapping must be in the format xxxx/yyyy")
 
-        activity = None
-        project = self.projects_db.get(project_activity[0])
-
-        if project:
-            activity = project.get_activity(project_activity[1])
-
-        if project is None or activity is None:
-            raise Exception(
-                "Error: the project/activity tuple was not found in the"
-                " project database. Check your input or update your projects"
-                " database."
-            )
-
         if self.settings.activity_exists(alias_name):
             existing_mapping = self.settings.get_aliases()[alias_name]
             confirm = self.view.overwrite_alias(alias_name, existing_mapping,
