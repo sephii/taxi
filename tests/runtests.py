@@ -5,8 +5,5 @@ import unittest
 from taxi.parser.parsers import plaintext
 
 suite = unittest.TestSuite()
-suite.addTest(unittest.TestLoader().discover('tests'))
+suite.addTest(unittest.TestLoader().discover('.'))
 suite.addTest(doctest.DocTestSuite(plaintext))
-
-runner = unittest.TextTestRunner(verbosity=2)
-runner.run(suite)
