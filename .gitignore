@@ -1,4 +1,6 @@
 *.pyc
-build/*
-dist/*
-MANIFEST
+/*.egg
+/build/*
+/dist/*
+/MANIFEST
+/taxi.egg-info
