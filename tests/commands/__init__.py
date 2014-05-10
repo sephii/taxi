@@ -9,21 +9,6 @@ from taxi.remote import ZebraRemote
 
 
 class CommandTestCase(TestCase):
-    default_config = {
-        'default': {
-            'site': 'https://zebra.liip.ch',
-            'username': 'john.doe',
-            'password': 'john.doe',
-            'date_format': '%d/%m/%Y',
-        },
-        'wrmap': {
-            'alias_1': '123/456'
-        }
-    }
-
-    default_options = {
-    }
-
     def setUp(self):
         def zebra_remote_send_entries(entries, callback):
             pushed_entries = [
@@ -34,6 +19,21 @@ class CommandTestCase(TestCase):
 
         self.original_zebra_remote_send_entries = ZebraRemote.send_entries
         ZebraRemote.send_entries = Mock(side_effect=zebra_remote_send_entries)
+        self.default_config = {
+            'default': {
+                'site': 'https://zebra.liip.ch',
+                'username': 'john.doe',
+                'password': 'john.doe',
+                'date_format': '%d/%m/%Y',
+            },
+            'wrmap': {
+                'alias_1': '123/456'
+            }
+        }
+
+        self.default_options = {
+        }
+
 
         self.stdout = StringIO()
         _, self.config_file = tempfile.mkstemp()
