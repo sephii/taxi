@@ -1,7 +1,5 @@
 from freezegun import freeze_time
 
-from taxi.app import Taxi
-
 from . import CommandTestCase
 
 
@@ -11,11 +9,9 @@ class StartCommandTestCase(CommandTestCase):
         options = self.default_options
         options['ignore_date_error'] = True
 
-        self.write_config(self.default_config)
         self.write_entries(entries)
 
-        app = Taxi()
-        app.run_command('start', options=options, args=['alias_1'])
+        self.run_command('start', ['alias_1'], options)
 
         with open(self.entries_file, 'r') as f:
             self.assertEqual(f.read(), expected)

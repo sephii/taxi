@@ -1,7 +1,3 @@
-from StringIO import StringIO
-
-from taxi.app import Taxi
-
 from . import CommandTestCase
 
 
@@ -21,14 +17,8 @@ class AliasCommandTestCase(CommandTestCase):
         }
 
     def run_alias_command(self, args, config_options):
-        self.write_config(config_options)
-        self.stdout = StringIO()
-        self.default_options['stdout'] = self.stdout
-
-        app = Taxi()
-        app.run_command('alias', options=self.default_options, args=args)
-
-        return self.stdout.getvalue()
+        return self.run_command('alias', args, self.default_options,
+                                config_options)
 
     def test_alias_list(self):
         output = self.run_alias_command([], self.config)
