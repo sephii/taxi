@@ -11,7 +11,7 @@ tests_require = [
 setup(
     name='taxi',
     version=__version__,
-    packages=find_packages(exclude=('tests','tests.*')),
+    packages=find_packages(exclude=('tests', 'tests.*')),
     description='Taxi is a Zebra frontend',
     author='Sylvain Fankhauser',
     author_email='sylvain.fankhauser@liip.ch',
