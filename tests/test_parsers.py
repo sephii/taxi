@@ -72,5 +72,20 @@ foo? 2 foobar"""
     def test_empty(self):
         p = self._create_parser('')
 
-        self.assertEquals(len(p.parsed_lines), 1)
-        self.assertEquals(p.parsed_lines[0].text, '')
+        self.assertEquals(len(p.parsed_lines), 0)
+
+    def test_stripping_empty(self):
+        p = self._create_parser("""
+
+""")
+        self.assertEquals(len(p.parsed_lines), 0)
+
+    def test_stripping_not_empty(self):
+        p = self._create_parser("""
+
+10.01.2013
+
+foobar 0900-1000 baz
+
+""")
+        self.assertEquals(len(p.parsed_lines), 3)

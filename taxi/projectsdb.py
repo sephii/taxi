@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
-import json
 import pickle
-import os
 
-from taxi.remote import ZebraRemote
 
 class ProjectsDb:
     def __init__(self, path):
@@ -30,8 +27,8 @@ class ProjectsDb:
             setattr(self, '_projects_cache', lpdb.projects)
 
             return lpdb.projects
-        except IOError:
-            raise Exception('Error: the projects database file doesn\'t exist.  Please run `taxi update` to create it')
+        except (IOError, EOFError):
+            return []
 
     def update(self, projects):
         lpdb = LocalProjectsDb(projects)
