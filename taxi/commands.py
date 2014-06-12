@@ -363,7 +363,7 @@ class CommitCommand(BaseTimesheetCommand):
         (pushed_entries, failed_entries) = r.send_entries(entries_to_push,
                                                           self._entry_pushed)
 
-        local_entries = t.get_local_entries(self.options.date)
+        local_entries = t.get_local_entries(self.options.get('date', None))
         local_entries_list = []
         for (date, entries) in local_entries.iteritems():
             local_entries_list.extend(entries)
