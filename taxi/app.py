@@ -118,7 +118,10 @@ Available commands:
         else:
             options['date'] = None
 
-        projects_db = ProjectsDb(os.path.join(settings.TAXI_PATH, 'projects.db'))
+        if 'projects_db' not in options:
+            options['projects_db'] = os.path.join(settings.TAXI_PATH, 'projects.db')
+
+        projects_db = ProjectsDb(options['projects_db'])
 
         view = TtyUi(options.get('stdout', sys.stdout))
         ac = AppContainer()

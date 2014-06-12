@@ -27,7 +27,7 @@ class ProjectsDb:
             setattr(self, '_projects_cache', lpdb.projects)
 
             return lpdb.projects
-        except IOError:
+        except (IOError, EOFError):
             return []
 
     def update(self, projects):
