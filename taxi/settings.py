@@ -69,7 +69,12 @@ class Settings:
                     )
 
         if include_local:
-            for alias in self.config.get('default', 'local_aliases').split(','):
+            try:
+                local_aliases = self.config.get('default', 'local_aliases')
+            except ConfigParser.NoOptionError:
+                local_aliases = ''
+
+            for alias in local_aliases.split(','):
                 aliases[alias.strip()] = (None, None)
 
         return aliases
