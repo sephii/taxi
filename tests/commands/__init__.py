@@ -12,11 +12,25 @@ from taxi.remote import ZebraRemote
 class CommandTestCase(TestCase):
     def setUp(self):
         def zebra_remote_send_entries(entries, callback):
+            for (_, date_entries) in entries.iteritems():
+                for entry in date_entries:
+                    if entry.project_name != 'fail':
+                        entry.pushed = True
+
+                    callback(entry,
+                             entry.description if not entry.pushed else None)
+
             pushed_entries = [
-                item for sublist in entries.values() for item in sublist
+                item for sublist in entries.values()
+                for item in sublist if item.pushed
             ]
 
-            return (pushed_entries, [])
+            failed_entries = [
+                item for sublist in entries.values()
+                for item in sublist if not item.pushed
+            ]
+
+            return (pushed_entries, failed_entries)
 
         self.original_zebra_remote_send_entries = ZebraRemote.send_entries
         ZebraRemote.send_entries = Mock(side_effect=zebra_remote_send_entries)
@@ -38,15 +52,18 @@ class CommandTestCase(TestCase):
         self.stdout = StringIO()
         _, self.config_file = tempfile.mkstemp()
         _, self.entries_file = tempfile.mkstemp()
+        _, self.projects_db = tempfile.mkstemp()
         self.default_options['config'] = self.config_file
         self.default_options['file'] = self.entries_file
         self.default_options['stdout'] = self.stdout
+        self.default_options['projects_db'] = self.projects_db
 
     def tearDown(self):
         ZebraRemote.send_entries = self.original_zebra_remote_send_entries
 
         os.remove(self.config_file)
         os.remove(self.entries_file)
+        os.remove(self.projects_db)
 
     def write_config(self, config):
         with open(self.config_file, 'w') as f:
