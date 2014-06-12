@@ -367,9 +367,9 @@ class CommitCommand(BaseTimesheetCommand):
         local_entries_list = []
         for (date, entries) in local_entries.iteritems():
             local_entries_list.extend(entries)
-        t.comment_entries(local_entries_list)
 
         t.fix_entries_start_time()
+        t.comment_entries(local_entries_list)
         t.comment_entries(pushed_entries)
         t.save()
 
