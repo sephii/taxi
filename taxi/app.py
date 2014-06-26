@@ -91,12 +91,15 @@ Available commands:
             os.mkdir(settings.TAXI_PATH)
 
         if options.get('file', None) is None:
+            options['forced_file'] = True
             try:
                 options['file'] = settings.get('file')
             except ConfigParser.NoOptionError:
                 raise Exception("Error: no file to parse. You must either "
                                 "define one in your config file with the "
                                 "'file' setting, or use the -f option")
+        else:
+            options['forced_file'] = False
 
         options['unparsed_file'] = os.path.expanduser(options['file'])
         options['file'] = datetime.date.today().strftime(os.path.expanduser(options['file']))

@@ -12,12 +12,11 @@ class AutofillCommandTestCase(CommandTestCase):
         self.run_command('autofill', config_options=config_options)
 
     def test_autofill_bottom(self):
-        config_options = {
-            'default': {
-                'auto_fill_days': '1',
-                'auto_add': 'bottom'
-            }
-        }
+        config_options = self.default_config.copy()
+        config_options['default'].update({
+            'auto_fill_days': '1',
+            'auto_add': 'bottom'
+        })
 
         self.run_autofill_command(config_options)
         entries_file_contents = self.read_entries()
@@ -33,12 +32,11 @@ class AutofillCommandTestCase(CommandTestCase):
 """)
 
     def test_autofill_top(self):
-        config_options = {
-            'default': {
-                'auto_fill_days': '1',
-                'auto_add': 'top'
-            }
-        }
+        config_options = self.default_config.copy()
+        config_options['default'].update({
+            'auto_fill_days': '1',
+            'auto_add': 'top'
+        })
 
         self.run_autofill_command(config_options)
         entries_file_contents = self.read_entries()
@@ -54,12 +52,11 @@ class AutofillCommandTestCase(CommandTestCase):
 """)
 
     def test_autofill_existing_entries(self):
-        config_options = {
-            'default': {
-                'auto_fill_days': '1',
-                'auto_add': 'top'
-            }
-        }
+        config_options = self.default_config.copy()
+        config_options['default'].update({
+            'auto_fill_days': '1',
+            'auto_add': 'top'
+        })
 
         self.write_entries("15/02/2012\n\n07/02/2012")
 

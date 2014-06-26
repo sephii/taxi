@@ -394,7 +394,8 @@ class EditCommand(BaseTimesheetCommand):
         file.create_file(self.options['file'])
         is_top_down = None
 
-        if self.settings.get('auto_add') != Settings.AUTO_ADD_OPTIONS['NO']:
+        if (self.settings.get('auto_add') != Settings.AUTO_ADD_OPTIONS['NO'] and
+            not self.options.get('forced_file')):
             try:
                 t = self.get_timesheet()
             except (UndefinedAliasError, ParseError):

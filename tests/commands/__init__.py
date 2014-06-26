@@ -34,12 +34,20 @@ class CommandTestCase(TestCase):
 
         self.original_zebra_remote_send_entries = ZebraRemote.send_entries
         ZebraRemote.send_entries = Mock(side_effect=zebra_remote_send_entries)
+        self.stdout = StringIO()
+
+        _, self.config_file = tempfile.mkstemp()
+        _, self.entries_file = tempfile.mkstemp()
+        _, self.projects_db = tempfile.mkstemp()
+
         self.default_config = {
             'default': {
                 'site': 'https://zebra.liip.ch',
                 'username': 'john.doe',
                 'password': 'john.doe',
                 'date_format': '%d/%m/%Y',
+                'editor': '/bin/false',
+                'file': self.entries_file
             },
             'wrmap': {
                 'alias_1': '123/456'
@@ -49,12 +57,7 @@ class CommandTestCase(TestCase):
         self.default_options = {
         }
 
-        self.stdout = StringIO()
-        _, self.config_file = tempfile.mkstemp()
-        _, self.entries_file = tempfile.mkstemp()
-        _, self.projects_db = tempfile.mkstemp()
         self.default_options['config'] = self.config_file
-        self.default_options['file'] = self.entries_file
         self.default_options['stdout'] = self.stdout
         self.default_options['projects_db'] = self.projects_db
 
