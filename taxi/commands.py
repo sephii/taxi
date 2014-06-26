@@ -325,14 +325,16 @@ class CleanAliasesCommand(BaseCommand):
             self.view.msg(u"No inactive aliases found.")
             return
 
-        confirm = self.view.clean_inactive_aliases(inactive_aliases)
+        if not self.options.get('force_yes'):
+            confirm = self.view.clean_inactive_aliases(inactive_aliases)
 
-        if confirm:
+        if self.options.get('force_yes') or confirm:
             self.settings.remove_aliases(
                 [item[0][0] for item in inactive_aliases]
             )
             self.settings.write_config()
-            self.view.msg(u"Inactive aliases have been successfully cleaned.")
+            self.view.msg(u"%d inactive aliases have been successfully"
+                          " cleaned." % len(inactive_aliases))
 
 
 class CommitCommand(BaseTimesheetCommand):

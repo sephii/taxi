@@ -47,6 +47,8 @@ Available commands:
                 dest='ignore_date_error', help='suppresses the error if'\
                 ' you\'re trying to commit a date that\'s on a week-end or on another'\
                 ' day than the current day or the day before', action='store_true', default=False)
+        opt.add_option('-y', '--force-yes', dest='force_yes',
+                       help='assume "yes"', action='store_true', default=False)
         (options, args) = opt.parse_args()
         args = [term_unicode(arg) for arg in args]
 
