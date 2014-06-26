@@ -361,8 +361,11 @@ class CommitCommand(BaseTimesheetCommand):
         r = remote.ZebraRemote(self.settings.get('site'),
                                self.settings.get('username'),
                                self.settings.get('password'))
-        entries_to_push = t.get_entries(self.options.get('date', None),
-                                        exclude_ignored=True)
+
+        entries_to_push = t.get_entries(
+            self.options.get('date', None), exclude_ignored=True, regroup=True
+        )
+
         (pushed_entries, failed_entries) = r.send_entries(entries_to_push,
                                                           self._entry_pushed)
 
@@ -426,7 +429,7 @@ class EditCommand(BaseTimesheetCommand):
         except ParseError as e:
             self.view.err(e)
         else:
-            self.view.show_status(t.get_entries())
+            self.view.show_status(t.get_entries(regroup=True))
 
 
 class HelpCommand(BaseCommand):
@@ -571,7 +574,7 @@ class StatusCommand(BaseTimesheetCommand):
         except ParseError as e:
             self.view.err(e)
         else:
-            self.view.show_status(t.get_entries(self.date))
+            self.view.show_status(t.get_entries(self.date, regroup=True))
 
 
 class StopCommand(BaseTimesheetCommand):
