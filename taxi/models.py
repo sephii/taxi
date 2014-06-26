@@ -63,7 +63,11 @@ class AggregatedEntry:
         self.entries = []
 
     def __unicode__(self):
-        project_name = u'%s (%s/%s)' % (self.project_name, self.project_id, self.activity_id)
+        if self.is_ignored():
+            project_name = u'%s (ignored)' % (self.project_name)
+        else:
+            project_name = u'%s (%s/%s)' % (self.project_name, self.project_id, self.activity_id)
+
         return u'%-30s %-5.2f %s' % (project_name, self.get_duration() or 0, self.description)
 
     def get_duration(self):
@@ -92,6 +96,9 @@ class AggregatedEntry:
     @property
     def project_name(self):
         return self.entries[0].project_name
+
+    def is_ignored(self):
+        return self.entries[0].is_ignored()
 
 class Project:
     STATUS_NOT_STARTED = 0
