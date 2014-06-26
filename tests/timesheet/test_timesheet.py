@@ -2,7 +2,7 @@
 import datetime
 
 from taxi.exceptions import UndefinedAliasError, UnknownDirectionError
-from taxi.models import Entry
+from taxi.models import AggregatedEntry, Entry
 from taxi.parser import ParseError
 
 from . import BaseTimesheetTestCase
