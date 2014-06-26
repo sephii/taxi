@@ -149,3 +149,10 @@ Getting help
 Run taxi without any argument to get an overview of available commands and
 options. You can also use the ``help`` command followed by the name of a command
 to get detailed help on any command.
+
+Running tests
+=============
+
+To run the tests, just run the following command::
+
+    ./setup.py test

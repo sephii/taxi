@@ -47,6 +47,8 @@ Available commands:
                 dest='ignore_date_error', help='suppresses the error if'\
                 ' you\'re trying to commit a date that\'s on a week-end or on another'\
                 ' day than the current day or the day before', action='store_true', default=False)
+        opt.add_option('-y', '--force-yes', dest='force_yes',
+                       help='assume "yes"', action='store_true', default=False)
         (options, args) = opt.parse_args()
         args = [term_unicode(arg) for arg in args]
 
@@ -89,12 +91,15 @@ Available commands:
             os.mkdir(settings.TAXI_PATH)
 
         if options.get('file', None) is None:
+            options['forced_file'] = True
             try:
                 options['file'] = settings.get('file')
             except ConfigParser.NoOptionError:
                 raise Exception("Error: no file to parse. You must either "
                                 "define one in your config file with the "
                                 "'file' setting, or use the -f option")
+        else:
+            options['forced_file'] = False
 
         options['unparsed_file'] = os.path.expanduser(options['file'])
         options['file'] = datetime.date.today().strftime(os.path.expanduser(options['file']))
@@ -118,7 +123,10 @@ Available commands:
         else:
             options['date'] = None
 
-        projects_db = ProjectsDb(os.path.join(settings.TAXI_PATH, 'projects.db'))
+        if 'projects_db' not in options:
+            options['projects_db'] = os.path.join(settings.TAXI_PATH, 'projects.db')
+
+        projects_db = ProjectsDb(options['projects_db'])
 
         view = TtyUi(options.get('stdout', sys.stdout))
         ac = AppContainer()
