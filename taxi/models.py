@@ -76,10 +76,12 @@ class Project:
         self.id = int(id)
         self.name = name
         self.activities = []
-        self.status = int(status)
+        self.status = int(status) if status is not None else None
         self.description = description
         self.budget = budget
         self.aliases = {}
+        self.start_date = None
+        self.end_date = None
 
     def __unicode__(self):
         if self.status in self.STATUSES:
