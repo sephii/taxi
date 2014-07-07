@@ -488,7 +488,7 @@ class Timesheet:
         return lines
 
     def get_non_current_workday_entries(self, limit_date=None):
-        non_workday_entries = []
+        non_workday_entries = {}
         entries = self.get_entries(limit_date, exclude_ignored=True)
         today = datetime.date.today()
         yesterday = date_utils.get_previous_working_day(today)
@@ -496,7 +496,7 @@ class Timesheet:
         for (date, date_entries) in entries.iteritems():
             if date not in (today, yesterday) or date.strftime('%w') in [6, 0]:
                 if date_entries:
-                    non_workday_entries.append((date, date_entries))
+                    non_workday_entries[date] = date_entries
 
         return non_workday_entries
 
@@ -563,3 +563,54 @@ class Timesheet:
                     entry_line.text = entry_line.generate_text()
                 elif entry.pushed:
                     previous_entry = entry
+
+    def get_file_path(self):
+        return self.parser.io.file_path
+
+
+class TimesheetCollection:
+    def __init__(self):
+        self.timesheets = []
+
+    def _timesheets_callback(self, callback):
+        def call(*args, **kwargs):
+            return_values = []
+
+            for timesheet in self.timesheets:
+                return_values.append(
+                    getattr(timesheet, callback)(*args, **kwargs)
+                )
+
+            return return_values
+
+        return call
+
+    def get_entries(self, *args, **kwargs):
+        entries_list = self._timesheets_callback('get_entries')(*args, **kwargs)
+        entries = {}
+
+        for entries_dict in entries_list:
+            entries.update(entries_dict)
+
+        return entries
+
+    def get_ignored_entries(self, *args, **kwargs):
+        entries_list = self._timesheets_callback('get_ignored_entries')(*args, **kwargs)
+        entries = {}
+
+        for entries_dict in entries_list:
+            entries.update(entries_dict)
+
+        return entries
+
+    def get_non_current_workday_entries(self, *args, **kwargs):
+        entries_list = self._timesheets_callback('get_non_current_workday_entries')(*args, **kwargs)
+        entries = {}
+
+        for entries_dict in entries_list:
+            entries.update(entries_dict)
+
+        return entries
+
+    def __getattr__(self, name):
+        return self._timesheets_callback(name)

@@ -7,6 +7,7 @@ from mock import Mock
 
 from taxi.app import Taxi
 from taxi.remote import ZebraRemote
+from taxi.utils.file import expand_filename
 
 
 class CommandTestCase(TestCase):
@@ -47,7 +48,7 @@ class CommandTestCase(TestCase):
                 'password': 'john.doe',
                 'date_format': '%d/%m/%Y',
                 'editor': '/bin/false',
-                'file': self.entries_file
+                'file': self.entries_file,
             },
             'wrmap': {
                 'alias_1': '123/456'
@@ -64,8 +65,11 @@ class CommandTestCase(TestCase):
     def tearDown(self):
         ZebraRemote.send_entries = self.original_zebra_remote_send_entries
 
+        entries_file = expand_filename(self.entries_file)
+
         os.remove(self.config_file)
-        os.remove(self.entries_file)
+        if os.path.exists(entries_file):
+            os.remove(entries_file)
         os.remove(self.projects_db)
 
     def write_config(self, config):
@@ -77,11 +81,11 @@ class CommandTestCase(TestCase):
                     f.write("%s = %s\n" % (param, value))
 
     def write_entries(self, contents):
-        with open(self.entries_file, 'w') as f:
+        with open(expand_filename(self.entries_file), 'w') as f:
             f.write(contents)
 
     def read_entries(self):
-        with open(self.entries_file, 'r') as f:
+        with open(expand_filename(self.entries_file), 'r') as f:
             contents = f.read()
 
         return contents

@@ -11,6 +11,7 @@ from taxi import __version__, commands
 from taxi.exceptions import UndefinedAliasError, UsageError
 from taxi.projectsdb import ProjectsDb
 from taxi.settings import Settings
+from taxi.utils.file import expand_filename
 from taxi.ui.tty import TtyUi
 
 class AppContainer(object):
@@ -86,6 +87,9 @@ Available commands:
             'update': commands.UpdateCommand,
         }
 
+        options = options.copy()
+        args = list(args)
+
         settings = Settings(options['config'])
         if not os.path.exists(settings.TAXI_PATH):
             os.mkdir(settings.TAXI_PATH)
@@ -102,7 +106,10 @@ Available commands:
             options['forced_file'] = False
 
         options['unparsed_file'] = os.path.expanduser(options['file'])
-        options['file'] = datetime.date.today().strftime(os.path.expanduser(options['file']))
+        options['file'] = self.get_files(
+            options['unparsed_file'],
+            settings.get('nb_previous_files')
+        )
 
         if options.get('date', None) is not None:
             date_format = '%d.%m.%Y'
@@ -159,6 +166,26 @@ Available commands:
             except UndefinedAliasError as e:
                 close = settings.get_close_matches(e.message)
                 view.suggest_aliases(e.message, close)
+
+    def get_files(self, filename, nb_previous_files):
+        date_units = ['d', 'm', 'Y']
+        smallest_unit = date_units[-1]
+        files = set()
+
+        for date in date_units:
+            if '%%%s' % date in filename:
+                smallest_unit = date
+                break
+
+        file_date = datetime.date.today()
+        delta = datetime.timedelta(days=30)
+        for i in xrange(0, nb_previous_files + 1):
+            files.add(expand_filename(filename, file_date))
+
+            file_date -= delta
+
+        return files
+
 
 def term_unicode(string):
     return unicode(string, sys.stdin.encoding)
