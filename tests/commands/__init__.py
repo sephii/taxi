@@ -81,7 +81,7 @@ class CommandTestCase(TestCase):
                     f.write("%s = %s\n" % (param, value))
 
     def write_entries(self, contents):
-        with open(expand_filename(self.entries_file), 'w') as f:
+        with open(expand_filename(self.entries_file), 'a') as f:
             f.write(contents)
 
     def read_entries(self):

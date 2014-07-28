@@ -60,7 +60,7 @@ alias_1 2 foobar
         stdout = self.run_command('commit', options=self.default_options)
         self.assertIn('--ignore-date-error', stdout)
 
-    def test_commit_previous_file(self):
+    def test_commit_previous_file_previous_month(self):
         tmp_entries_dir = tempfile.mkdtemp()
         config = self.default_config.copy()
 
@@ -69,21 +69,135 @@ alias_1 2 foobar
         self.entries_file = os.path.join(tmp_entries_dir, '%m_%Y.txt')
         config['default']['file'] = self.entries_file
 
-        freeze_time('2014-01-21')
-
-        self.write_entries("""17/01/2014
-alias_1 2 foobar
+        with freeze_time('2014-01-01'):
+            self.write_entries("""01/01/2014
+alias_1 2 january
 """)
 
-        with freeze_time('2014-02-05'):
-            self.write_entries("""05/02/2014
-    alias_1 4 foobar
+        with freeze_time('2014-02-01'):
+            self.write_entries("""01/02/2014
+    alias_1 4 february
     """)
 
             options = self.default_options.copy()
             options['ignore_date_error'] = True
 
             stdout = self.run_command('commit', config_options=config,
-                    options=options)
+                                      options=options)
         shutil.rmtree(tmp_entries_dir)
-        #assert False, stdout
+
+        self.assertIn('january', stdout)
+        self.assertIn('february', stdout)
+
+    def test_commit_previous_file_previous_year(self):
+        tmp_entries_dir = tempfile.mkdtemp()
+        config = self.default_config.copy()
+
+        os.remove(self.entries_file)
+
+        self.entries_file = os.path.join(tmp_entries_dir, '%m_%Y.txt')
+        config['default']['file'] = self.entries_file
+
+        with freeze_time('2013-11-01'):
+            self.write_entries("""01/11/2013
+alias_1 2 november
+""")
+
+        with freeze_time('2013-12-01'):
+            self.write_entries("""01/12/2013
+alias_1 2 december
+""")
+
+        with freeze_time('2014-01-01'):
+            self.write_entries("""01/01/2014
+    alias_1 4 january
+    """)
+
+            options = self.default_options.copy()
+            options['ignore_date_error'] = True
+
+            stdout = self.run_command('commit', config_options=config,
+                                      options=options)
+        shutil.rmtree(tmp_entries_dir)
+
+        self.assertNotIn('november', stdout)
+        self.assertIn('december', stdout)
+        self.assertIn('january', stdout)
+
+    def test_commit_previous_files_previous_months(self):
+        tmp_entries_dir = tempfile.mkdtemp()
+        config = self.default_config.copy()
+        config['default']['nb_previous_files'] = 2
+
+        os.remove(self.entries_file)
+
+        self.entries_file = os.path.join(tmp_entries_dir, '%m_%Y.txt')
+        config['default']['file'] = self.entries_file
+
+        with freeze_time('2014-01-01'):
+            self.write_entries("""01/01/2014
+alias_1 2 january
+""")
+
+        with freeze_time('2014-02-01'):
+            self.write_entries("""01/02/2014
+    alias_1 3 february
+    """)
+
+        with freeze_time('2014-03-01'):
+            self.write_entries("""01/03/2014
+alias_1 4 march
+""")
+
+            options = self.default_options.copy()
+            options['ignore_date_error'] = True
+
+            stdout = self.run_command('commit', config_options=config,
+                                      options=options)
+        shutil.rmtree(tmp_entries_dir)
+
+        self.assertIn('january', stdout)
+        self.assertIn('february', stdout)
+        self.assertIn('march', stdout)
+
+    def test_commit_previous_file_year_format(self):
+        tmp_entries_dir = tempfile.mkdtemp()
+        config = self.default_config.copy()
+        config['default']['nb_previous_files'] = 2
+
+        os.remove(self.entries_file)
+
+        self.entries_file = os.path.join(tmp_entries_dir, '%Y.txt')
+        config['default']['file'] = self.entries_file
+
+        with freeze_time('2013-01-01'):
+            self.write_entries("""01/01/2013
+    alias_1 1 january 2013
+    """)
+
+        with freeze_time('2013-02-01'):
+            self.write_entries("""01/02/2013
+    alias_1 1 february 2013
+    """)
+
+        with freeze_time('2014-01-01'):
+            self.write_entries("""01/01/2014
+alias_1 1 january 2014
+""")
+
+        with freeze_time('2014-02-01'):
+            self.write_entries("""01/02/2014
+alias_1 1 february 2014
+""")
+
+            options = self.default_options.copy()
+            options['ignore_date_error'] = True
+
+            stdout = self.run_command('commit', config_options=config,
+                                      options=options)
+        shutil.rmtree(tmp_entries_dir)
+
+        self.assertIn('january 2013', stdout)
+        self.assertIn('february 2013', stdout)
+        self.assertIn('january 2014', stdout)
+        self.assertIn('february 2014', stdout)

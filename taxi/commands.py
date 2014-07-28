@@ -46,10 +46,10 @@ class BaseTimesheetCommand(BaseCommand):
 
         timesheet_collection = TimesheetCollection()
 
-        if isinstance(self.options['file'], set):
-            timesheet_files = self.options['file']
-        else:
-            timesheet_files = set(self.options['file'])
+        timesheet_files = self.get_files(
+            self.options['unparsed_file'],
+            int(self.settings.get('nb_previous_files'))
+        )
 
         for timesheet_file in timesheet_files:
             try:
@@ -90,8 +90,8 @@ class BaseTimesheetCommand(BaseCommand):
                 prev_month = (
                     datetime.date.today() - datetime.timedelta(days=30)
                 )
-                # TODO
-                oldfile = prev_month.strftime(self.options['unparsed_file'])
+                oldfile = file.expand_filename(self.options['unparsed_file'],
+                                               date=prev_month)
 
                 try:
                     p = PlainTextParser(PlainFileIo(oldfile))
@@ -105,6 +105,34 @@ class BaseTimesheetCommand(BaseCommand):
                            Settings.AUTO_ADD_OPTIONS['BOTTOM'])
 
         return is_top_down
+
+    def get_files(self, filename, nb_previous_files):
+        date_units = ['m', 'Y']
+        smallest_unit = None
+
+        for date in date_units:
+            if '%%%s' % date in filename:
+                smallest_unit = date
+                break
+
+        if smallest_unit is None:
+            return set([filename])
+
+        files = set()
+        file_date = datetime.date.today()
+        for i in xrange(0, nb_previous_files + 1):
+            files.add(file.expand_filename(filename, file_date))
+
+            if smallest_unit == 'm':
+                if file_date.month == 1:
+                    file_date = file_date.replace(month=12,
+                                                  year=file_date.year - 1)
+                else:
+                    file_date = file_date.replace(month=file_date.month - 1)
+            elif smallest_unit == 'Y':
+                file_date = file_date.replace(year=file_date.year - 1)
+
+        return files
 
 
 class AddCommand(BaseCommand):
@@ -376,6 +404,8 @@ class CommitCommand(BaseTimesheetCommand):
         r = remote.ZebraRemote(self.settings.get('site'),
                                self.settings.get('username'),
                                self.settings.get('password'))
+        all_pushed_entries = []
+        all_failed_entries = []
 
         for timesheet in timesheet_collection.timesheets:
             entries_to_push = timesheet.get_entries(
@@ -389,12 +419,15 @@ class CommitCommand(BaseTimesheetCommand):
             timesheet.comment_entries(pushed_entries)
             timesheet.save()
 
+            all_pushed_entries.extend(pushed_entries)
+            all_failed_entries.extend(failed_entries)
+
         ignored_entries = timesheet_collection.get_ignored_entries(self.options.get('date', None))
         ignored_entries_list = []
         for (date, entries) in ignored_entries.iteritems():
             ignored_entries_list.extend(entries)
 
-        self.view.pushed_entries_summary(pushed_entries, failed_entries,
+        self.view.pushed_entries_summary(all_pushed_entries, all_failed_entries,
                                          ignored_entries_list)
 
     def _entry_pushed(self, entry, error):

@@ -569,10 +569,18 @@ class Timesheet:
 
 
 class TimesheetCollection:
+    """
+    This is a collection of timesheets. It's basically a proxy class that calls
+    methods on all timesheets it contains.
+    """
     def __init__(self):
         self.timesheets = []
 
     def _timesheets_callback(self, callback):
+        """
+        Call a method on all the timesheets, aggregate the return values in a
+        list and return it.
+        """
         def call(*args, **kwargs):
             return_values = []
 
@@ -586,6 +594,10 @@ class TimesheetCollection:
         return call
 
     def get_entries(self, *args, **kwargs):
+        """
+        Return the entries (as a {date: entries} dict) of all timesheets in the
+        collection.
+        """
         entries_list = self._timesheets_callback('get_entries')(*args, **kwargs)
         entries = {}
 
@@ -595,6 +607,10 @@ class TimesheetCollection:
         return entries
 
     def get_ignored_entries(self, *args, **kwargs):
+        """
+        Return the ignored entries (as a {date: entries} dict) of all
+        timesheets in the collection.
+        """
         entries_list = self._timesheets_callback('get_ignored_entries')(*args, **kwargs)
         entries = {}
 
@@ -604,6 +620,10 @@ class TimesheetCollection:
         return entries
 
     def get_non_current_workday_entries(self, *args, **kwargs):
+        """
+        Return the non current workday entries (as a {date: entries} dict) of
+        all timesheets in the collection.
+        """
         entries_list = self._timesheets_callback('get_non_current_workday_entries')(*args, **kwargs)
         entries = {}
 
@@ -613,4 +633,7 @@ class TimesheetCollection:
         return entries
 
     def __getattr__(self, name):
+        """
+        Proxy all methods not defined here to the timesheets.
+        """
         return self._timesheets_callback(name)
