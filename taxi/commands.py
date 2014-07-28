@@ -11,7 +11,7 @@ from taxi.exceptions import (
     UnknownDirectionError,
     UsageError
 )
-from taxi.models import Entry, Project, Timesheet
+from taxi.models import Entry, Project, Timesheet, TimesheetCollection
 from taxi.parser import ParseError
 from taxi.parser.parsers.plaintext import PlainTextParser
 from taxi.parser.io import PlainFileIo
@@ -38,34 +38,47 @@ class BaseCommand(object):
 
 
 class BaseTimesheetCommand(BaseCommand):
-    def get_timesheet(self, skip_cache=False):
-        timesheet = getattr(self, '_current_timesheet', None)
-        if timesheet is not None and not skip_cache:
-            return timesheet
+    def get_timesheet_collection(self, skip_cache=False):
+        timesheet_collection = getattr(self, '_current_timesheet_collection',
+                                       None)
+        if timesheet_collection is not None and not skip_cache:
+            return timesheet_collection
 
-        try:
-            p = PlainTextParser(PlainFileIo(self.options['file']))
-        except IOError:
-            # The timesheet doesn't exist, create it
-            file.create_file(self.options['file'])
-            p = PlainTextParser(PlainFileIo(self.options['file']))
+        timesheet_collection = TimesheetCollection()
 
-        t = Timesheet(p, self.settings.get_aliases(),
-                      self.settings.get('date_format'))
-        setattr(self, '_current_timesheet', t)
+        timesheet_files = self.get_files(
+            self.options['unparsed_file'],
+            int(self.settings.get('nb_previous_files'))
+        )
 
-        return t
+        for timesheet_file in timesheet_files:
+            try:
+                p = PlainTextParser(PlainFileIo(timesheet_file))
+            except IOError:
+                # The timesheet doesn't exist, create it
+                file.create_file(timesheet_file)
+                p = PlainTextParser(PlainFileIo(timesheet_file))
+
+            t = Timesheet(p, self.settings.get_aliases(),
+                          self.settings.get('date_format'))
+            timesheet_collection.timesheets.append(t)
+
+        setattr(self, '_current_timesheet_collection', timesheet_collection)
+
+        return timesheet_collection
 
     def get_entries_direction(self):
         is_top_down = None
 
         try:
-            t = self.get_timesheet()
+            timesheet_collection = self.get_timesheet_collection()
         except ParseError:
-            t = None
+            timesheet_collection = None
 
         if self.settings.get('auto_add') == Settings.AUTO_ADD_OPTIONS['AUTO']:
-            if t is not None:
+            if timesheet_collection is not None:
+                t = timesheet_collection.timesheets[-1]
+
                 try:
                     is_top_down = t.is_top_down()
                 except (ParseError, UnknownDirectionError):
@@ -77,7 +90,8 @@ class BaseTimesheetCommand(BaseCommand):
                 prev_month = (
                     datetime.date.today() - datetime.timedelta(days=30)
                 )
-                oldfile = prev_month.strftime(self.options['unparsed_file'])
+                oldfile = file.expand_filename(self.options['unparsed_file'],
+                                               date=prev_month)
 
                 try:
                     p = PlainTextParser(PlainFileIo(oldfile))
@@ -91,6 +105,34 @@ class BaseTimesheetCommand(BaseCommand):
                            Settings.AUTO_ADD_OPTIONS['BOTTOM'])
 
         return is_top_down
+
+    def get_files(self, filename, nb_previous_files):
+        date_units = ['m', 'Y']
+        smallest_unit = None
+
+        for date in date_units:
+            if '%%%s' % date in filename:
+                smallest_unit = date
+                break
+
+        if smallest_unit is None:
+            return set([filename])
+
+        files = set()
+        file_date = datetime.date.today()
+        for i in xrange(0, nb_previous_files + 1):
+            files.add(file.expand_filename(filename, file_date))
+
+            if smallest_unit == 'm':
+                if file_date.month == 1:
+                    file_date = file_date.replace(month=12,
+                                                  year=file_date.year - 1)
+                else:
+                    file_date = file_date.replace(month=file_date.month - 1)
+            elif smallest_unit == 'Y':
+                file_date = file_date.replace(year=file_date.year - 1)
+
+        return files
 
 
 class AddCommand(BaseCommand):
@@ -276,7 +318,8 @@ class AutofillCommand(BaseTimesheetCommand):
             last_date = datetime.date(today.year, today.month, last_day[1])
             add_to_bottom = direction == Settings.AUTO_ADD_OPTIONS['BOTTOM']
 
-            t = self.get_timesheet()
+            timesheet_collection = self.get_timesheet_collection()
+            t = timesheet_collection.timesheets[-1]
             t.prefill(auto_fill_days, last_date, add_to_bottom)
             t.save()
 
@@ -345,14 +388,14 @@ class CommitCommand(BaseTimesheetCommand):
 
     """
     def run(self):
-        t = self.get_timesheet()
+        timesheet_collection = self.get_timesheet_collection()
 
         if (self.options.get('date', None) is None
                 and not self.options.get('ignore_date_error', False)):
-            non_workday_entries = t.get_non_current_workday_entries()
+            non_workday_entries = timesheet_collection.get_non_current_workday_entries()
 
             if non_workday_entries:
-                dates = [d[0] for d in non_workday_entries]
+                dates = non_workday_entries.keys()
                 self.view.non_working_dates_commit_error(dates)
 
                 return
@@ -361,24 +404,30 @@ class CommitCommand(BaseTimesheetCommand):
         r = remote.ZebraRemote(self.settings.get('site'),
                                self.settings.get('username'),
                                self.settings.get('password'))
+        all_pushed_entries = []
+        all_failed_entries = []
 
-        entries_to_push = t.get_entries(
-            self.options.get('date', None), exclude_ignored=True, regroup=True
-        )
+        for timesheet in timesheet_collection.timesheets:
+            entries_to_push = timesheet.get_entries(
+                self.options.get('date', None), exclude_ignored=True, regroup=True
+            )
 
-        (pushed_entries, failed_entries) = r.send_entries(entries_to_push,
-                                                          self._entry_pushed)
+            (pushed_entries, failed_entries) = r.send_entries(entries_to_push,
+                                                              self._entry_pushed)
 
-        t.fix_entries_start_time()
-        t.comment_entries(pushed_entries)
-        t.save()
+            timesheet.fix_entries_start_time()
+            timesheet.comment_entries(pushed_entries)
+            timesheet.save()
 
-        ignored_entries = t.get_ignored_entries(self.options.get('date', None))
+            all_pushed_entries.extend(pushed_entries)
+            all_failed_entries.extend(failed_entries)
+
+        ignored_entries = timesheet_collection.get_ignored_entries(self.options.get('date', None))
         ignored_entries_list = []
         for (date, entries) in ignored_entries.iteritems():
             ignored_entries_list.extend(entries)
 
-        self.view.pushed_entries_summary(pushed_entries, failed_entries,
+        self.view.pushed_entries_summary(all_pushed_entries, all_failed_entries,
                                          ignored_entries_list)
 
     def _entry_pushed(self, entry, error):
@@ -393,22 +442,22 @@ class EditCommand(BaseTimesheetCommand):
 
     """
     def run(self):
-        # Create the file if it does not exist yet
-        file.create_file(self.options['file'])
         is_top_down = None
+
+        try:
+            timesheet_collection = self.get_timesheet_collection()
+        except (UndefinedAliasError, ParseError):
+            pass
+        else:
+            try:
+                is_top_down = self.get_entries_direction()
+            except UnknownDirectionError:
+                is_top_down = True
+
+            t = timesheet_collection.timesheets[-1]
 
         if (self.settings.get('auto_add') != Settings.AUTO_ADD_OPTIONS['NO'] and
             not self.options.get('forced_file')):
-            try:
-                t = self.get_timesheet()
-            except (UndefinedAliasError, ParseError):
-                pass
-            else:
-                try:
-                    is_top_down = self.get_entries_direction()
-                except UnknownDirectionError:
-                    is_top_down = True
-
                 auto_fill_days = self.settings.get_auto_fill_days()
                 if auto_fill_days:
                     t.prefill(auto_fill_days, limit=None,
@@ -422,13 +471,14 @@ class EditCommand(BaseTimesheetCommand):
         except NoOptionError:
             editor = None
 
-        file.spawn_editor(self.options['file'], editor)
+        file.spawn_editor(t.get_file_path(), editor)
 
         try:
-            t = self.get_timesheet(True)
+            timesheet_collection = self.get_timesheet_collection(True)
         except ParseError as e:
             self.view.err(e)
         else:
+            t = timesheet_collection.timesheets[-1]
             self.view.show_status(t.get_entries(regroup=True))
 
 
@@ -536,10 +586,12 @@ class StartCommand(BaseTimesheetCommand):
         today = datetime.date.today()
 
         try:
-            t = self.get_timesheet()
+            timesheet_collection = self.get_timesheet_collection()
         except ParseError as e:
             self.view.err(e)
             return
+
+        t = timesheet_collection.timesheets[-1]
 
         # If there's a previous entry on the same date, check if we can use its
         # end time as a start time for the newly started entry
@@ -570,11 +622,11 @@ class StatusCommand(BaseTimesheetCommand):
 
     def run(self):
         try:
-            t = self.get_timesheet()
+            timesheet_collection = self.get_timesheet_collection()
         except ParseError as e:
             self.view.err(e)
         else:
-            self.view.show_status(t.get_entries(self.date, regroup=True))
+            self.view.show_status(timesheet_collection.get_entries(self.date, regroup=True))
 
 
 class StopCommand(BaseTimesheetCommand):

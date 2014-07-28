@@ -24,8 +24,6 @@ class CleanAliasesCommandTestCase(CommandTestCase):
 
         options['force_yes'] = True
 
-        _, options['projects_db'] = tempfile.mkstemp()
-
         projects_db = ProjectsDb(options['projects_db'])
 
         project_not_started = Project(0, 'not started project',

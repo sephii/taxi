@@ -11,6 +11,7 @@ from taxi import __version__, commands
 from taxi.exceptions import UndefinedAliasError, UsageError
 from taxi.projectsdb import ProjectsDb
 from taxi.settings import Settings
+from taxi.utils.file import expand_filename
 from taxi.ui.tty import TtyUi
 
 class AppContainer(object):
@@ -86,6 +87,9 @@ Available commands:
             'update': commands.UpdateCommand,
         }
 
+        options = options.copy()
+        args = list(args)
+
         settings = Settings(options['config'])
         if not os.path.exists(settings.TAXI_PATH):
             os.mkdir(settings.TAXI_PATH)
@@ -102,7 +106,7 @@ Available commands:
             options['forced_file'] = False
 
         options['unparsed_file'] = os.path.expanduser(options['file'])
-        options['file'] = datetime.date.today().strftime(os.path.expanduser(options['file']))
+        options['file'] = expand_filename(options['file'])
 
         if options.get('date', None) is not None:
             date_format = '%d.%m.%Y'
@@ -159,6 +163,7 @@ Available commands:
             except UndefinedAliasError as e:
                 close = settings.get_close_matches(e.message)
                 view.suggest_aliases(e.message, close)
+
 
 def term_unicode(string):
     return unicode(string, sys.stdin.encoding)
