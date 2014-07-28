@@ -6,7 +6,7 @@ import sys
 
 from taxi.utils import date as date_utils, terminal
 from taxi.exceptions import CancelException
-from taxi.models import Project
+from taxi.models import Project, Entry
 
 class BaseUi(object):
     def __init__(self, stdout):
@@ -162,20 +162,30 @@ class BaseUi(object):
 
         return confirm == 'y'
 
-    def pushed_entries_total(self, pushed_entries):
-        total_hours = 0
-        for entry in pushed_entries:
-            total_hours += entry.get_duration()
+    def display_entries_list(self, entries, msg, details=True):
+        total = 0
+        for entry in entries:
+            if not isinstance(entry, Entry):
+                reason = entry[1]
+                entry = entry[0]
+                line = unicode(entry) + ' - ' + reason
+            else:
+                line = unicode(entry)
 
-        self.msg(u'\n%-29s %5.2f' % ('Total pushed', total_hours))
+            total += entry.get_duration()
+            if details:
+                self.msg(line)
+
+        self.msg(u'\n%-29s %5.2f' % (msg, total))
+
+    def pushed_entries_total(self, pushed_entries):
+        self.display_entries_list(pushed_entries, 'Total pushed', False)
 
     def ignored_entries_list(self, ignored_entries):
-        ignored_hours = 0
-        for entry in ignored_entries:
-            ignored_hours += entry.get_duration()
-            self.msg(unicode(entry))
+        self.display_entries_list(ignored_entries, 'Total ignored')
 
-        self.msg(u'\n%-29s %5.2f' % ('Total ignored', ignored_hours))
+    def failed_entries_list(self, failed_entries):
+        self.display_entries_list(failed_entries, 'Total failed')
 
     def non_working_dates_commit_error(self, dates):
         dates = [date_utils.unicode_strftime(d, '%A %d %B') for d in dates]
@@ -216,10 +226,6 @@ class BaseUi(object):
         else:
             self.msg(unicode(entry))
 
-    def failed_entries_list(self, failed_entries):
-        for failed_entry in failed_entries:
-            self.msg(u"%s, reason: %s" % failed_entry)
-
     def pushed_entries_summary(self, pushed_entries, failed_entries,
                                ignored_entries):
         self.pushed_entries_total(pushed_entries)
@@ -227,6 +233,10 @@ class BaseUi(object):
         if ignored_entries:
             self.msg(u"\nIgnored entries:\n")
             self.ignored_entries_list(ignored_entries)
+
+        if failed_entries:
+            self.msg(u"\nFailed entries:\n")
+            self.failed_entries_list(failed_entries)
 
     def pushing_entries(self):
         self.msg(u"Pushing entries...\n")
