@@ -95,7 +95,7 @@ Available commands:
             os.mkdir(settings.TAXI_PATH)
 
         if options.get('file', None) is None:
-            options['forced_file'] = True
+            options['forced_file'] = False
             try:
                 options['file'] = settings.get('file')
             except ConfigParser.NoOptionError:
@@ -103,7 +103,7 @@ Available commands:
                                 "define one in your config file with the "
                                 "'file' setting, or use the -f option")
         else:
-            options['forced_file'] = False
+            options['forced_file'] = True
 
         options['unparsed_file'] = os.path.expanduser(options['file'])
         options['file'] = expand_filename(options['file'])

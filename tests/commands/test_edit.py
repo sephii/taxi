@@ -1,10 +1,4 @@
-import tempfile
-
 from freezegun import freeze_time
-
-from taxi.models import Project, Activity
-from taxi.projectsdb import ProjectsDb
-from taxi.settings import Settings
 
 from . import CommandTestCase
 
@@ -21,7 +15,7 @@ class EditCommandTestCase(CommandTestCase):
         config['default']['auto_fill_days'] = '0,1,2,3,4,5,6'
         options['file'] = self.entries_file
 
-        self.run_command('edit')
+        self.run_command('edit', options=options)
 
         with open(self.entries_file, 'r') as f:
             self.assertEqual(f.read(), '')
