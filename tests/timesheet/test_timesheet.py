@@ -5,25 +5,26 @@ from taxi.exceptions import UndefinedAliasError, UnknownDirectionError
 from taxi.models import AggregatedEntry, Entry
 from taxi.parser import ParseError
 
+from taxi.timesheet.entry import TimesheetEntry
+from taxi.timesheet.parser import TimesheetParser
+
 from . import BaseTimesheetTestCase
 
 
 class TimesheetTestCase(BaseTimesheetTestCase):
     def test_empty(self):
         t = self._create_timesheet('')
-        entries = t.get_entries()
-        self.assertEquals(len(entries), 0)
+        self.assertEquals(len(t.entries), 0)
 
     def test_valid_timesheet(self):
         contents = """10.10.2012
 foo 09:00-10:00 baz"""
 
         t = self._create_timesheet(contents)
-        entries = t.get_entries()
-        self.assertEquals(len(entries), 1)
-        self.assertIn(datetime.date(2012, 10, 10), entries)
-        self.assertEquals(len(entries.values()[0]), 1)
-        self.assertIsInstance(entries.values()[0][0], Entry)
+        self.assertEquals(len(t.entries), 1)
+        self.assertIn(datetime.date(2012, 10, 10), t.entries)
+        self.assertEquals(len(t.entries.values()[0]), 1)
+        self.assertIsInstance(t.entries.values()[0][0], TimesheetEntry)
 
     def test_to_lines(self):
         contents = """10.10.2012
@@ -31,15 +32,16 @@ foo 09:00-10:00 baz
 bar -11:00 foobar"""
 
         t = self._create_timesheet(contents)
-        lines = t.to_lines()
+        lines = TimesheetParser.to_lines(t.entries)
         self.assertEquals(len(lines), 3)
         self.assertEquals(lines[0], '10.10.2012')
         self.assertEquals(lines[1], 'foo 09:00-10:00 baz')
         self.assertEquals(lines[2], 'bar -11:00 foobar')
 
-        e = Entry(datetime.date(2012, 9, 29), 'foo', (datetime.time(15, 0), None), 'bar')
-        t.add_entry(e)
-        lines = t.to_lines()
+        t.entries[datetime.date(2012, 9, 29)].append(
+            TimesheetEntry('foo', (datetime.time(15, 0), None), 'bar')
+        )
+        lines = TimesheetParser.to_lines(t.entries)
         self.assertEquals(len(lines), 7)
         self.assertEquals(lines[3], '')
         self.assertEquals(lines[4], '29.09.2012')
@@ -65,7 +67,7 @@ bar     -1100 bar
 foo     -1200 bar"""
 
         t = self._create_timesheet(contents)
-        entries = t.get_entries()
+        entries = t.entries
         entries_list = entries[datetime.date(2012, 10, 10)]
         self.assertEquals(len(entries_list), 3)
         self.assertEquals(entries_list[0].duration, (datetime.time(9, 0),
@@ -188,7 +190,7 @@ bar 0900-1000 bar
 foo 1 bar"""
 
         t = self._create_timesheet(contents)
-        entries = t.get_entries(datetime.date(2013, 4, 1))
+        entries = t.entries[datetime.date(2013, 4, 1)]
 
         for (date, entries_list) in entries.iteritems():
             t.comment_entries(entries_list)
@@ -204,21 +206,13 @@ foo 1 bar"""
 
     def test_add_date(self):
         t = self._create_timesheet('')
-        t.add_date(datetime.date(2013, 1, 1))
-        self.assertEquals(len(t.get_entries()), 1)
-        t.add_date(datetime.date(2013, 1, 1))
-        self.assertEquals(len(t.get_entries()), 1)
-        t.add_date(datetime.date(2013, 1, 2))
-        self.assertEquals(len(t.get_entries()), 2)
+        t.entries[datetime.date(2013, 1, 1)] = []
+        t.entries[datetime.date(2013, 1, 2)] = []
 
-        lines = t.to_lines()
+        lines = TimesheetParser.to_lines(t.entries, descending=False)
         self.assertEquals(lines, ["01.01.2013", "", "02.01.2013", ""])
 
-        t = self._create_timesheet('')
-        t.add_date(datetime.date(2013, 1, 1), False)
-        t.add_date(datetime.date(2013, 1, 2), False)
-
-        lines = t.to_lines()
+        lines = TimesheetParser.to_lines(t.entries, descending=True)
         self.assertEquals(lines, ["02.01.2013", "", "01.01.2013", ""])
 
     def test_regroup(self):

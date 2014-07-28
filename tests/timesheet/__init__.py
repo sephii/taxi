@@ -1,15 +1,13 @@
 # -*- coding: utf-8 -*-
 import unittest
 
-from taxi.models import Timesheet
-from taxi.parser.io import StreamIo
-from taxi.parser.parsers.plaintext import PlainTextParser
+from taxi.timesheet import Timesheet
+from taxi.timesheet.entry import EntriesCollection
 
 
 class BaseTimesheetTestCase(unittest.TestCase):
     def _create_timesheet(self, text):
         mappings = {'foo': (123, 456), 'bar': (12, 34)}
-        io = StreamIo(text)
-        p = PlainTextParser(io)
+        entries = EntriesCollection(text)
 
-        return Timesheet(p, mappings, '%d.%m.%Y')
+        return Timesheet(entries, mappings)

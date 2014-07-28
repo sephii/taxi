@@ -24,8 +24,8 @@ alias_1 1 january
 
         with freeze_time('2014-02-01'):
             self.write_entries("""01/02/2014
-    alias_1 1 february
-    """)
+alias_1 1 february
+""")
 
             options = self.default_options.copy()
             options['ignore_date_error'] = True

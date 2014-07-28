@@ -202,7 +202,7 @@ class BaseUi(object):
                      date_utils.unicode_strftime(date, '%A %d %B').capitalize())
             for entry in entries:
                 self.msg(unicode(entry))
-                subtotal_hours += entry.get_duration() or 0
+                subtotal_hours += entry.duration or 0
 
             self.msg(u'%-29s %5.2f\n' % ('', subtotal_hours))
             total_hours += subtotal_hours

@@ -11,10 +11,10 @@ from taxi.exceptions import (
     UnknownDirectionError,
     UsageError
 )
-from taxi.models import Entry, Project, Timesheet, TimesheetCollection
+from taxi.models import Entry, Project, TimesheetCollection
+from taxi.timesheet import Timesheet, TimesheetFile
+from taxi.timesheet.entry import EntriesCollection
 from taxi.parser import ParseError
-from taxi.parser.parsers.plaintext import PlainTextParser
-from taxi.parser.io import PlainFileIo
 from taxi.settings import Settings
 from taxi.utils import file
 from taxi.utils.structures import OrderedSet
@@ -52,16 +52,19 @@ class BaseTimesheetCommand(BaseCommand):
             int(self.settings.get('nb_previous_files'))
         )
 
-        for timesheet_file in timesheet_files:
+        for file_path in timesheet_files:
             try:
-                p = PlainTextParser(PlainFileIo(timesheet_file))
+                timesheet_file = TimesheetFile(file_path)
             except IOError:
                 # The timesheet doesn't exist, create it
-                file.create_file(timesheet_file)
-                p = PlainTextParser(PlainFileIo(timesheet_file))
+                file.create_file(file_path)
+                timesheet_file = TimesheetFile(file_path)
 
-            t = Timesheet(p, self.settings.get_aliases(),
-                          self.settings.get('date_format'))
+            t = Timesheet(
+                EntriesCollection(timesheet_file.text),
+                self.settings.get_aliases(),
+                self.settings.get('date_format')
+            )
             timesheet_collection.timesheets.append(t)
 
         setattr(self, '_current_timesheet_collection', timesheet_collection)
