@@ -17,6 +17,7 @@ from taxi.parser.parsers.plaintext import PlainTextParser
 from taxi.parser.io import PlainFileIo
 from taxi.settings import Settings
 from taxi.utils import file
+from taxi.utils.structures import OrderedSet
 
 
 class BaseCommand(object):
@@ -77,29 +78,20 @@ class BaseTimesheetCommand(BaseCommand):
 
         if self.settings.get('auto_add') == Settings.AUTO_ADD_OPTIONS['AUTO']:
             if timesheet_collection is not None:
-                t = timesheet_collection.timesheets[-1]
+                t = timesheet_collection.timesheets[0]
 
                 try:
                     is_top_down = t.is_top_down()
                 except (ParseError, UnknownDirectionError):
-                    is_top_down = None
+                    pass
 
-            if is_top_down is None:
-                # Unable to automatically detect the entries direction, we try
-                # to get a previous file to see if we're lucky
-                prev_month = (
-                    datetime.date.today() - datetime.timedelta(days=30)
-                )
-                oldfile = file.expand_filename(self.options['unparsed_file'],
-                                               date=prev_month)
-
-                try:
-                    p = PlainTextParser(PlainFileIo(oldfile))
-                    t2 = Timesheet(p, self.settings.get_aliases(),
-                                   self.settings.get('date_format'))
-                    is_top_down = t2.is_top_down()
-                except (IOError, ParseError, UnknownDirectionError):
-                    is_top_down = False
+                if is_top_down is None and len(timesheet_collection.timesheets) > 1:
+                    # Unable to automatically detect the entries direction, we
+                    # try to get a previous file to see if we're lucky
+                    try:
+                        is_top_down = timesheet_collection[1].is_top_down()
+                    except (ParseError, UnknownDirectionError):
+                        pass
         else:
             is_top_down = (self.settings.get('auto_add') ==
                            Settings.AUTO_ADD_OPTIONS['BOTTOM'])
@@ -116,9 +108,9 @@ class BaseTimesheetCommand(BaseCommand):
                 break
 
         if smallest_unit is None:
-            return set([filename])
+            return OrderedSet([filename])
 
-        files = set()
+        files = OrderedSet()
         file_date = datetime.date.today()
         for i in xrange(0, nb_previous_files + 1):
             files.add(file.expand_filename(filename, file_date))
@@ -319,7 +311,7 @@ class AutofillCommand(BaseTimesheetCommand):
             add_to_bottom = direction == Settings.AUTO_ADD_OPTIONS['BOTTOM']
 
             timesheet_collection = self.get_timesheet_collection()
-            t = timesheet_collection.timesheets[-1]
+            t = timesheet_collection.timesheets[0]
             t.prefill(auto_fill_days, last_date, add_to_bottom)
             t.save()
 
@@ -454,7 +446,7 @@ class EditCommand(BaseTimesheetCommand):
             except UnknownDirectionError:
                 is_top_down = True
 
-            t = timesheet_collection.timesheets[-1]
+            t = timesheet_collection.timesheets[0]
 
         if (self.settings.get('auto_add') != Settings.AUTO_ADD_OPTIONS['NO'] and
             not self.options.get('forced_file')):
@@ -478,7 +470,7 @@ class EditCommand(BaseTimesheetCommand):
         except ParseError as e:
             self.view.err(e)
         else:
-            t = timesheet_collection.timesheets[-1]
+            t = timesheet_collection.timesheets[0]
             self.view.show_status(t.get_entries(regroup=True))
 
 
@@ -591,7 +583,7 @@ class StartCommand(BaseTimesheetCommand):
             self.view.err(e)
             return
 
-        t = timesheet_collection.timesheets[-1]
+        t = timesheet_collection.timesheets[0]
 
         # If there's a previous entry on the same date, check if we can use its
         # end time as a start time for the newly started entry
