@@ -89,7 +89,7 @@ class BaseTimesheetCommand(BaseCommand):
                     # Unable to automatically detect the entries direction, we
                     # try to get a previous file to see if we're lucky
                     try:
-                        is_top_down = timesheet_collection[1].is_top_down()
+                        is_top_down = timesheet_collection.timesheets[1].is_top_down()
                     except (ParseError, UnknownDirectionError):
                         pass
         else:

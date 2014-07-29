@@ -636,4 +636,7 @@ class TimesheetCollection:
         """
         Proxy all methods not defined here to the timesheets.
         """
-        return self._timesheets_callback(name)
+        if hasattr(Timesheet, name):
+            return self._timesheets_callback(name)
+        else:
+            raise AttributeError()
