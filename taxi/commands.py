@@ -435,12 +435,14 @@ class EditCommand(BaseTimesheetCommand):
     """
     def run(self):
         is_top_down = None
+        timesheet_collection = None
 
         try:
             timesheet_collection = self.get_timesheet_collection()
         except (UndefinedAliasError, ParseError):
             pass
-        else:
+
+        if timesheet_collection:
             try:
                 is_top_down = self.get_entries_direction()
             except UnknownDirectionError:
@@ -448,22 +450,22 @@ class EditCommand(BaseTimesheetCommand):
 
             t = timesheet_collection.timesheets[0]
 
-        if (self.settings.get('auto_add') != Settings.AUTO_ADD_OPTIONS['NO'] and
-            not self.options.get('forced_file')):
-                auto_fill_days = self.settings.get_auto_fill_days()
-                if auto_fill_days:
-                    t.prefill(auto_fill_days, limit=None,
-                              add_to_bottom=is_top_down)
+            if (self.settings.get('auto_add') != Settings.AUTO_ADD_OPTIONS['NO'] and
+                not self.options.get('forced_file')):
+                    auto_fill_days = self.settings.get_auto_fill_days()
+                    if auto_fill_days:
+                        t.prefill(auto_fill_days, limit=None,
+                                  add_to_bottom=is_top_down)
 
-                t.add_date(datetime.date.today(), is_top_down)
-                t.save()
+                    t.add_date(datetime.date.today(), is_top_down)
+                    t.save()
 
         try:
             editor = self.settings.get('editor')
         except NoOptionError:
             editor = None
 
-        file.spawn_editor(t.get_file_path(), editor)
+        file.spawn_editor(self.options['file'], editor)
 
         try:
             timesheet_collection = self.get_timesheet_collection(True)
