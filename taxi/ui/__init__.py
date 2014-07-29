@@ -6,15 +6,15 @@ import sys
 
 from taxi.utils import date as date_utils, terminal
 from taxi.exceptions import CancelException
-from taxi.models import Project, Entry
+from taxi.models import Project
 
-from colorama import init, Fore, Style
-init()
+import colorama
 
 
 class BaseUi(object):
     def __init__(self, stdout):
         self.stdout = stdout
+        colorama.init()
 
     @staticmethod
     def _get_encoding():
@@ -27,11 +27,17 @@ class BaseUi(object):
 
         return encoding
 
-    def msg(self, message, color=Fore.RESET):
-        self.stdout.write(u"%s%s\n" % (color, message.encode(self._get_encoding())))
+    def msg(self, message, color=None):
+        if color is not None:
+            message = u"%s%s" % (color, message)
+
+        self.stdout.write(u"%s%s\n" % (
+            message.encode(self._get_encoding()),
+            colorama.Back.RESET + colorama.Fore.RESET + colorama.Style.RESET_ALL
+        ))
 
     def err(self, message):
-        self.msg(u"%sError: %s" % (Fore.RED, message))
+        self.msg(u"%sError: %s" % (colorama.Fore.RED, message))
 
     def projects_list(self, projects, numbered=False):
         for (key, project) in enumerate(projects):
@@ -226,7 +232,11 @@ class BaseUi(object):
 
     def pushed_entry(self, entry, error):
         if error:
-            self.msg(u"%s - %sFailed, reason: %s" % (unicode(entry), Style.BRIGHT + Fore.RED, error))
+            self.msg(u"%s - %sFailed, reason: %s" % (
+                unicode(entry),
+                colorama.Style.BRIGHT + colorama.Fore.RED,
+                error
+            ))
         else:
             self.msg(unicode(entry))
 
@@ -235,11 +245,13 @@ class BaseUi(object):
         self.pushed_entries_total(pushed_entries)
 
         if ignored_entries:
-            self.msg(u"\nIgnored entries\n", Style.BRIGHT + Fore.YELLOW)
+            self.msg(u"\nIgnored entries\n",
+                     colorama.Style.BRIGHT + colorama.Fore.YELLOW)
             self.ignored_entries_list(ignored_entries)
 
         if failed_entries:
-            self.msg(u"\nFailed entries\n", Style.BRIGHT + Fore.RED)
+            self.msg(u"\nFailed entries\n",
+                     colorama.Style.BRIGHT + colorama.Fore.RED)
             self.failed_entries_list(failed_entries)
 
     def pushing_entries(self):
