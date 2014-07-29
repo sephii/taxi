@@ -7,6 +7,10 @@ tests_require = [
     'mock',
 ]
 
+install_require = [
+    'colorama'
+]
+
 
 setup(
     name='taxi',
@@ -17,6 +21,7 @@ setup(
     author_email='sylvain.fankhauser@liip.ch',
     scripts=['bin/taxi'],
     url='https://github.com/sephii/taxi',
+    install_require=install_require,
     tests_require=tests_require,
     test_suite='tests.runtests.suite',
     include_package_data=False
