@@ -8,7 +8,7 @@ from taxi.utils import date as date_utils, terminal
 from taxi.exceptions import CancelException
 from taxi.models import Project, Entry
 
-from colorama import init, Fore
+from colorama import init, Fore, Style
 init()
 
 
@@ -28,10 +28,10 @@ class BaseUi(object):
         return encoding
 
     def msg(self, message, color=Fore.RESET):
-        self.stdout.write(color + message.encode(self._get_encoding()) + "\n")
+        self.stdout.write(u"%s%s\n" % (color, message.encode(self._get_encoding())))
 
     def err(self, message):
-        self.msg(Fore.red + u"Error: %s" % message)
+        self.msg(u"%sError: %s" % (Fore.RED, message))
 
     def projects_list(self, projects, numbered=False):
         for (key, project) in enumerate(projects):
@@ -166,30 +166,30 @@ class BaseUi(object):
 
         return confirm == 'y'
 
-    def display_entries_list(self, entries, msg, details=True, color=Fore.RESET):
+    def display_entries_list(self, entries, msg, details=True):
         total = 0
         for entry in entries:
             if not isinstance(entry, Entry):
                 reason = entry[1]
                 entry = entry[0]
-                line = unicode(entry) + ' - ' + reason
+                line = "%s - %s" % (unicode(entry), reason)
             else:
                 line = unicode(entry)
 
             total += entry.get_duration()
             if details:
-                self.msg(line, color)
+                self.msg(line)
 
-        self.msg(u'\n%-29s %5.2f' % (msg, total), color)
+        self.msg(u'\n%-29s %5.2f' % (msg, total))
 
     def pushed_entries_total(self, pushed_entries):
-        self.display_entries_list(pushed_entries, 'Total pushed', False, color=Fore.GREEN)
+        self.display_entries_list(pushed_entries, 'Total pushed', False)
 
     def ignored_entries_list(self, ignored_entries):
-        self.display_entries_list(ignored_entries, 'Total ignored', color=Fore.YELLOW)
+        self.display_entries_list(ignored_entries, 'Total ignored')
 
     def failed_entries_list(self, failed_entries):
-        self.display_entries_list(failed_entries, 'Total failed', color=Fore.RED)
+        self.display_entries_list(failed_entries, 'Total failed')
 
     def non_working_dates_commit_error(self, dates):
         dates = [date_utils.unicode_strftime(d, '%A %d %B') for d in dates]
@@ -226,7 +226,7 @@ class BaseUi(object):
 
     def pushed_entry(self, entry, error):
         if error:
-            self.msg(u"%s - " % unicode(entry) + Fore.RED + u"Failed, reason: %s " % error)
+            self.msg(u"%s - %sFailed, reason: %s" % (unicode(entry), Style.BRIGHT + Fore.RED, error))
         else:
             self.msg(unicode(entry))
 
@@ -235,11 +235,11 @@ class BaseUi(object):
         self.pushed_entries_total(pushed_entries)
 
         if ignored_entries:
-            self.msg(u"\nIgnored entries:\n", Fore.YELLOW)
+            self.msg(u"\nIgnored entries\n", Style.BRIGHT + Fore.YELLOW)
             self.ignored_entries_list(ignored_entries)
 
         if failed_entries:
-            self.msg(u"\nFailed entries:\n", Fore.RED)
+            self.msg(u"\nFailed entries\n", Style.BRIGHT + Fore.RED)
             self.failed_entries_list(failed_entries)
 
     def pushing_entries(self):
