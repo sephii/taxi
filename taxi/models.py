@@ -289,27 +289,48 @@ class Timesheet:
 
         for (entrydate, entries) in self.entries.iteritems():
             if date is None or (entrydate >= date[0] and entrydate <= date[1]):
-                aggregated_entries = {}
-
                 if entrydate not in entries_dict:
                     entries_dict[entrydate] = []
 
                 entries_for_date = []
 
                 if regroup:
+                    # This is a mapping between entries hashes and their
+                    # position in the entries_for_date list
+                    aggregated_entries = {}
+
                     for (id, entry) in enumerate(entries):
                         if exclude_ignored and entry.is_ignored():
                             continue
 
+                        # Common case: the entry is not yet referenced in the
+                        # aggregated_entries dict
                         if entry.get_hash() not in aggregated_entries:
+                            # In that case, put it normally in the
+                            # entries_for_date list. It will get replaced by an
+                            # AggregatedEntry later if necessary
                             entries_for_date.append(entry)
                             aggregated_entries[entry.get_hash()] = id
                         else:
-                            normal_entry = entries_for_date[aggregated_entries[entry.get_hash()]]
-                            aggregated_entry = AggregatedEntry()
-                            aggregated_entry.entries.append(normal_entry)
-                            aggregated_entry.entries.append(entry)
-                            entries_for_date[aggregated_entries[entry.get_hash()]] = aggregated_entry
+                            # Get the first occurence of the entry in the
+                            # entries_for_date list
+                            existing_entry = entries_for_date[aggregated_entries[entry.get_hash()]]
+
+                            # The entry could already have been replaced by an
+                            # AggregatedEntry if there's more than 2 occurences
+                            if isinstance(existing_entry, Entry):
+                                # Create the AggregatedEntry, put the first
+                                # occurence of Entry in it and the current one
+                                aggregated_entry = AggregatedEntry()
+                                aggregated_entry.entries.append(existing_entry)
+                                aggregated_entry.entries.append(entry)
+                                entries_for_date[aggregated_entries[entry.get_hash()]] = aggregated_entry
+                            else:
+                                # The entry we found is already an
+                                # AggregatedEntry, let's just append the
+                                # current entry to it
+                                aggregated_entry = existing_entry
+                                aggregated_entry.entries.append(entry)
                 else:
                     if not exclude_ignored:
                         entries_for_date = entries
