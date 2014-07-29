@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import inspect
-import locale
 import re
 import sys
 
@@ -12,9 +11,12 @@ import colorama
 
 
 class BaseUi(object):
-    def __init__(self, stdout):
+    def __init__(self, stdout, use_colors=True):
         self.stdout = stdout
-        colorama.init()
+        self.use_colors = use_colors
+
+        if self.use_colors:
+            colorama.init()
 
     @staticmethod
     def _get_encoding():
@@ -28,16 +30,21 @@ class BaseUi(object):
         return encoding
 
     def msg(self, message, color=None):
-        if color is not None:
+        if self.use_colors and color is not None:
             message = u"%s%s" % (color, message)
 
-        self.stdout.write(u"%s%s\n" % (
-            message.encode(self._get_encoding()),
-            colorama.Back.RESET + colorama.Fore.RESET + colorama.Style.RESET_ALL
-        ))
+        self.stdout.write(message.encode(self._get_encoding()))
+
+        if self.use_colors and color is not None:
+            self.stdout.write(
+                colorama.Back.RESET + colorama.Fore.RESET +
+                colorama.Style.RESET_ALL
+            )
+
+        self.stdout.write("\n")
 
     def err(self, message):
-        self.msg(u"%sError: %s" % (colorama.Fore.RED, message))
+        self.msg(u"Error: %s" % message, colorama.Fore.RED)
 
     def projects_list(self, projects, numbered=False):
         for (key, project) in enumerate(projects):
@@ -232,11 +239,10 @@ class BaseUi(object):
 
     def pushed_entry(self, entry, error):
         if error:
-            self.msg(u"%s - %sFailed, reason: %s" % (
+            self.msg(u"%s - Failed, reason: %s" % (
                 unicode(entry),
-                colorama.Style.BRIGHT + colorama.Fore.RED,
                 error
-            ))
+            ), colorama.Style.BRIGHT + colorama.Fore.RED)
         else:
             self.msg(unicode(entry))
 

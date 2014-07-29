@@ -37,6 +37,9 @@ auto_add = auto
 # empty
 # auto_fill_days = 0,1,2,3,4
 
+# Set this to 0 to disable colored output
+# use_colors = 1
+
 # This section contains your project name <-> id mapping. The format is:
 # project_name = project_id/activity_id
 [wrmap]

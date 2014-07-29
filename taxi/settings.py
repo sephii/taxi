@@ -16,7 +16,8 @@ class Settings:
             'auto_fill_days': '',
             'date_format': '%d/%m/%Y',
             'auto_add': 'auto',
-            'nb_previous_files': 1,
+            'nb_previous_files': '1',
+            'use_colors': '1'
     }
 
     def __init__(self, file):

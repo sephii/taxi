@@ -49,6 +49,7 @@ class CommandTestCase(TestCase):
                 'date_format': '%d/%m/%Y',
                 'editor': '/bin/false',
                 'file': self.entries_file,
+                'use_colors': '0'
             },
             'wrmap': {
                 'alias_1': '123/456'
