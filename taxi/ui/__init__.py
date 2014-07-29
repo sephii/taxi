@@ -169,7 +169,7 @@ class BaseUi(object):
     def display_entries_list(self, entries, msg, details=True):
         total = 0
         for entry in entries:
-            if not isinstance(entry, Entry):
+            if isinstance(entry, tuple):
                 reason = entry[1]
                 entry = entry[0]
                 line = "%s - %s" % (unicode(entry), reason)
