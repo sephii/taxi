@@ -350,8 +350,9 @@ class CommitCommand(BaseTimesheetCommand):
             non_workday_entries = t.get_non_current_workday_entries()
 
             if non_workday_entries:
-                dates = [d[0] for d in non_workday_entries]
-                self.view.non_working_dates_commit_error(dates)
+                self.view.non_working_dates_commit_error(
+                    non_workday_entries.keys()
+                )
 
                 return
 

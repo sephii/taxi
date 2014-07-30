@@ -434,15 +434,18 @@ class Timesheet:
         return lines
 
     def get_non_current_workday_entries(self, limit_date=None):
-        non_workday_entries = []
-        entries = self.get_entries(limit_date, exclude_ignored=True)
+        non_workday_entries = defaultdict(list)
+        entries = self.get_entries(
+            limit_date,
+            lambda e: not e.is_ignored() and not e.is_local()
+        )
         today = datetime.date.today()
         yesterday = date_utils.get_previous_working_day(today)
 
         for (date, date_entries) in entries.iteritems():
             if date not in (today, yesterday) or date.strftime('%w') in [6, 0]:
                 if date_entries:
-                    non_workday_entries.append((date, date_entries))
+                    non_workday_entries[date].extend(date_entries)
 
         return non_workday_entries
 
