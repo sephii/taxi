@@ -122,6 +122,11 @@ class BaseUi(object):
     def _show_mapping(self, mapping, project, alias_first=True):
         (alias, t) = mapping
 
+        # Handle local aliases
+        if t == (None, None):
+            self.msg(u"%s -> local alias" % alias)
+            return
+
         mapping_name = '%s/%s' % t
 
         if not project:
