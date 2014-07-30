@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from collections import defaultdict
 import datetime
 import re
 
@@ -37,14 +38,12 @@ class Entry:
     def is_ignored(self):
         return self.ignored or self.get_duration() == 0
 
-    """ return true if the entry is local, ie we don't have to push it
-        to Zebra
-    """
     def is_local(self):
+        """
+        Return true if the entry is local, ie. we don't have to push it to the
+        remote
+        """
         return self.local
-
-    def is_selected(self, exclude_ignored, exclude_local):
-        return not (exclude_ignored and self.is_ignored()) and not (exclude_local and self.is_local())
 
     def get_duration(self):
         if isinstance(self.duration, tuple):
@@ -236,7 +235,7 @@ class Timesheet:
                     entry.project_id = self.mappings[entry.project_name][0]
                     entry.activity_id = self.mappings[entry.project_name][1]
 
-                    if(entry.project_id is None or entry.activity_id is None):
+                    if entry.project_id is None or entry.activity_id is None:
                         entry.local = True
                 else:
                     if not entry.is_ignored():
@@ -244,8 +243,8 @@ class Timesheet:
 
                 self.entries[current_date].append(entry)
 
-    def get_entries(self, date=None, exclude_ignored=False, exclude_local=False):
-        entries_dict = {}
+    def get_filtered_entries(self, date=None, filter_callback=None):
+        entries_dict = defaultdict(list)
 
         # Date can either be a single date (only 1 day) or a tuple for a
         # date range
@@ -254,40 +253,33 @@ class Timesheet:
 
         for (entrydate, entries) in self.entries.iteritems():
             if date is None or (entrydate >= date[0] and entrydate <= date[1]):
-                if entrydate not in entries_dict:
-                    entries_dict[entrydate] = []
+                if filter_callback is None:
+                    d_list = entries
+                else:
+                    d_list = [
+                        entry for entry in entries
+                        if (filter_callback is not None
+                            and filter_callback(entry))
+                    ]
 
-                d_list = [entry for entry in entries if entry.is_selected(exclude_ignored, exclude_local)]
                 entries_dict[entrydate].extend(d_list)
 
         return entries_dict
 
+    def get_entries(self, date=None, exclude_ignored=False,
+                    exclude_local=False):
+        def entry_filter(entry):
+            return (not (exclude_ignored and entry.is_ignored())
+                    and not (exclude_local and entry.is_local()))
+
+        return self.get_filtered_entries(date, entry_filter)
+
     def get_local_entries(self, date=None):
-        entries_dict = self.get_entries(date, False)
-        local_entries = {}
-
-        for (date, entries) in entries_dict.iteritems():
-            local_entries_list = [entry for entry in entries if entry.is_local()]
-
-            if local_entries_list:
-                local_entries[date] = local_entries_list
-
-        return local_entries
+        return self.get_filtered_entries(date, lambda entry: entry.is_local())
 
     def get_ignored_entries(self, date=None):
-        entries_dict = self.get_entries(date, False)
-        ignored_entries = {}
-
-        for (date, entries) in entries_dict.iteritems():
-            ignored_entries_list = []
-            for entry in entries:
-                if entry.is_ignored():
-                    ignored_entries_list.append(entry)
-
-            if ignored_entries_list:
-                ignored_entries[date] = ignored_entries_list
-
-        return ignored_entries
+        return self.get_filtered_entries(date,
+                                         lambda entry: entry.is_ignored())
 
     def _get_latest_entry_for_date(self, date):
         date_line = None

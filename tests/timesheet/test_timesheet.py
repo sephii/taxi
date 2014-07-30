@@ -116,7 +116,7 @@ foo 1400-? ?"""
             "foo 1400-? ?"])
 
         ignored_entries = t.get_ignored_entries()
-        self.assertEquals(len(ignored_entries), 1)
+        self.assertEquals(len(ignored_entries), 3)
         self.assertEquals(len(ignored_entries[datetime.date(2012, 10, 12)]), 3)
 
         t.continue_entry(datetime.date(2012, 10, 12), datetime.time(15, 12))
