@@ -74,8 +74,9 @@ class Settings:
             except ConfigParser.NoOptionError:
                 local_aliases = ''
 
-            for alias in local_aliases.split(','):
-                aliases[alias.strip()] = (None, None)
+            if local_aliases:
+                for alias in local_aliases.split(','):
+                    aliases[alias.strip()] = (None, None)
 
         return aliases
 
