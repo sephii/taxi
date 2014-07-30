@@ -387,8 +387,9 @@ class CommitCommand(BaseTimesheetCommand):
             non_workday_entries = timesheet_collection.get_non_current_workday_entries()
 
             if non_workday_entries:
-                dates = non_workday_entries.keys()
-                self.view.non_working_dates_commit_error(dates)
+                self.view.non_working_dates_commit_error(
+                    non_workday_entries.keys()
+                )
 
                 return
 
@@ -396,18 +397,28 @@ class CommitCommand(BaseTimesheetCommand):
         r = remote.ZebraRemote(self.settings.get('site'),
                                self.settings.get('username'),
                                self.settings.get('password'))
+
         all_pushed_entries = []
         all_failed_entries = []
 
         for timesheet in timesheet_collection.timesheets:
             entries_to_push = timesheet.get_entries(
-                self.options.get('date', None), exclude_ignored=True, regroup=True
+                self.options.get('date', None), exclude_ignored=True,
+                exclude_local=True, regroup=True
             )
 
             (pushed_entries, failed_entries) = r.send_entries(entries_to_push,
                                                               self._entry_pushed)
 
+            local_entries = timesheet.get_local_entries(
+                self.options.get('date', None)
+            )
+            local_entries_list = []
+            for (date, entries) in local_entries.iteritems():
+                local_entries_list.extend(entries)
+
             timesheet.fix_entries_start_time()
+            timesheet.comment_entries(local_entries_list)
             timesheet.comment_entries(pushed_entries)
             timesheet.save()
 

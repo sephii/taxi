@@ -9,7 +9,7 @@ class AliasCommandTestCase(CommandTestCase):
     def setUp(self):
         super(AliasCommandTestCase, self).setUp()
 
-        self.config = self.default_config
+        self.config = self.default_config.copy()
         self.config['wrmap'] = {
             'alias_1': '123/456',
             'alias_2': '123/457',
@@ -71,3 +71,10 @@ class AliasCommandTestCase(CommandTestCase):
             config_lines = f.readlines()
 
         self.assertIn('bar = 123/458\n', config_lines)
+
+    def test_local_alias(self):
+        self.config = self.default_config.copy()
+        self.config['default']['local_aliases'] = 'pingpong'
+
+        stdout = self.run_alias_command([], self.config)
+        self.assertIn('pingpong -> local alias', stdout)
