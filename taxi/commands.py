@@ -117,12 +117,15 @@ class BaseTimesheetCommand(BaseCommand):
 
             if smallest_unit == 'm':
                 if file_date.month == 1:
-                    file_date = file_date.replace(month=12,
+                    file_date = file_date.replace(day=1,
+                                                  month=12,
                                                   year=file_date.year - 1)
                 else:
-                    file_date = file_date.replace(month=file_date.month - 1)
+                    file_date = file_date.replace(day=1,
+                                                  month=file_date.month - 1)
+
             elif smallest_unit == 'Y':
-                file_date = file_date.replace(year=file_date.year - 1)
+                file_date = file_date.replace(day=1, year=file_date.year - 1)
 
         return files
 
