@@ -132,7 +132,10 @@ Available commands:
 
         projects_db = ProjectsDb(options['projects_db'])
 
-        view = TtyUi(options.get('stdout', sys.stdout))
+        view = TtyUi(
+            options.get('stdout', sys.stdout),
+            settings.get('use_colors').lower() in ['1', 'yes', 'true']
+        )
         ac = AppContainer()
         ac.settings = settings
         ac.options = options

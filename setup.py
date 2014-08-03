@@ -29,6 +29,10 @@ tests_require = [
     'pytest',
 ]
 
+install_requires = [
+    'colorama>=0.3.1'
+]
+
 
 setup(
     name='taxi',
@@ -39,6 +43,7 @@ setup(
     author_email='sylvain.fankhauser@liip.ch',
     scripts=['bin/taxi'],
     url='https://github.com/sephii/taxi',
+    install_requires=install_requires,
     tests_require=tests_require,
     test_suite='tests.runtests.suite',
     include_package_data=False,

@@ -201,3 +201,14 @@ alias_1 1 february 2014
         self.assertIn('february 2013', stdout)
         self.assertIn('january 2014', stdout)
         self.assertIn('february 2014', stdout)
+
+    def test_local_alias(self):
+        config = self.default_config.copy()
+        config['default']['local_aliases'] = '_pingpong'
+
+        self.write_entries("""20/01/2014
+_pingpong 0800-0900 Play ping-pong
+""")
+
+        stdout = self.run_command('commit', options=self.default_options)
+        self.assertIn("Total pushed                   0.00", stdout)

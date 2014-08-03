@@ -92,7 +92,7 @@ class BaseTimesheetCommand(BaseCommand):
                     # Unable to automatically detect the entries direction, we
                     # try to get a previous file to see if we're lucky
                     try:
-                        is_top_down = timesheet_collection[1].is_top_down()
+                        is_top_down = timesheet_collection.timesheets[1].is_top_down()
                     except (ParseError, UnknownDirectionError):
                         pass
         else:
@@ -120,12 +120,15 @@ class BaseTimesheetCommand(BaseCommand):
 
             if smallest_unit == 'm':
                 if file_date.month == 1:
-                    file_date = file_date.replace(month=12,
+                    file_date = file_date.replace(day=1,
+                                                  month=12,
                                                   year=file_date.year - 1)
                 else:
-                    file_date = file_date.replace(month=file_date.month - 1)
+                    file_date = file_date.replace(day=1,
+                                                  month=file_date.month - 1)
+
             elif smallest_unit == 'Y':
-                file_date = file_date.replace(year=file_date.year - 1)
+                file_date = file_date.replace(day=1, year=file_date.year - 1)
 
         return files
 
@@ -390,8 +393,9 @@ class CommitCommand(BaseTimesheetCommand):
             non_workday_entries = timesheet_collection.get_non_current_workday_entries()
 
             if non_workday_entries:
-                dates = non_workday_entries.keys()
-                self.view.non_working_dates_commit_error(dates)
+                self.view.non_working_dates_commit_error(
+                    non_workday_entries.keys()
+                )
 
                 return
 
@@ -399,18 +403,28 @@ class CommitCommand(BaseTimesheetCommand):
         r = remote.ZebraRemote(self.settings.get('site'),
                                self.settings.get('username'),
                                self.settings.get('password'))
+
         all_pushed_entries = []
         all_failed_entries = []
 
         for timesheet in timesheet_collection.timesheets:
             entries_to_push = timesheet.get_entries(
-                self.options.get('date', None), exclude_ignored=True, regroup=True
+                self.options.get('date', None), exclude_ignored=True,
+                exclude_local=True, regroup=True
             )
 
             (pushed_entries, failed_entries) = r.send_entries(entries_to_push,
                                                               self._entry_pushed)
 
+            local_entries = timesheet.get_local_entries(
+                self.options.get('date', None)
+            )
+            local_entries_list = []
+            for (date, entries) in local_entries.iteritems():
+                local_entries_list.extend(entries)
+
             timesheet.fix_entries_start_time()
+            timesheet.comment_entries(local_entries_list)
             timesheet.comment_entries(pushed_entries)
             timesheet.save()
 
@@ -438,12 +452,14 @@ class EditCommand(BaseTimesheetCommand):
     """
     def run(self):
         is_top_down = None
+        timesheet_collection = None
 
         try:
             timesheet_collection = self.get_timesheet_collection()
         except (UndefinedAliasError, ParseError):
             pass
-        else:
+
+        if timesheet_collection:
             try:
                 is_top_down = self.get_entries_direction()
             except UnknownDirectionError:
@@ -451,22 +467,22 @@ class EditCommand(BaseTimesheetCommand):
 
             t = timesheet_collection.timesheets[0]
 
-        if (self.settings.get('auto_add') != Settings.AUTO_ADD_OPTIONS['NO'] and
-            not self.options.get('forced_file')):
-                auto_fill_days = self.settings.get_auto_fill_days()
-                if auto_fill_days:
-                    t.prefill(auto_fill_days, limit=None,
-                              add_to_bottom=is_top_down)
+            if (self.settings.get('auto_add') != Settings.AUTO_ADD_OPTIONS['NO'] and
+                not self.options.get('forced_file')):
+                    auto_fill_days = self.settings.get_auto_fill_days()
+                    if auto_fill_days:
+                        t.prefill(auto_fill_days, limit=None,
+                                  add_to_bottom=is_top_down)
 
-                t.add_date(datetime.date.today(), is_top_down)
-                t.save()
+                    t.add_date(datetime.date.today(), is_top_down)
+                    t.save()
 
         try:
             editor = self.settings.get('editor')
         except NoOptionError:
             editor = None
 
-        file.spawn_editor(t.get_file_path(), editor)
+        file.spawn_editor(self.options['file'], editor)
 
         try:
             timesheet_collection = self.get_timesheet_collection(True)

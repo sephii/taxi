@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from collections import defaultdict
 import datetime
 import re
 
@@ -10,6 +11,7 @@ from taxi.exceptions import (
 from taxi.parser import DateLine, EntryLine, TextLine, ParseError
 from taxi.utils import date as date_utils
 
+
 class Entry:
     def __init__(self, date, project_name, hours, description, id=None):
         self.project_name = project_name
@@ -18,6 +20,7 @@ class Entry:
         self.date = date
         self.pushed = False
         self.ignored = False
+        self.local = False
         self.project_id = None
         self.activity_id = None
         self.id = id
@@ -25,6 +28,8 @@ class Entry:
     def __unicode__(self):
         if self.is_ignored():
             project_name = u'%s (ignored)' % (self.project_name)
+        elif self.is_local():
+            project_name = u'%s (local)' % (self.project_name)
         else:
             project_name = u'%s (%s/%s)' % (self.project_name, self.project_id, self.activity_id)
 
@@ -40,6 +45,13 @@ class Entry:
 
     def is_ignored(self):
         return self.ignored or self.get_duration() == 0
+
+    def is_local(self):
+        """
+        Return true if the entry is local, ie. we don't have to push it to the
+        remote
+        """
+        return self.local
 
     def get_duration(self):
         if isinstance(self.duration, tuple):
@@ -273,14 +285,18 @@ class Timesheet:
                 if entry.project_name in self.mappings:
                     entry.project_id = self.mappings[entry.project_name][0]
                     entry.activity_id = self.mappings[entry.project_name][1]
+
+                    if entry.project_id is None or entry.activity_id is None:
+                        entry.local = True
                 else:
                     if not entry.is_ignored():
                         raise UndefinedAliasError(line.get_alias())
 
                 self.entries[current_date].append(entry)
 
-    def get_entries(self, date=None, exclude_ignored=False, regroup=False):
-        entries_dict = {}
+    def get_filtered_entries(self, date=None, filter_callback=None,
+                             regroup=False):
+        entries_dict = defaultdict(list)
 
         # Date can either be a single date (only 1 day) or a tuple for a
         # date range
@@ -289,51 +305,73 @@ class Timesheet:
 
         for (entrydate, entries) in self.entries.iteritems():
             if date is None or (entrydate >= date[0] and entrydate <= date[1]):
-                aggregated_entries = {}
-
-                if entrydate not in entries_dict:
-                    entries_dict[entrydate] = []
-
                 entries_for_date = []
 
                 if regroup:
+                    # This is a mapping between entries hashes and their
+                    # position in the entries_for_date list
+                    aggregated_entries = {}
+
                     for (id, entry) in enumerate(entries):
-                        if exclude_ignored and entry.is_ignored():
+                        if (filter_callback is not None
+                                and not filter_callback(entry)):
                             continue
 
+                        # Common case: the entry is not yet referenced in the
+                        # aggregated_entries dict
                         if entry.get_hash() not in aggregated_entries:
+                            # In that case, put it normally in the
+                            # entries_for_date list. It will get replaced by an
+                            # AggregatedEntry later if necessary
                             entries_for_date.append(entry)
                             aggregated_entries[entry.get_hash()] = id
                         else:
-                            normal_entry = entries_for_date[aggregated_entries[entry.get_hash()]]
-                            aggregated_entry = AggregatedEntry()
-                            aggregated_entry.entries.append(normal_entry)
-                            aggregated_entry.entries.append(entry)
-                            entries_for_date[aggregated_entries[entry.get_hash()]] = aggregated_entry
+                            # Get the first occurence of the entry in the
+                            # entries_for_date list
+                            existing_entry = entries_for_date[aggregated_entries[entry.get_hash()]]
+
+                            # The entry could already have been replaced by an
+                            # AggregatedEntry if there's more than 2 occurences
+                            if isinstance(existing_entry, Entry):
+                                # Create the AggregatedEntry, put the first
+                                # occurence of Entry in it and the current one
+                                aggregated_entry = AggregatedEntry()
+                                aggregated_entry.entries.append(existing_entry)
+                                aggregated_entry.entries.append(entry)
+                                entries_for_date[aggregated_entries[entry.get_hash()]] = aggregated_entry
+                            else:
+                                # The entry we found is already an
+                                # AggregatedEntry, let's just append the
+                                # current entry to it
+                                aggregated_entry = existing_entry
+                                aggregated_entry.entries.append(entry)
                 else:
-                    if not exclude_ignored:
+                    if filter_callback is None:
                         entries_for_date = entries
                     else:
-                        entries_for_date = [entry for entry in entries if not entry.is_ignored()]
+                        entries_for_date = [
+                            entry for entry in entries
+                                  if filter_callback(entry)
+                        ]
 
                 entries_dict[entrydate].extend(entries_for_date)
 
         return entries_dict
 
+    def get_entries(self, date=None, exclude_ignored=False,
+                    exclude_local=False, regroup=False):
+        def entry_filter(entry):
+            return (not (exclude_ignored and entry.is_ignored())
+                    and not (exclude_local and entry.is_local()))
+
+        return self.get_filtered_entries(date, entry_filter, regroup)
+
+    def get_local_entries(self, date=None):
+        return self.get_filtered_entries(date, lambda entry: entry.is_local())
+
     def get_ignored_entries(self, date=None):
-        entries_dict = self.get_entries(date, False)
-        ignored_entries = {}
-
-        for (date, entries) in entries_dict.iteritems():
-            ignored_entries_list = []
-            for entry in entries:
-                if entry.is_ignored():
-                    ignored_entries_list.append(entry)
-
-            if ignored_entries_list:
-                ignored_entries[date] = ignored_entries_list
-
-        return ignored_entries
+        return self.get_filtered_entries(date,
+                                         lambda entry: entry.is_ignored())
 
     def _get_latest_entry_for_date(self, date):
         date_line = None
@@ -488,8 +526,12 @@ class Timesheet:
         return lines
 
     def get_non_current_workday_entries(self, limit_date=None):
-        non_workday_entries = {}
-        entries = self.get_entries(limit_date, exclude_ignored=True)
+        non_workday_entries = defaultdict(list)
+        entries = self.get_entries(
+            limit_date,
+            lambda e: not e.is_ignored() and not e.is_local()
+        )
+
         today = datetime.date.today()
         yesterday = date_utils.get_previous_working_day(today)
 
@@ -636,4 +678,7 @@ class TimesheetCollection:
         """
         Proxy all methods not defined here to the timesheets.
         """
-        return self._timesheets_callback(name)
+        if hasattr(Timesheet, name):
+            return self._timesheets_callback(name)
+        else:
+            raise AttributeError()

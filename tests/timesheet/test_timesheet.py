@@ -118,7 +118,7 @@ foo 1400-? ?"""
             "foo 1400-? ?"])
 
         ignored_entries = t.get_ignored_entries()
-        self.assertEquals(len(ignored_entries), 1)
+        self.assertEquals(len(ignored_entries), 3)
         self.assertEquals(len(ignored_entries[datetime.date(2012, 10, 12)]), 3)
 
         t.continue_entry(datetime.date(2012, 10, 12), datetime.time(15, 12))
@@ -220,13 +220,17 @@ foo 1 bar"""
 foo 2 bar
 bar 0900-1000 bar
 foo 2 bar
+foo 3 bar
 foo 1 barz"""
 
         t = self._create_timesheet(contents)
         entries = t.get_entries(regroup=True)[datetime.date(2013, 4, 1)]
         self.assertEquals(len(entries), 3)
-        self.assertEquals(entries[0].duration, 4)
+        self.assertEquals(entries[0].duration, 7)
         self.assertIsInstance(entries[0], AggregatedEntry)
+        self.assertEquals(len(entries[0].entries), 3)
+        for entry in entries[0].entries:
+            self.assertIsInstance(entry, Entry)
 
     def test_regroup_partial_time(self):
         contents = """01.04.2013
