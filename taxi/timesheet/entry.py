@@ -49,6 +49,11 @@ class EntriesCollection(collections.defaultdict):
             finally:
                 self.synchronized = True
 
+            try:
+                self.add_date_to_bottom = self.is_top_down()
+            except UnknownDirectionError:
+                pass
+
     def __missing__(self, key):
         """
         Automatically called when the given date (key) doesn't exist. In that
@@ -58,9 +63,6 @@ class EntriesCollection(collections.defaultdict):
         textual representation.
         """
         self[key] = self.default_factory(self, key)
-
-        if self.synchronized:
-            self.add_date(key)
 
         return self[key]
 
@@ -74,6 +76,18 @@ class EntriesCollection(collections.defaultdict):
             self.delete_date(key)
 
         super(EntriesCollection, self).__delitem__(key)
+
+    def __setitem__(self, key, value):
+        # Delete existing lines if any
+        if key in self:
+            del self[key]
+
+        super(EntriesCollection, self).__setitem__(key, value)
+
+        if self.synchronized:
+            self.add_date(key)
+            for entry in value:
+                self.add_entry(entry)
 
     @synchronized
     def add_entry(self, date, entry):
@@ -173,7 +187,10 @@ class EntriesCollection(collections.defaultdict):
         """
         Add the given date to the textual representation.
         """
+        self.trim()
+
         if self.add_date_to_bottom:
+            self.lines.append(TextLine(''))
             self.lines.append(DateLine(date))
         else:
             self.lines.insert(0, TextLine(''))
@@ -194,8 +211,22 @@ class EntriesCollection(collections.defaultdict):
                 timesheet_entry = TimesheetEntry(
                     line.alias, line.duration, line.description
                 )
+                timesheet_entry.ignored = line.ignored
                 timesheet_entry.line = line
                 self[current_date].append(timesheet_entry)
+
+    def to_lines(self):
+        return [line.text for line in self.lines]
+
+    def is_top_down(self):
+        date_lines = [
+            line for line in self.lines if isinstance(line, DateLine)
+        ]
+
+        if len(date_lines) < 2 or date_lines[0].date == date_lines[1].date:
+            raise UnknownDirectionError()
+        else:
+            return date_lines[1].date > date_lines[0].date
 
 
 class EntriesList(list):
@@ -298,3 +329,7 @@ class TimesheetEntry(object):
             return total_hours
 
         return self.duration
+
+
+class UnknownDirectionError(Exception):
+    pass

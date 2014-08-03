@@ -1,3 +1,6 @@
+from collections import defaultdict
+import datetime
+
 from .entry import EntriesCollection
 
 
@@ -9,15 +12,50 @@ class Timesheet(object):
 
     def get_entries(self, date=None, exclude_ignored=False, regroup=False):
         if date is not None:
-            return self.entries[date]
+            return {date: self.entries[date]}
 
         return self.entries
 
     def get_ignored_entries(self, date=None):
-        pass
+        entries = self.get_entries(date)
+        ignored_entries = defaultdict(list)
+
+        for (date, entries) in entries.iteritems():
+            for entry in entries:
+                if entry.is_ignored():
+                    ignored_entries[date].append(entry)
+
+        return ignored_entries
+
+    def continue_entry(self, date, end_time, description=None):
+        entry = self.entries[date][-1]
+        entry.duration = (entry.duration[0], self.round_to_quarter(
+            entry.duration[0],
+            end_time
+        ))
+
+        if description is not None:
+            entry.description = description
 
     def stop_running_entry(self, date, end_time=None, description=None):
         pass
+
+    @staticmethod
+    def round_to_quarter(start_time, end_time):
+        # We don't care about the date (only about the time) but Python
+        # can substract only datetime objects, not time ones
+        today = datetime.date.today()
+        start_date = datetime.datetime.combine(today, start_time)
+        end_date = datetime.datetime.combine(today, end_time)
+
+        difference_minutes = (end_date - start_date).seconds / 60
+        remainder = difference_minutes % 15
+        # Round up
+        difference_minutes += 15 - remainder if remainder > 0 else 0
+
+        return (
+            start_date + datetime.timedelta(minutes=difference_minutes)
+        ).time()
 
 
 class TimesheetFile(object):

@@ -35,7 +35,7 @@ class EntryLine(TextLine):
     duration and a description. The text attribute allows to keep the original
     formatting of the duration as long as the entry is not changed.
     """
-    def __init__(self, alias, duration, description, text=None):
+    def __init__(self, alias, duration, description, text=None, ignored=False):
         self._alias = alias
         self.duration = duration
         self.description = description
@@ -43,7 +43,7 @@ class EntryLine(TextLine):
         # These should normally be always set to False, but can be changed
         # later
         self.commented = False
-        self.ignored = False
+        self.ignored = ignored
 
         if text is not None:
             self._text = text
@@ -63,12 +63,25 @@ class EntryLine(TextLine):
 
             duration = u'%s-%s' % (start, end)
         else:
-            duration = self.duration
+            # Remove '.0' if the number doesn't have a decimal part
+            duration = str(self.duration).rstrip('0').rstrip('.')
 
         commented_prefix = '# ' if self.commented else ''
         alias = u'%s?' % self.alias if self.ignored else self.alias
 
-        return u'%s%s %s %s' % (commented_prefix, alias, duration, self.description)
+        return u'%s%s %s %s' % (
+            commented_prefix,
+            alias,
+            duration,
+            self.description
+        )
+
+    @property
+    def text(self):
+        if self._text is not None:
+            return self._text
+        else:
+            return self.generate_text()
 
     @property
     def alias(self):
@@ -127,11 +140,13 @@ class TimesheetParser(object):
         if len(split_line) != 3:
             raise ParseError("Couldn't split line into 3 chunks")
 
-        alias = split_line[0]
+        alias = split_line[0].replace('?', '')
         time = cls.parse_time(split_line[1])
         description = split_line[2]
 
-        return EntryLine(alias, time, description, line)
+        ignored = split_line[0].endswith('?') or split_line[0].startswith('?')
+
+        return EntryLine(alias, time, description, line, ignored)
 
     @staticmethod
     def parse_time(str_time):
