@@ -15,7 +15,7 @@ class CommandTestCase(TestCase):
         def zebra_remote_send_entries(entries, callback):
             for (_, date_entries) in entries.iteritems():
                 for entry in date_entries:
-                    if entry.project_name != 'fail':
+                    if entry.alias != 'fail':
                         entry.pushed = True
 
                     callback(entry,

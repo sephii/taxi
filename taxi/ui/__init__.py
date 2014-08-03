@@ -194,7 +194,7 @@ class BaseUi(object):
             else:
                 line = unicode(entry)
 
-            total += entry.get_duration()
+            total += entry.hours
             if details:
                 self.msg(line)
 

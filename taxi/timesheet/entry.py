@@ -27,7 +27,7 @@ class EntriesCollection(collections.defaultdict):
     of automatically synchronizing the textual representation with the
     structured data.
     """
-    def __init__(self, entries=None):
+    def __init__(self, entries=None, date_format='%d.%m.%Y'):
         super(EntriesCollection, self).__init__(EntriesList)
 
         self.lines = []
@@ -38,6 +38,7 @@ class EntriesCollection(collections.defaultdict):
         # Whether to add new dates at the start or at the end in the textual
         # representation
         self.add_date_to_bottom = False
+        self.date_format = date_format
 
         # If there are initial entries to import, disable synchronization and
         # import them in the structure
@@ -191,10 +192,10 @@ class EntriesCollection(collections.defaultdict):
 
         if self.add_date_to_bottom:
             self.lines.append(TextLine(''))
-            self.lines.append(DateLine(date))
+            self.lines.append(DateLine(date, date_format=self.date_format))
         else:
             self.lines.insert(0, TextLine(''))
-            self.lines.insert(0, DateLine(date))
+            self.lines.insert(0, DateLine(date, date_format=self.date_format))
 
         self.trim()
 
@@ -276,6 +277,7 @@ class TimesheetEntry(object):
         self.line = None
         self.ignored = False
         self.commented = False
+        self.local = False
 
         self.alias = alias
         self.description = description

@@ -8,12 +8,11 @@ from taxi.exceptions import (
     NoActivityInProgressError,
     CancelException,
     UndefinedAliasError,
-    UnknownDirectionError,
     UsageError
 )
-from taxi.models import Entry, Project, TimesheetCollection
+from taxi.models import Project, TimesheetCollection
 from taxi.timesheet import Timesheet, TimesheetFile
-from taxi.timesheet.entry import EntriesCollection
+from taxi.timesheet.entry import TimesheetEntry, EntriesCollection, UnknownDirectionError
 from taxi.parser import ParseError
 from taxi.settings import Settings
 from taxi.utils import file
@@ -61,9 +60,11 @@ class BaseTimesheetCommand(BaseCommand):
                 timesheet_file = TimesheetFile(file_path)
 
             t = Timesheet(
-                EntriesCollection(timesheet_file.text),
+                EntriesCollection(
+                    timesheet_file.read(),
+                    self.settings.get('date_format')
+                ),
                 self.settings.get_aliases(),
-                self.settings.get('date_format')
             )
             timesheet_collection.timesheets.append(t)
 
@@ -84,7 +85,7 @@ class BaseTimesheetCommand(BaseCommand):
                 t = timesheet_collection.timesheets[0]
 
                 try:
-                    is_top_down = t.is_top_down()
+                    is_top_down = t.entries.is_top_down()
                 except (ParseError, UnknownDirectionError):
                     pass
 
@@ -92,7 +93,7 @@ class BaseTimesheetCommand(BaseCommand):
                     # Unable to automatically detect the entries direction, we
                     # try to get a previous file to see if we're lucky
                     try:
-                        is_top_down = timesheet_collection.timesheets[1].is_top_down()
+                        is_top_down = timesheet_collection.timesheets[1].entries.is_top_down()
                     except (ParseError, UnknownDirectionError):
                         pass
         else:
@@ -423,10 +424,10 @@ class CommitCommand(BaseTimesheetCommand):
             for (date, entries) in local_entries.iteritems():
                 local_entries_list.extend(entries)
 
-            timesheet.fix_entries_start_time()
-            timesheet.comment_entries(local_entries_list)
-            timesheet.comment_entries(pushed_entries)
-            timesheet.save()
+            for entry in local_entries_list + pushed_entries:
+                entry.commented = True
+
+            TimesheetFile(self.options['file']).write(timesheet.entries)
 
             all_pushed_entries.extend(pushed_entries)
             all_failed_entries.extend(failed_entries)
@@ -615,9 +616,9 @@ class StartCommand(BaseTimesheetCommand):
             new_entry_start_time = datetime.datetime.now()
 
         duration = (new_entry_start_time, None)
-        e = Entry(today, self.project_name, duration, '?')
-        t.add_entry(e, self.get_entries_direction())
-        t.save()
+        e = TimesheetEntry(self.project_name, duration, '?')
+        t.entries[today].append(e)
+        TimesheetFile(self.options['file']).write(t.entries)
 
 
 class StatusCommand(BaseTimesheetCommand):
