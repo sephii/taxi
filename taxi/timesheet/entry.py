@@ -196,6 +196,8 @@ class EntriesCollection(collections.defaultdict):
             self.lines.insert(0, TextLine(''))
             self.lines.insert(0, DateLine(date))
 
+        self.trim()
+
     def init_from_str(self, entries):
         """
         Initialize the structured and textual data based on a string
@@ -207,6 +209,7 @@ class EntriesCollection(collections.defaultdict):
         for line in self.lines:
             if isinstance(line, DateLine):
                 current_date = line.date
+                self[current_date] = self.default_factory(self, line.date)
             elif isinstance(line, EntryLine):
                 timesheet_entry = TimesheetEntry(
                     line.alias, line.duration, line.description
