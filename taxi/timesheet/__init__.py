@@ -1,5 +1,6 @@
 from collections import defaultdict
 import datetime
+import os
 
 from ..utils import date as date_utils
 from .entry import EntriesCollection
@@ -37,7 +38,7 @@ class Timesheet(object):
         # TODO regroup
         def entry_filter(entry):
             return (not (exclude_ignored and entry.is_ignored())
-                    and not (exclude_local and entry.local))
+                    and not (exclude_local and self.is_alias_local(entry.alias)))
 
         return self.get_filtered_entries(date, entry_filter)
 
@@ -45,7 +46,12 @@ class Timesheet(object):
         return self.get_filtered_entries(date, lambda e: e.is_ignored())
 
     def get_local_entries(self, date=None):
-        return self.get_filtered_entries(date, lambda e: e.local)
+        return self.get_filtered_entries(
+            date, lambda e: self.is_alias_local(e.alias)
+        )
+
+    def is_alias_local(self, alias):
+        return alias in self.mappings and self.mappings[alias] is None
 
     def get_non_current_workday_entries(self):
         non_workday_entries = {}
@@ -70,8 +76,23 @@ class Timesheet(object):
         if description is not None:
             entry.description = description
 
-    def stop_running_entry(self, date, end_time=None, description=None):
-        pass
+    def prefill(self, auto_fill_days, limit=None):
+        today = datetime.date.today()
+
+        if limit is None:
+            limit = today
+
+        if not self.entries:
+            cur_date = datetime.date(today.year, today.month, 1)
+        else:
+            cur_date = max([date for date in self.entries.keys()])
+            cur_date += datetime.timedelta(days=1)
+
+        while cur_date <= limit:
+            if cur_date.weekday() in auto_fill_days:
+                self.entries[cur_date] = []
+
+            cur_date = cur_date + datetime.timedelta(days=1)
 
     @staticmethod
     def round_to_quarter(start_time, end_time):
@@ -95,9 +116,16 @@ class TimesheetFile(object):
     def __init__(self, file_path):
         self.file_path = file_path
 
-    def read(self):
-        with open(self.file_path, 'r') as timesheet_file:
-            return timesheet_file.read()
+    def read(self, create=True):
+        try:
+            with open(self.file_path, 'r') as timesheet_file:
+                return timesheet_file.read()
+        except IOError:
+            if create:
+                open(self.file_path, 'w').close()
+                return ''
+            else:
+                raise
 
     def write(self, entries):
         with open(self.file_path, 'w') as timesheet_file:

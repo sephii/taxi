@@ -140,7 +140,7 @@ class BaseUi(object):
         (alias, t) = mapping
 
         # Handle local aliases
-        if t == (None, None):
+        if t is None:
             self.msg(u"%s -> local alias" % alias)
             return
 

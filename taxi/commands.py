@@ -66,41 +66,19 @@ class BaseTimesheetCommand(BaseCommand):
                 ),
                 self.settings.get_aliases(),
             )
+
+            if (self.settings.get('auto_add') in [
+                    Settings.AUTO_ADD_OPTIONS['TOP'],
+                    Settings.AUTO_ADD_OPTIONS['BOTTOM']]):
+                t.entries.add_date_to_bottom = (
+                    self.settings.get('auto_add') == Settings.AUTO_ADD_OPTIONS['BOTTOM']
+                )
+
             timesheet_collection.timesheets.append(t)
 
         setattr(self, '_current_timesheet_collection', timesheet_collection)
 
         return timesheet_collection
-
-    def get_entries_direction(self):
-        is_top_down = None
-
-        try:
-            timesheet_collection = self.get_timesheet_collection()
-        except ParseError:
-            timesheet_collection = None
-
-        if self.settings.get('auto_add') == Settings.AUTO_ADD_OPTIONS['AUTO']:
-            if timesheet_collection is not None:
-                t = timesheet_collection.timesheets[0]
-
-                try:
-                    is_top_down = t.entries.is_top_down()
-                except (ParseError, UnknownDirectionError):
-                    pass
-
-                if is_top_down is None and len(timesheet_collection.timesheets) > 1:
-                    # Unable to automatically detect the entries direction, we
-                    # try to get a previous file to see if we're lucky
-                    try:
-                        is_top_down = timesheet_collection.timesheets[1].entries.is_top_down()
-                    except (ParseError, UnknownDirectionError):
-                        pass
-        else:
-            is_top_down = (self.settings.get('auto_add') ==
-                           Settings.AUTO_ADD_OPTIONS['BOTTOM'])
-
-        return is_top_down
 
     def get_files(self, filename, nb_previous_files):
         date_units = ['m', 'Y']
@@ -259,7 +237,9 @@ class AliasCommand(BaseCommand):
         # No argument, display the mappings
         if self.mode == self.MODE_LIST_ALIASES:
             for m in self.settings.search_mappings(self.alias):
-                self.view.alias_detail(m, self.projects_db.get(m[1][0]))
+                self.view.alias_detail(
+                    m, self.projects_db.get(m[1][0]) if m[1] is not None else None
+                )
 
     def _add_alias(self, alias_name, mapping):
         project_activity = Project.str_to_tuple(mapping)
@@ -290,37 +270,17 @@ class AutofillCommand(BaseTimesheetCommand):
 
     """
     def run(self):
-        try:
-            direction = self.settings.get('auto_add')
-        except NoOptionError:
-            direction = Settings.AUTO_ADD_OPTIONS['AUTO']
-
-        if direction == Settings.AUTO_ADD_OPTIONS['NO']:
-            self.view.err(u"The parameter `auto_add` must have a value that "
-                          "is different than 'no' for this command to work.")
-            return
-
-        if direction == Settings.AUTO_ADD_OPTIONS['AUTO']:
-            try:
-                direction = self.get_entries_direction()
-            except UnknownDirectionError:
-                direction = None
-
-        if direction is None:
-            direction = Settings.AUTO_ADD_OPTIONS['TOP']
-
         auto_fill_days = self.settings.get_auto_fill_days()
 
         if auto_fill_days:
             today = datetime.date.today()
             last_day = calendar.monthrange(today.year, today.month)
             last_date = datetime.date(today.year, today.month, last_day[1])
-            add_to_bottom = direction == Settings.AUTO_ADD_OPTIONS['BOTTOM']
 
             timesheet_collection = self.get_timesheet_collection()
             t = timesheet_collection.timesheets[0]
-            t.prefill(auto_fill_days, last_date, add_to_bottom)
-            t.save()
+            t.prefill(auto_fill_days, last_date)
+            TimesheetFile(self.options['file']).write(t.entries)
 
             self.view.msg(u"Your entries file has been filled.")
         else:
@@ -452,7 +412,6 @@ class EditCommand(BaseTimesheetCommand):
 
     """
     def run(self):
-        is_top_down = None
         timesheet_collection = None
 
         try:
@@ -461,22 +420,16 @@ class EditCommand(BaseTimesheetCommand):
             pass
 
         if timesheet_collection:
-            try:
-                is_top_down = self.get_entries_direction()
-            except UnknownDirectionError:
-                is_top_down = True
-
             t = timesheet_collection.timesheets[0]
 
             if (self.settings.get('auto_add') != Settings.AUTO_ADD_OPTIONS['NO'] and
-                not self.options.get('forced_file')):
-                    auto_fill_days = self.settings.get_auto_fill_days()
-                    if auto_fill_days:
-                        t.prefill(auto_fill_days, limit=None,
-                                  add_to_bottom=is_top_down)
+                    not self.options.get('forced_file')):
+                auto_fill_days = self.settings.get_auto_fill_days()
+                if auto_fill_days:
+                    t.prefill(auto_fill_days, limit=None)
 
-                    t.add_date(datetime.date.today(), is_top_down)
-                    t.save()
+                t.entries[datetime.date.today()] = []
+                TimesheetFile(self.options['file']).write(t.entries)
 
         try:
             editor = self.settings.get('editor')

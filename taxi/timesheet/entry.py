@@ -83,6 +83,11 @@ class EntriesCollection(collections.defaultdict):
         if key in self:
             del self[key]
 
+        # Automatically set non-supported types to an empty EntriesList. This
+        # allows for things like entries[date] = []
+        if not isinstance(value, self.default_factory):
+            value = self.default_factory(self, key)
+
         super(EntriesCollection, self).__setitem__(key, value)
 
         if self.synchronized:
@@ -277,7 +282,6 @@ class TimesheetEntry(object):
         self.line = None
         self.ignored = False
         self.commented = False
-        self.local = False
 
         self.alias = alias
         self.description = description

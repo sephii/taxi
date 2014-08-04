@@ -78,7 +78,7 @@ class Settings:
 
             if local_aliases:
                 for alias in local_aliases.split(','):
-                    aliases[alias.strip()] = (None, None)
+                    aliases[alias.strip()] = None
 
         return aliases
 
