@@ -2,9 +2,10 @@
 import datetime
 import pytest
 
-from taxi.models import AggregatedEntry, Entry
 from taxi.parser import ParseError
-from taxi.timesheet.entry import TimesheetEntry, UnknownDirectionError
+from taxi.timesheet.entry import (
+    AggregatedTimesheetEntry, TimesheetEntry, UnknownDirectionError
+)
 
 from . import BaseTimesheetTestCase
 
@@ -80,17 +81,20 @@ foo     -1200 bar"""
 foo 0900-1000 baz
 bar 2 bar
 foo     -1200 bar"""
-        self.assertRaises(ParseError, self._create_timesheet, contents)
+        t = self._create_timesheet(contents)
+        self.assertTrue(t.entries[datetime.date(2012, 10, 10)][2].is_ignored())
 
         contents = """10.10.2012
 foo -1000 baz"""
-        self.assertRaises(ParseError, self._create_timesheet, contents)
+        t = self._create_timesheet(contents)
+        self.assertTrue(t.entries[datetime.date(2012, 10, 10)][0].is_ignored())
 
         contents = """10.10.2012
 foo 0900-1000 baz
 bar 1000-? bar
 foo     -1200 bar"""
-        self.assertRaises(ParseError, self._create_timesheet, contents)
+        t = self._create_timesheet(contents)
+        self.assertTrue(t.entries[datetime.date(2012, 10, 10)][2].is_ignored())
 
     def test_complete_timesheet(self):
         contents = """10.10.2012
@@ -229,11 +233,11 @@ foo 1 barz"""
         t = self._create_timesheet(contents)
         entries = t.get_entries(regroup=True)[datetime.date(2013, 4, 1)]
         self.assertEquals(len(entries), 3)
-        self.assertEquals(entries[0].duration, 7)
-        self.assertIsInstance(entries[0], AggregatedEntry)
+        self.assertEquals(entries[0].hours, 7)
+        self.assertIsInstance(entries[0], AggregatedTimesheetEntry)
         self.assertEquals(len(entries[0].entries), 3)
         for entry in entries[0].entries:
-            self.assertIsInstance(entry, Entry)
+            self.assertIsInstance(entry, TimesheetEntry)
 
     def test_regroup_partial_time(self):
         contents = """01.04.2013
@@ -244,7 +248,7 @@ foo -1100 bar"""
         t = self._create_timesheet(contents)
         entries = t.get_entries(regroup=True)[datetime.date(2013, 4, 1)]
         self.assertEquals(len(entries), 2)
-        self.assertEquals(entries[0].duration, 4)
+        self.assertEquals(entries[0].hours, 4)
 
     def test_comment_regrouped_entries(self):
         contents = """01.04.2013
@@ -253,7 +257,8 @@ bar 0900-1000 bar
 foo 1 bar"""
         t = self._create_timesheet(contents)
         entries = t.get_entries(regroup=True)[datetime.date(2013, 4, 1)]
-        t.comment_entries(entries)
-        lines = t.to_lines()
+        for entry in entries:
+            entry.commented = True
+        lines = t.entries.to_lines()
         self.assertEquals(lines, ["01.04.2013", "# foo 2 bar",
-                                  "# bar 0900-1000 bar", "# foo 1 bar"])
+                                  "# bar 09:00-10:00 bar", "# foo 1 bar"])

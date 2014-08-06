@@ -309,7 +309,7 @@ class TimesheetEntry(object):
     @property
     def hash(self):
         return u'%s%s%s' % (
-            self.activity,
+            self.alias,
             self.description,
             self.ignored
         )
@@ -338,6 +338,28 @@ class TimesheetEntry(object):
             return total_hours
 
         return self.duration
+
+
+class AggregatedTimesheetEntry(object):
+    def __init__(self):
+        super(AggregatedTimesheetEntry, self).__setattr__('entries', [])
+
+    def __getattr__(self, name):
+        if not self.entries:
+            raise AttributeError()
+
+        if hasattr(self.entries[0], name):
+            return getattr(self.entries[0], name)
+        else:
+            raise AttributeError()
+
+    def __setattr__(self, name, value):
+        for entry in self.entries:
+            setattr(entry, name, value)
+
+    @property
+    def hours(self):
+        return sum([entry.hours for entry in self.entries])
 
 
 class UnknownDirectionError(Exception):
