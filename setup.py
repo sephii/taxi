@@ -6,12 +6,23 @@ from taxi import __version__
 from setuptools.command.test import test as TestCommand
 
 
+tests_require = [
+    'freezegun',
+    'mock',
+    'pytest',
+]
+
+install_requires = [
+    'colorama>=0.3.1'
+]
+
+
 class PyTest(TestCommand):
     user_options = [('pytest-args=', 'a', "Arguments to pass to py.test")]
 
     def initialize_options(self):
         TestCommand.initialize_options(self)
-        self.pytest_args = None
+        self.pytest_args = []
 
     def finalize_options(self):
         TestCommand.finalize_options(self)
@@ -22,16 +33,6 @@ class PyTest(TestCommand):
         import pytest
         errno = pytest.main(self.pytest_args)
         sys.exit(errno)
-
-tests_require = [
-    'freezegun',
-    'mock',
-    'pytest',
-]
-
-install_requires = [
-    'colorama>=0.3.1'
-]
 
 
 setup(
@@ -45,7 +46,6 @@ setup(
     url='https://github.com/sephii/taxi',
     install_requires=install_requires,
     tests_require=tests_require,
-    test_suite='tests.runtests.suite',
     include_package_data=False,
-    cmdclass = {'tests': PyTest},
+    cmdclass = {'test': PyTest},
 )

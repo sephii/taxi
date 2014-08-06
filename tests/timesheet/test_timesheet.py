@@ -2,7 +2,6 @@
 import datetime
 import pytest
 
-from taxi.parser import ParseError
 from taxi.timesheet.entry import (
     AggregatedTimesheetEntry, TimesheetEntry, UnknownDirectionError
 )

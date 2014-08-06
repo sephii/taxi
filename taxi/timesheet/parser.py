@@ -108,7 +108,9 @@ class TimesheetParser(object):
     """
     @classmethod
     def parse(cls, text):
+        text = text.strip()
         lines_parser = cls.parser(text.splitlines())
+
         return [line for line in lines_parser]
 
     @classmethod
@@ -150,39 +152,6 @@ class TimesheetParser(object):
 
     @staticmethod
     def parse_time(str_time):
-        """
-        >>> PlainTextParser.parse_time('1.75')
-        1.75
-        >>> PlainTextParser.parse_time('3')
-        3.0
-        >>> PlainTextParser.parse_time('0900')
-        900.0
-        >>> PlainTextParser.parse_time('0900-1015')
-        (datetime.time(9, 0), datetime.time(10, 15))
-        >>> PlainTextParser.parse_time('09:00-10:15')
-        (datetime.time(9, 0), datetime.time(10, 15))
-        >>> PlainTextParser.parse_time('09:00-?')
-        (datetime.time(9, 0), None)
-        >>> PlainTextParser.parse_time('-10:15')
-        (None, datetime.time(10, 15))
-        >>> PlainTextParser.parse_time('foo')
-        Traceback (most recent call last):
-            ...
-        ParseError: The duration must be a float number or a HH:mm string
-        >>> PlainTextParser.parse_time('-2500')
-        Traceback (most recent call last):
-            ...
-        ParseError: hour must be in 0..23
-        >>> PlainTextParser.parse_time('-1061')
-        Traceback (most recent call last):
-            ...
-        ParseError: minute must be in 0..59
-        >>> PlainTextParser.parse_time('-')
-        Traceback (most recent call last):
-            ...
-        ParseError: The duration must be a float number or a HH:mm string
-        """
-
         time = re.match(r'(?:(\d{1,2}):?(\d{1,2}))?-(?:(?:(\d{1,2}):?(\d{1,2}))|\?)',
                         str_time)
         time_end = None
@@ -214,36 +183,6 @@ class TimesheetParser(object):
 
     @staticmethod
     def extract_date(line):
-        """
-        >>> PlainTextParser.extract_date('1.1.2010')
-        datetime.date(2010, 1, 1)
-        >>> PlainTextParser.extract_date('05/08/2012')
-        datetime.date(2012, 8, 5)
-        >>> PlainTextParser.extract_date('05/08/12')
-        datetime.date(2012, 8, 5)
-        >>> PlainTextParser.extract_date('2013/08/09')
-        datetime.date(2013, 8, 9)
-        >>> PlainTextParser.extract_date('foobar') is None
-        Traceback (most recent call last):
-            ...
-        ValueError: No date could be extracted from the given value
-        >>> PlainTextParser.extract_date('05/08') is None
-        Traceback (most recent call last):
-            ...
-        ValueError: No date could be extracted from the given value
-        >>> PlainTextParser.extract_date('05.082012') is None
-        Traceback (most recent call last):
-            ...
-        ValueError: No date could be extracted from the given value
-        >>> PlainTextParser.extract_date('05082012') is None
-        Traceback (most recent call last):
-            ...
-        ValueError: No date could be extracted from the given value
-        >>> PlainTextParser.extract_date('2012/0801') is None
-        Traceback (most recent call last):
-            ...
-        ValueError: No date could be extracted from the given value
-        """
         # Try to match dd/mm/yyyy format
         date_matches = re.match(r'(\d{1,2})\D(\d{1,2})\D(\d{4}|\d{2})', line)
 
