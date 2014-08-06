@@ -3,6 +3,8 @@ import ConfigParser
 import os
 import difflib
 
+from .timesheet import AliasMappings
+
 class Settings:
     TAXI_PATH = os.path.expanduser('~/.taxi')
     AUTO_ADD_OPTIONS = {
@@ -48,7 +50,7 @@ class Settings:
         return [int(e.strip()) for e in auto_fill_days.split(',')]
 
     def get_aliases(self, include_shared=True, include_local=True):
-        aliases = {}
+        aliases = AliasMappings()
         config_aliases = self.config.items('wrmap')
         shared_config_aliases = (self.config.items('shared_wrmap')
                                  if self.config.has_section('shared_wrmap')

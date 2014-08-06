@@ -51,6 +51,8 @@ class BaseTimesheetCommand(BaseCommand):
             int(self.settings.get('nb_previous_files'))
         )
 
+        self.alias_mappings = self.settings.get_aliases()
+
         for file_path in timesheet_files:
             try:
                 timesheet_file = TimesheetFile(file_path)
@@ -64,9 +66,10 @@ class BaseTimesheetCommand(BaseCommand):
                     timesheet_file.read(),
                     self.settings.get('date_format')
                 ),
-                self.settings.get_aliases(),
+                self.alias_mappings
             )
 
+            # Force new entries direction if necessary
             if (self.settings.get('auto_add') in [
                     Settings.AUTO_ADD_OPTIONS['TOP'],
                     Settings.AUTO_ADD_OPTIONS['BOTTOM']]):
@@ -444,7 +447,9 @@ class EditCommand(BaseTimesheetCommand):
             self.view.err(e)
         else:
             t = timesheet_collection.timesheets[0]
-            self.view.show_status(t.get_entries(regroup=True))
+            self.view.show_status(
+                t.get_entries(regroup=True), self.alias_mappings
+            )
 
 
 class HelpCommand(BaseCommand):
@@ -591,7 +596,10 @@ class StatusCommand(BaseTimesheetCommand):
         except ParseError as e:
             self.view.err(e)
         else:
-            self.view.show_status(timesheet_collection.get_entries(self.date, regroup=True))
+            self.view.show_status(
+                timesheet_collection.get_entries(self.date, regroup=True),
+                self.alias_mappings
+            )
 
 
 class StopCommand(BaseTimesheetCommand):

@@ -9,7 +9,7 @@ from .entry import EntriesCollection
 class Timesheet(object):
     def __init__(self, entries=None, mappings=None):
         self.entries = entries if entries is not None else EntriesCollection()
-        self.mappings = mappings if mappings is not None else {}
+        self.mappings = mappings if mappings is not None else AliasMappings()
 
     def get_filtered_entries(self, date=None, filter_callback=None):
         # Date can either be a single date (only 1 day) or a tuple for a
@@ -133,8 +133,6 @@ class TimesheetFile(object):
                 timesheet_file.write(u'%s\n' % line)
 
 
-class Mapping(object):
-    def __init__(self, alias, project_id, activity_id):
-        self.alias = alias
-        self.project_id = project_id
-        self.activity_id = activity_id
+class AliasMappings(dict):
+    def is_local(self, alias):
+        return self[alias] is None
