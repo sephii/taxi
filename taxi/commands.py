@@ -13,7 +13,7 @@ from taxi.exceptions import (
 from taxi.projects import Project
 from taxi.timesheet import Timesheet, TimesheetCollection, TimesheetFile
 from taxi.timesheet.entry import TimesheetEntry, EntriesCollection
-from taxi.parser import ParseError
+from taxi.timesheet.parser import ParseError
 from taxi.settings import Settings
 from taxi.utils import file
 from taxi.utils.structures import OrderedSet
