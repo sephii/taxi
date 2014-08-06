@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-import urllib, urllib2, urlparse, cookielib
+import urllib, urllib2, cookielib
 import json
 from datetime import datetime
 
-from taxi.models import Project, Activity
+from taxi.projects import Project, Activity
 
 class Remote(object):
     # Default timeout for HTTP-related operations, in seconds

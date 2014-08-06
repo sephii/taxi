@@ -5,7 +5,7 @@ import sys
 
 from taxi.utils import date as date_utils, terminal
 from taxi.exceptions import CancelException
-from taxi.models import Project
+from taxi.projects import Project
 
 import colorama
 

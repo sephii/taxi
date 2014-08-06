@@ -10,9 +10,9 @@ from taxi.exceptions import (
     UndefinedAliasError,
     UsageError
 )
-from taxi.models import Project, TimesheetCollection
-from taxi.timesheet import Timesheet, TimesheetFile
-from taxi.timesheet.entry import TimesheetEntry, EntriesCollection, UnknownDirectionError
+from taxi.projects import Project
+from taxi.timesheet import Timesheet, TimesheetCollection, TimesheetFile
+from taxi.timesheet.entry import TimesheetEntry, EntriesCollection
 from taxi.parser import ParseError
 from taxi.settings import Settings
 from taxi.utils import file
