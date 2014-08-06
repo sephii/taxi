@@ -112,6 +112,9 @@ class AggregatedEntry:
     def is_ignored(self):
         return self.entries[0].is_ignored()
 
+    def is_local(self):
+        return self.entries[0].is_local()
+
 class Project:
     STATUS_NOT_STARTED = 0
     STATUS_ACTIVE = 1

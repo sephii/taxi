@@ -45,7 +45,8 @@ alias_1 1 january
         self.write_entries("""20/01/2014
 _pingpong 0800-0900 Play ping-pong
 """)
-        stdout = self.run_command('status', options=self.default_options)
+        stdout = self.run_command('status', options=self.default_options,
+                                  config_options=config)
 
         self.assertIn(
             "_pingpong (local)              1.00  Play ping-pong",
@@ -61,12 +62,25 @@ _pingpong 0800-0900 Play ping-pong
 _coffee 0900-1000 Drink some coffee
 """)
 
-        stdout = self.run_command('status', options=self.default_options)
+        stdout = self.run_command('status', options=self.default_options,
+                                  config_options=config)
         self.assertIn(
             "_pingpong (local)              1.00  Play ping-pong",
             stdout
         )
         self.assertIn(
             "_coffee (local)                1.00  Drink some coffee",
+            stdout
+        )
+
+    def test_regrouped_entries(self):
+        self.write_entries("""20/01/2014
+alias_1 0800-0900 Play ping-pong
+alias_1 1200-1300 Play ping-pong
+""")
+
+        stdout = self.run_command('status', options=self.default_options)
+        self.assertIn(
+            "alias_1 (123/456)              2.00  Play ping-pong",
             stdout
         )
