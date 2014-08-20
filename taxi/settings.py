@@ -15,7 +15,7 @@ class Settings:
     }
 
     DEFAULTS = {
-            'auto_fill_days': '',
+            'auto_fill_days': '1,2,3,4,5',
             'date_format': '%d/%m/%Y',
             'auto_add': 'auto',
             'nb_previous_files': '1',
