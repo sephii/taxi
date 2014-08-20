@@ -431,7 +431,6 @@ class EditCommand(BaseTimesheetCommand):
                 if auto_fill_days:
                     t.prefill(auto_fill_days, limit=None)
 
-                t.entries[datetime.date.today()] = []
                 TimesheetFile(self.options['file']).write(t.entries)
 
         try:
