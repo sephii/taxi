@@ -5,13 +5,14 @@ import datetime
 
 from taxi import remote
 from taxi.exceptions import (
-    NoActivityInProgressError,
     CancelException,
     UndefinedAliasError,
     UsageError
 )
 from taxi.projects import Project
-from taxi.timesheet import Timesheet, TimesheetCollection, TimesheetFile
+from taxi.timesheet import (
+    NoActivityInProgressError, Timesheet, TimesheetCollection, TimesheetFile
+)
 from taxi.timesheet.entry import TimesheetEntry, EntriesCollection
 from taxi.timesheet.parser import ParseError
 from taxi.settings import Settings
@@ -617,16 +618,21 @@ class StopCommand(BaseTimesheetCommand):
 
     def run(self):
         try:
-            t = self.get_timesheet()
-            t.continue_entry(datetime.date.today(),
-                             datetime.datetime.now().time(),
-                             self.description)
+            timesheet_collection = self.get_timesheet_collection()
+            current_timesheet = timesheet_collection.timesheets[0]
+            current_timesheet.continue_entry(
+                datetime.date.today(),
+                datetime.datetime.now().time(),
+                self.description
+            )
         except ParseError as e:
             self.view.err(e)
         except NoActivityInProgressError:
             self.view.err(u"You don't have any activity in progress for today")
         else:
-            t.save()
+            TimesheetFile(self.options['file']).write(
+                current_timesheet.entries
+            )
 
 
 class UpdateCommand(BaseCommand):

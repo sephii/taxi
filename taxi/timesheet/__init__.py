@@ -110,7 +110,15 @@ class Timesheet(object):
         return non_workday_entries
 
     def continue_entry(self, date, end_time, description=None):
-        entry = self.entries[date][-1]
+        try:
+            entry = self.entries[date][-1]
+        except KeyError:
+            raise NoActivityInProgressError()
+
+        if (not isinstance(entry.duration, tuple)
+                or entry.duration[1] is not None):
+            raise NoActivityInProgressError()
+
         entry.duration = (entry.duration[0], self.round_to_quarter(
             entry.duration[0],
             end_time
@@ -258,3 +266,7 @@ class TimesheetFile(object):
 class AliasMappings(dict):
     def is_local(self, alias):
         return self[alias] is None
+
+
+class NoActivityInProgressError(Exception):
+    pass

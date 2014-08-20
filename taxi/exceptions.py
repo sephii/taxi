@@ -5,8 +5,5 @@ class UsageError(Exception):
 class CancelException(Exception):
     pass
 
-class NoActivityInProgressError(Exception):
-    pass
-
 class UndefinedAliasError(Exception):
     pass
