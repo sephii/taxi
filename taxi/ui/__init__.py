@@ -233,7 +233,7 @@ class BaseUi(object):
             self.msg(u'# %s #' %
                      date_utils.unicode_strftime(date, '%A %d %B').capitalize())
             for entry in entries:
-                if entry.is_ignored():
+                if entry.alias not in alias_mappings or entry.is_ignored():
                     project_name = u'%s (ignored)' % entry.alias
                 elif alias_mappings.is_local(entry.alias):
                     project_name = u'%s (local)' % entry.alias
@@ -243,8 +243,8 @@ class BaseUi(object):
                 self.msg(u'%-30s %-5.2f %s' % (project_name, entry.hours,
                                                entry.description))
 
-                if not alias_mappings.is_local(entry.alias):
-                    subtotal_hours += entry.duration or 0
+                if entry.alias not in alias_mappings or not alias_mappings.is_local(entry.alias):
+                    subtotal_hours += entry.hours or 0
 
             self.msg(u'%-29s %5.2f\n' % ('', subtotal_hours))
             total_hours += subtotal_hours
