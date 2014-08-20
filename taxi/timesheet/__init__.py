@@ -1,5 +1,6 @@
 from collections import defaultdict
 import datetime
+import os
 
 from ..utils import date as date_utils
 from .entry import AggregatedTimesheetEntry, EntriesCollection, TimesheetEntry
@@ -238,6 +239,11 @@ class TimesheetFile(object):
                 return timesheet_file.read()
         except IOError:
             if create:
+                try:
+                    os.makedirs(os.path.split(self.file_path)[0])
+                except OSError:
+                    pass
+
                 open(self.file_path, 'w').close()
                 return ''
             else:
