@@ -136,24 +136,24 @@ class BaseUi(object):
         self.msg(u"The following alias has been added to your configuration "
                  "file: %s = %s" % (alias, mapping_name))
 
-    def _show_mapping(self, mapping, project, alias_first=True):
-        (alias, t) = mapping
+    def _show_mapping(self, alias_mapping, project, alias_first=True):
+        (alias, mapping) = alias_mapping
 
         # Handle local aliases
-        if t is None:
+        if mapping is None:
             self.msg(u"%s -> local alias" % alias)
             return
 
-        mapping_name = '%s/%s' % t
+        mapping_name = '%s/%s' % mapping
 
         if not project:
-            project_name = '?'
+            project_name = ''
         else:
-            if t[1] is None:
+            if mapping[1] is None:
                 project_name = project.name
-                mapping_name = t[0]
+                mapping_name = mapping[0]
             else:
-                activity = project.get_activity(t[1])
+                activity = project.get_activity(mapping[1])
 
                 if activity is None:
                     project_name = u'%s, ?' % (project.name)
@@ -161,11 +161,13 @@ class BaseUi(object):
                     project_name = u'%s, %s' % (project.name, activity.name)
 
         if alias_first:
-            args = (alias, mapping_name, project_name)
+            args = [alias, mapping_name]
         else:
-            args = (mapping_name, alias, project_name)
+            args = [mapping_name, alias]
 
-        self.msg(u"%s -> %s (%s)" % args)
+        args.append(' (%s)' % project_name if project_name else '')
+
+        self.msg(u"%s -> %s%s" % tuple(args))
 
     def mapping_detail(self, mapping, project):
         self._show_mapping(mapping, project, False)
