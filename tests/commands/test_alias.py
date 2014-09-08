@@ -25,29 +25,29 @@ class AliasCommandTestCase(CommandTestCase):
         lines = output.splitlines()
 
         self.assertEquals(len(lines), 3)
-        self.assertIn("alias_1 -> 123/456 (?)", lines)
-        self.assertIn("alias_2 -> 123/457 (?)", lines)
-        self.assertIn("foo -> 777/777 (?)", lines)
+        self.assertIn("alias_1 -> 123/456", lines)
+        self.assertIn("alias_2 -> 123/457", lines)
+        self.assertIn("foo -> 777/777", lines)
 
     def test_alias_search_mapping_exact(self):
         output = self.run_alias_command(['alias_1'], self.config)
-        self.assertEquals(output, "alias_1 -> 123/456 (?)\n")
+        self.assertEquals(output, "alias_1 -> 123/456\n")
 
     def test_alias_search_mapping_partial(self):
         output = self.run_alias_command(['alias'], self.config)
         lines = output.splitlines()
 
         self.assertEquals(len(lines), 2)
-        self.assertIn("alias_1 -> 123/456 (?)", lines)
-        self.assertIn("alias_2 -> 123/457 (?)", lines)
+        self.assertIn("alias_1 -> 123/456", lines)
+        self.assertIn("alias_2 -> 123/457", lines)
 
     def test_alias_search_project(self):
         output = self.run_alias_command(['123'], self.config)
         lines = output.splitlines()
 
         self.assertEquals(len(lines), 2)
-        self.assertIn("123/456 -> alias_1 (?)", lines)
-        self.assertIn("123/457 -> alias_2 (?)", lines)
+        self.assertIn("123/456 -> alias_1", lines)
+        self.assertIn("123/457 -> alias_2", lines)
 
         output = self.run_alias_command(['12'], self.config)
         lines = output.splitlines()
@@ -58,7 +58,7 @@ class AliasCommandTestCase(CommandTestCase):
         output = self.run_alias_command(['123/457'], self.config)
         lines = output.splitlines()
         self.assertEquals(len(lines), 1)
-        self.assertIn("123/457 -> alias_2 (?)", lines)
+        self.assertIn("123/457 -> alias_2", lines)
 
         output = self.run_alias_command(['123/458'], self.config)
         lines = output.splitlines()
