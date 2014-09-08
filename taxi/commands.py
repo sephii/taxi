@@ -665,9 +665,11 @@ class UpdateCommand(BaseCommand):
         # Put the shared aliases in the config file
         shared_aliases = {}
         for project in projects:
-            for alias, activity_id in project.aliases.iteritems():
-                self.settings.add_shared_alias(alias, project.id, activity_id)
-                shared_aliases[alias] = (project.id, activity_id)
+            if project.is_active():
+                for alias, activity_id in project.aliases.iteritems():
+                    self.settings.add_shared_alias(alias, project.id,
+                                                   activity_id)
+                    shared_aliases[alias] = (project.id, activity_id)
 
         aliases_after_update = self.settings.get_aliases()
 
