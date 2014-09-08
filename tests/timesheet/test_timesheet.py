@@ -2,8 +2,10 @@
 import datetime
 import pytest
 
+from taxi.timesheet import Timesheet
 from taxi.timesheet.entry import (
-    AggregatedTimesheetEntry, TimesheetEntry, UnknownDirectionError
+    AggregatedTimesheetEntry, EntriesCollection, TimesheetEntry,
+    UnknownDirectionError
 )
 
 from . import BaseTimesheetTestCase
@@ -261,3 +263,22 @@ foo 1 bar"""
         lines = t.entries.to_lines()
         self.assertEquals(lines, ["01.04.2013", "# foo 2 bar",
                                   "# bar 09:00-10:00 bar", "# foo 1 bar"])
+
+
+def test_empty_timesheet():
+    timesheet = Timesheet()
+    assert len(timesheet.entries) == 0
+
+
+def test_timesheet_with_entries():
+    entries = EntriesCollection("""10.10.2014\nfoo 2 bar\n11.10.2014\nfoo 1 bar""")
+
+    timesheet = Timesheet(entries)
+    assert len(timesheet.entries) == 2
+
+
+def test_timesheet_get_entries():
+    entries = EntriesCollection("""10.10.2014\nfoo 2 bar\n11.10.2014\nfoo 1 bar""")
+
+    timesheet = Timesheet(entries)
+    assert len(timesheet.get_entries(datetime.date(2014, 10, 10))) == 1
