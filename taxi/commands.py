@@ -352,6 +352,10 @@ class CleanAliasesCommand(BaseCommand):
         inactive_aliases = []
 
         for (alias, mapping) in aliases.iteritems():
+            # Ignore local aliases
+            if mapping is None:
+                continue
+
             project = self.projects_db.get(mapping[0])
 
             if (project is None or not project.is_active() or
