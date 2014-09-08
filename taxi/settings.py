@@ -122,8 +122,15 @@ class Settings:
         self.config.set('wrmap', alias, '%s/%s' % (projectid, activityid))
 
     def remove_aliases(self, aliases):
+        # Look in mapping sections in this order, once the mapping has been
+        # found in a section, don't go further
+        search_in_sections = ['wrmap', 'shared_wrmap']
+
         for alias in aliases:
-            self.config.remove_option('wrmap', alias)
+            for section in search_in_sections:
+                if self.config.has_option(section, alias):
+                    self.config.remove_option(section, alias)
+                    break
 
     def write_config(self):
         with open(self.filepath, 'w') as file:
