@@ -112,7 +112,7 @@ class Timesheet(object):
     def continue_entry(self, date, end_time, description=None):
         try:
             entry = self.entries[date][-1]
-        except KeyError:
+        except IndexError:
             raise NoActivityInProgressError()
 
         if (not isinstance(entry.duration, tuple)
