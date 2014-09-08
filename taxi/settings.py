@@ -91,11 +91,13 @@ class Settings:
         aliases = []
 
         for (user_alias, mapped_alias) in self.get_aliases().iteritems():
-            if (mapped_alias[0] != mapping[0] or
+            if (mapped_alias is None or mapped_alias[0] != mapping[0] or
                     (mapping[1] is not None and mapped_alias[1] != mapping[1])):
                 continue
 
             aliases.append((user_alias, mapped_alias))
+
+        aliases = sorted(aliases, key=lambda alias: alias[1])
 
         return aliases
 
@@ -105,6 +107,8 @@ class Settings:
         for (user_alias, mapped_alias) in self.get_aliases().iteritems():
             if search_alias is None or user_alias.startswith(search_alias):
                 aliases.append((user_alias, mapped_alias))
+
+        aliases = sorted(aliases, key=lambda alias: alias[1])
 
         return aliases
 
