@@ -5,7 +5,7 @@ import sys
 
 from taxi.utils import date as date_utils, terminal
 from taxi.exceptions import CancelException
-from taxi.models import Project
+from taxi.projects import Project
 
 import colorama
 
@@ -136,24 +136,24 @@ class BaseUi(object):
         self.msg(u"The following alias has been added to your configuration "
                  "file: %s = %s" % (alias, mapping_name))
 
-    def _show_mapping(self, mapping, project, alias_first=True):
-        (alias, t) = mapping
+    def _show_mapping(self, alias_mapping, project, alias_first=True):
+        (alias, mapping) = alias_mapping
 
         # Handle local aliases
-        if t == (None, None):
+        if mapping is None:
             self.msg(u"%s -> local alias" % alias)
             return
 
-        mapping_name = '%s/%s' % t
+        mapping_name = '%s/%s' % mapping
 
         if not project:
-            project_name = '?'
+            project_name = ''
         else:
-            if t[1] is None:
+            if mapping[1] is None:
                 project_name = project.name
-                mapping_name = t[0]
+                mapping_name = mapping[0]
             else:
-                activity = project.get_activity(t[1])
+                activity = project.get_activity(mapping[1])
 
                 if activity is None:
                     project_name = u'%s, ?' % (project.name)
@@ -161,11 +161,13 @@ class BaseUi(object):
                     project_name = u'%s, %s' % (project.name, activity.name)
 
         if alias_first:
-            args = (alias, mapping_name, project_name)
+            args = [alias, mapping_name]
         else:
-            args = (mapping_name, alias, project_name)
+            args = [mapping_name, alias]
 
-        self.msg(u"%s -> %s (%s)" % args)
+        args.append(' (%s)' % project_name if project_name else '')
+
+        self.msg(u"%s -> %s%s" % tuple(args))
 
     def mapping_detail(self, mapping, project):
         self._show_mapping(mapping, project, False)
@@ -194,7 +196,7 @@ class BaseUi(object):
             else:
                 line = unicode(entry)
 
-            total += entry.get_duration()
+            total += entry.hours
             if details:
                 self.msg(line)
 
@@ -217,7 +219,7 @@ class BaseUi(object):
         "To ignore this error, re-run taxi with the option "
         "`--ignore-date-error`" % ', '.join(dates))
 
-    def show_status(self, entries_dict):
+    def show_status(self, entries_dict, alias_mappings):
         self.msg(u'Staging changes :\n')
         entries_list = entries_dict.items()
         entries_list = sorted(entries_list)
@@ -233,9 +235,18 @@ class BaseUi(object):
             self.msg(u'# %s #' %
                      date_utils.unicode_strftime(date, '%A %d %B').capitalize())
             for entry in entries:
-                self.msg(unicode(entry))
-                if not entry.is_local():
-                    subtotal_hours += entry.get_duration() or 0
+                if entry.alias not in alias_mappings or entry.is_ignored():
+                    project_name = u'%s (ignored)' % entry.alias
+                elif alias_mappings.is_local(entry.alias):
+                    project_name = u'%s (local)' % entry.alias
+                else:
+                    project_name = entry.alias
+
+                self.msg(u'%-30s %-5.2f %s' % (project_name, entry.hours,
+                                               entry.description))
+
+                if entry.alias not in alias_mappings or not alias_mappings.is_local(entry.alias):
+                    subtotal_hours += entry.hours or 0
 
             self.msg(u'%-29s %5.2f\n' % ('', subtotal_hours))
             total_hours += subtotal_hours

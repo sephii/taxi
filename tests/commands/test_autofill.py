@@ -28,7 +28,6 @@ class AutofillCommandTestCase(CommandTestCase):
 21/02/2012
 
 28/02/2012
-
 """)
 
     def test_autofill_top(self):
@@ -48,7 +47,6 @@ class AutofillCommandTestCase(CommandTestCase):
 14/02/2012
 
 07/02/2012
-
 """)
 
     def test_autofill_existing_entries(self):

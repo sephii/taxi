@@ -9,7 +9,7 @@ import sys
 
 from taxi import __version__, commands
 from taxi.exceptions import UndefinedAliasError, UsageError
-from taxi.projectsdb import ProjectsDb
+from taxi.projects import ProjectsDb
 from taxi.settings import Settings
 from taxi.utils.file import expand_filename
 from taxi.ui.tty import TtyUi

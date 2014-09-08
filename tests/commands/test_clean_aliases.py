@@ -1,9 +1,6 @@
-import tempfile
-
 from freezegun import freeze_time
 
-from taxi.models import Project, Activity
-from taxi.projectsdb import ProjectsDb
+from taxi.projects import Activity, Project, ProjectsDb
 from taxi.settings import Settings
 
 from . import CommandTestCase

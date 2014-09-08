@@ -13,23 +13,20 @@ from taxi.utils.file import expand_filename
 class CommandTestCase(TestCase):
     def setUp(self):
         def zebra_remote_send_entries(entries, callback):
+            pushed_entries = []
+            failed_entries = []
+
             for (_, date_entries) in entries.iteritems():
                 for entry in date_entries:
-                    if entry.project_name != 'fail':
-                        entry.pushed = True
+                    pushed = entry.alias != 'fail'
+
+                    if pushed:
+                        pushed_entries.append(entry)
+                    else:
+                        failed_entries.append(entry)
 
                     callback(entry,
-                             entry.description if not entry.pushed else None)
-
-            pushed_entries = [
-                item for sublist in entries.values()
-                for item in sublist if item.pushed
-            ]
-
-            failed_entries = [
-                item for sublist in entries.values()
-                for item in sublist if not item.pushed
-            ]
+                             entry.description if not pushed else None)
 
             return (pushed_entries, failed_entries)
 
