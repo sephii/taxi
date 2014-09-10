@@ -98,7 +98,7 @@ class ZebraRemote(Remote):
         for (date, entries) in entries.iteritems():
             for entry in entries:
                 parameters_dict = {
-                    'time':         entry.get_duration(),
+                    'time':         entry.hours,
                     'project_id':   entry.project_id,
                     'activity_id':  entry.activity_id,
                     'day':          date.day,
@@ -232,7 +232,7 @@ class DummyRemote(Remote):
             for entry in entries:
                 error = None
                 parameters_dict = {
-                    'time':         entry.get_duration(),
+                    'time':         entry.hours,
                     'project_id':   entry.project_id,
                     'activity_id':  entry.activity_id,
                     'day':          date.day,
