@@ -235,10 +235,17 @@ class BaseUi(object):
             self.msg(u'# %s #' %
                      date_utils.unicode_strftime(date, '%A %d %B').capitalize())
             for entry in entries:
-                if entry.alias not in alias_mappings or entry.is_ignored():
-                    project_name = u'%s (ignored)' % entry.alias
+                if entry.alias not in alias_mappings:
+                    status = 'not mapped'
+                elif entry.is_ignored():
+                    status = 'ignored'
                 elif alias_mappings.is_local(entry.alias):
-                    project_name = u'%s (local)' % entry.alias
+                    status = 'local'
+                else:
+                    status = ''
+
+                if status:
+                    project_name = u'%s (%s)' % (entry.alias, status)
                 else:
                     project_name = entry.alias
 
