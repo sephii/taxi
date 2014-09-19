@@ -314,8 +314,9 @@ class Timesheet:
                     # This is a mapping between entries hashes and their
                     # position in the entries_for_date list
                     aggregated_entries = {}
+                    id = 0
 
-                    for (id, entry) in enumerate(entries):
+                    for entry in entries:
                         if (filter_callback is not None
                                 and not filter_callback(entry)):
                             continue
@@ -328,6 +329,7 @@ class Timesheet:
                             # AggregatedEntry later if necessary
                             entries_for_date.append(entry)
                             aggregated_entries[entry.get_hash()] = id
+                            id += 1
                         else:
                             # Get the first occurence of the entry in the
                             # entries_for_date list
