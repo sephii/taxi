@@ -51,7 +51,7 @@ class EntryLine(TextLine):
         return u'%s %s %s' % (self.alias, time, self.description)
 
     def is_ignored(self):
-        return self.alias.endswith('?') or self.alias.startswith('?')
+        return self.alias.endswith('?') or self.alias.startswith('?') or self.description == '?'
 
     def get_alias(self):
         if self.alias.endswith('?'):

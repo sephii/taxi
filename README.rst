@@ -125,7 +125,8 @@ time is the duration of the activity in one of the following format:
     * -hh:mm (will use the previous line as start time)
     * hh:mm can also be replaced by hhmm
 
-description is the description of the entry.
+description is the description of the entry. If you put a question mark as
+ description, the entry will also be ignored.
 
 Start/stop usage
 ================
