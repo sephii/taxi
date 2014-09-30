@@ -81,6 +81,6 @@ alias_1 1200-1300 Play ping-pong
 
         stdout = self.run_command('status', options=self.default_options)
         self.assertIn(
-            "alias_1                        2.00  Play ping-pong",
+            "alias_1 (123/456)              2.00  Play ping-pong",
             stdout
         )

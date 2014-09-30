@@ -12,7 +12,7 @@ from taxi.utils.file import expand_filename
 
 class CommandTestCase(TestCase):
     def setUp(self):
-        def zebra_remote_send_entries(entries, callback):
+        def zebra_remote_send_entries(entries, mappings, callback):
             pushed_entries = []
             failed_entries = []
 
