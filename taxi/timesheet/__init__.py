@@ -81,10 +81,11 @@ class Timesheet(object):
         return filtered_entries
 
     def get_entries(self, date=None, exclude_ignored=False,
-                    exclude_local=False, regroup=False):
+                    exclude_local=False, exclude_unmapped=False, regroup=False):
         def entry_filter(entry):
             return (not (exclude_ignored and entry.is_ignored())
-                    and not (exclude_local and self.is_alias_local(entry.alias)))
+                    and not (exclude_local and self.is_alias_local(entry.alias))
+                    and (not exclude_unmapped or self.is_alias_mapped(entry.alias)))
 
         return self.get_filtered_entries(date, entry_filter, regroup)
 
@@ -97,7 +98,10 @@ class Timesheet(object):
         )
 
     def is_alias_local(self, alias):
-        return alias in self.mappings and self.mappings[alias] is None
+        return self.is_alias_mapped(alias) and self.mappings[alias] is None
+
+    def is_alias_mapped(self, alias):
+        return alias in self.mappings
 
     def get_non_current_workday_entries(self):
         non_workday_entries = {}

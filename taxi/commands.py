@@ -378,7 +378,7 @@ class CommitCommand(BaseTimesheetCommand):
         for timesheet in timesheet_collection.timesheets:
             entries_to_push = timesheet.get_entries(
                 self.options.get('date', None), exclude_ignored=True,
-                exclude_local=True, regroup=True
+                exclude_local=True, exclude_unmapped=True, regroup=True
             )
 
             (pushed_entries, failed_entries) = r.send_entries(entries_to_push,
