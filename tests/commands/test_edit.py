@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from freezegun import freeze_time
 
 from . import CommandTestCase
@@ -19,3 +20,12 @@ class EditCommandTestCase(CommandTestCase):
 
         with open(self.entries_file, 'r') as f:
             self.assertEqual(f.read(), '')
+
+    def test_edit_utf8_file(self):
+        """
+        Editing a file that contains accents should not crash.
+        """
+        self.write_entries("""20/01/2014
+alias_1 2 préparation du café pour l'évènement
+""")
+        self.run_command('edit')

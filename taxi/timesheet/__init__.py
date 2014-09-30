@@ -1,3 +1,4 @@
+import codecs
 from collections import defaultdict
 import datetime
 import os
@@ -244,7 +245,7 @@ class TimesheetFile(object):
         self.file_path = file_path
 
     def read(self):
-        with open(self.file_path, 'r') as timesheet_file:
+        with codecs.open(self.file_path, 'r', 'utf-8') as timesheet_file:
             return timesheet_file.read()
 
     def write(self, entries):
@@ -256,7 +257,7 @@ class TimesheetFile(object):
             except OSError:
                 pass
 
-        with open(self.file_path, 'w') as timesheet_file:
+        with codecs.open(self.file_path, 'w', 'utf-8') as timesheet_file:
             for line in entries.to_lines():
                 timesheet_file.write(u'%s\n' % line)
 
