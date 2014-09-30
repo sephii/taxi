@@ -242,7 +242,7 @@ class BaseUi(object):
                 elif alias_mappings.is_local(entry.alias):
                     status = 'local'
                 elif entry.alias in alias_mappings:
-                    status = ', '.join([
+                    status = '/'.join([
                         str(part) for part in alias_mappings[entry.alias]
                     ])
                 else:
