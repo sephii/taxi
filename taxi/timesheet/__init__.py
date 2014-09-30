@@ -8,9 +8,10 @@ from .entry import AggregatedTimesheetEntry, EntriesCollection, TimesheetEntry
 
 
 class Timesheet(object):
-    def __init__(self, entries=None, mappings=None):
+    def __init__(self, entries=None, mappings=None, file=None):
         self.entries = entries if entries is not None else EntriesCollection()
         self.mappings = mappings if mappings is not None else AliasMappings()
+        self.file = file
 
     def get_filtered_entries(self, date=None, filter_callback=None,
                              regroup=False):

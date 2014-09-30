@@ -66,7 +66,8 @@ class BaseTimesheetCommand(BaseCommand):
                     timesheet_contents,
                     self.settings.get('date_format')
                 ),
-                self.alias_mappings
+                self.alias_mappings,
+                timesheet_file
             )
 
             # Force new entries direction if necessary
@@ -283,7 +284,7 @@ class AutofillCommand(BaseTimesheetCommand):
             timesheet_collection = self.get_timesheet_collection()
             t = timesheet_collection.timesheets[0]
             t.prefill(auto_fill_days, last_date)
-            TimesheetFile(self.options['file']).write(t.entries)
+            t.file.write(t.entries)
 
             self.view.msg(u"Your entries file has been filled.")
         else:
@@ -394,7 +395,7 @@ class CommitCommand(BaseTimesheetCommand):
             for entry in local_entries_list + pushed_entries:
                 entry.commented = True
 
-            TimesheetFile(self.options['file']).write(timesheet.entries)
+            timesheet.file.write(timesheet.entries)
 
             all_pushed_entries.extend(pushed_entries)
             all_failed_entries.extend(failed_entries)
@@ -435,7 +436,7 @@ class EditCommand(BaseTimesheetCommand):
                 if auto_fill_days:
                     t.prefill(auto_fill_days, limit=None)
 
-                TimesheetFile(self.options['file']).write(t.entries)
+                t.file.write(t.entries)
 
         try:
             editor = self.settings.get('editor')
@@ -579,7 +580,7 @@ class StartCommand(BaseTimesheetCommand):
         duration = (new_entry_start_time, None)
         e = TimesheetEntry(self.project_name, duration, '?')
         t.entries[today].append(e)
-        TimesheetFile(self.options['file']).write(t.entries)
+        t.file.write(t.entries)
 
 
 class StatusCommand(BaseTimesheetCommand):
@@ -634,9 +635,7 @@ class StopCommand(BaseTimesheetCommand):
         except NoActivityInProgressError:
             self.view.err(u"You don't have any activity in progress for today")
         else:
-            TimesheetFile(self.options['file']).write(
-                current_timesheet.entries
-            )
+            t.file.write(current_timesheet.entries)
 
 
 class UpdateCommand(BaseCommand):
