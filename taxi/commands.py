@@ -383,6 +383,7 @@ class CommitCommand(BaseTimesheetCommand):
             )
 
             (pushed_entries, failed_entries) = r.send_entries(entries_to_push,
+                                                              self.alias_mappings,
                                                               self._entry_pushed)
 
             local_entries = timesheet.get_local_entries(

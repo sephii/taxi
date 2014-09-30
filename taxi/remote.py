@@ -88,7 +88,7 @@ class ZebraRemote(Remote):
         else:
             self.logged_in = True
 
-    def send_entries(self, entries, callback=None):
+    def send_entries(self, entries, mappings, callback=None):
         post_url = '/timesheet/create/.json'
 
         pushed_entries = []
@@ -99,8 +99,8 @@ class ZebraRemote(Remote):
             for entry in entries:
                 parameters_dict = {
                     'time':         entry.hours,
-                    'project_id':   entry.project_id,
-                    'activity_id':  entry.activity_id,
+                    'project_id':   mappings[entry.alias][0],
+                    'activity_id':  mappings[entry.alias][1],
                     'day':          date.day,
                     'month':        date.month,
                     'year':         date.year,
@@ -224,7 +224,7 @@ class DummyRemote(Remote):
     def __init__(self):
         super(DummyRemote, self).__init__('dummy')
 
-    def send_entries(self, entries, callback=None):
+    def send_entries(self, entries, mappings, callback=None):
         pushed_entries = []
         failed_entries = []
 
@@ -233,8 +233,8 @@ class DummyRemote(Remote):
                 error = None
                 parameters_dict = {
                     'time':         entry.hours,
-                    'project_id':   entry.project_id,
-                    'activity_id':  entry.activity_id,
+                    'project_id':   mappings[entry.alias][0],
+                    'activity_id':  mappings[entry.alias][1],
                     'day':          date.day,
                     'month':        date.month,
                     'year':         date.year,
