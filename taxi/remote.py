@@ -4,6 +4,7 @@ import json
 from datetime import datetime
 
 from taxi.projects import Project, Activity
+from taxi.exceptions import TaxiException
 
 class Remote(object):
     # Default timeout for HTTP-related operations, in seconds
@@ -61,7 +62,7 @@ class ZebraRemote(Remote):
         try:
             response = opener.open(request, timeout=self.DEFAULT_TIMEOUT)
         except urllib2.URLError:
-            raise Exception('Unable to connect to Zebra. Check your connection status and try again.')
+            raise TaxiException('Unable to connect to Zebra. Check your connection status and try again.')
 
         self.cookiejar.extract_cookies(response, request)
 
@@ -84,7 +85,7 @@ class ZebraRemote(Remote):
 
         if not response.info().getheader('Content-Type').startswith('application/json'):
             self.logged_in = False
-            raise Exception('Unable to login')
+            raise TaxiException('Unable to login')
         else:
             self.logged_in = True
 

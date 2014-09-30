@@ -8,7 +8,7 @@ import os
 import sys
 
 from taxi import __version__, commands
-from taxi.exceptions import UsageError
+from taxi.exceptions import TaxiException, UsageError
 from taxi.projects import ProjectsDb
 from taxi.settings import Settings
 from taxi.utils.file import expand_filename
@@ -161,7 +161,10 @@ Available commands:
             else:
                 raise ue
         else:
-            action.run()
+            try:
+                action.run()
+            except TaxiException as e:
+                view.err(e)
 
 
 def term_unicode(string):

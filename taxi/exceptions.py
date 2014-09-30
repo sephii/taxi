@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
-class UsageError(Exception):
+class TaxiException(Exception):
     pass
 
-class CancelException(Exception):
+class UsageError(TaxiException):
     pass
 
-class UndefinedAliasError(Exception):
+class CancelException(TaxiException):
+    pass
+
+class UndefinedAliasError(TaxiException):
     pass

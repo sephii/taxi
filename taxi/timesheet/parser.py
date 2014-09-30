@@ -1,6 +1,7 @@
 import datetime
 import re
 
+from taxi.exceptions import TaxiException
 from taxi.utils import date as date_utils
 
 
@@ -212,7 +213,7 @@ class TimesheetParser(object):
                              int(date_matches.group(1)))
 
 
-class ParseError(Exception):
+class ParseError(TaxiException):
     def __init__(self, message, line_number=None):
         self.message = message
         self.line_number = line_number

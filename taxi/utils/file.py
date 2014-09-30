@@ -4,6 +4,9 @@ import os
 import shlex
 import subprocess
 
+from taxi.exceptions import TaxiException
+
+
 def create_file(filepath):
     if not os.path.exists(os.path.dirname(filepath)):
         os.makedirs(os.path.dirname(filepath))
@@ -23,8 +26,8 @@ def spawn_editor(filepath, editor=None):
         subprocess.call(editor)
     except OSError:
         if 'EDITOR' not in os.environ:
-            raise Exception("Can't find any suitable editor. Check your EDITOR "
-                            " env var.")
+            raise TaxiException("Can't find any suitable editor. Check your"
+                                " EDITOR env var.")
 
         editor = shlex.split(os.environ['EDITOR'])
         editor.append(filepath)

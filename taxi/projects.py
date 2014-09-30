@@ -3,6 +3,8 @@ import datetime
 import pickle
 import re
 
+from taxi.exceptions import TaxiException
+
 
 class Project:
     STATUS_NOT_STARTED = 0
@@ -152,11 +154,11 @@ class ProjectsDb:
             try:
                 lpdb = pickle.load(input)
             except ImportError:
-                raise Exception('Your projects db is out of date, please '
+                raise TaxiException('Your projects db is out of date, please '
                         'run `taxi update` to update it')
 
             if not isinstance(lpdb, LocalProjectsDb) or lpdb.VERSION < LocalProjectsDb.VERSION:
-                raise Exception('Your projects db is out of date, please' \
+                raise TaxiException('Your projects db is out of date, please' \
                         ' run `taxi update` to update it')
 
             setattr(self, '_projects_cache', lpdb.projects)
