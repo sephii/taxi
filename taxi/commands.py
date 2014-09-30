@@ -55,16 +55,15 @@ class BaseTimesheetCommand(BaseCommand):
         self.alias_mappings = self.settings.get_aliases()
 
         for file_path in timesheet_files:
+            timesheet_file = TimesheetFile(file_path)
             try:
-                timesheet_file = TimesheetFile(file_path)
+                timesheet_contents = timesheet_file.read()
             except IOError:
-                # The timesheet doesn't exist, create it
-                file.create_file(file_path)
-                timesheet_file = TimesheetFile(file_path)
+                timesheet_contents = ''
 
             t = Timesheet(
                 EntriesCollection(
-                    timesheet_file.read(),
+                    timesheet_contents,
                     self.settings.get('date_format')
                 ),
                 self.alias_mappings

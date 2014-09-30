@@ -243,23 +243,19 @@ class TimesheetFile(object):
     def __init__(self, file_path):
         self.file_path = file_path
 
-    def read(self, create=True):
-        try:
-            with open(self.file_path, 'r') as timesheet_file:
-                return timesheet_file.read()
-        except IOError:
-            if create:
-                try:
-                    os.makedirs(os.path.split(self.file_path)[0])
-                except OSError:
-                    pass
-
-                open(self.file_path, 'w').close()
-                return ''
-            else:
-                raise
+    def read(self):
+        with open(self.file_path, 'r') as timesheet_file:
+            return timesheet_file.read()
 
     def write(self, entries):
+        try:
+            open(self.file_path, 'r').close()
+        except IOError:
+            try:
+                os.makedirs(os.path.split(self.file_path)[0])
+            except OSError:
+                pass
+
         with open(self.file_path, 'w') as timesheet_file:
             for line in entries.to_lines():
                 timesheet_file.write(u'%s\n' % line)
