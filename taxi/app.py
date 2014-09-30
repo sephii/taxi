@@ -8,7 +8,7 @@ import os
 import sys
 
 from taxi import __version__, commands
-from taxi.exceptions import UndefinedAliasError, UsageError
+from taxi.exceptions import UsageError
 from taxi.projects import ProjectsDb
 from taxi.settings import Settings
 from taxi.utils.file import expand_filename
@@ -161,11 +161,7 @@ Available commands:
             else:
                 raise ue
         else:
-            try:
-                action.run()
-            except UndefinedAliasError as e:
-                close = settings.get_close_matches(e.message)
-                view.suggest_aliases(e.message, close)
+            action.run()
 
 
 def term_unicode(string):

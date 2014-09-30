@@ -425,7 +425,7 @@ class EditCommand(BaseTimesheetCommand):
 
         try:
             timesheet_collection = self.get_timesheet_collection()
-        except (UndefinedAliasError, ParseError):
+        except ParseError:
             pass
 
         if timesheet_collection:
@@ -555,9 +555,6 @@ class StartCommand(BaseTimesheetCommand):
         self.project_name = self.arguments[0]
 
     def run(self):
-        if self.project_name not in self.settings.get_aliases().keys():
-            raise UndefinedAliasError(self.project_name)
-
         today = datetime.date.today()
 
         try:
