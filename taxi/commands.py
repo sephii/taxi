@@ -451,7 +451,7 @@ class EditCommand(BaseTimesheetCommand):
         else:
             t = timesheet_collection.timesheets[0]
             self.view.show_status(
-                t.get_entries(regroup=True), self.alias_mappings
+                t.get_entries(regroup=True), self.alias_mappings, self.settings
             )
 
 
@@ -601,7 +601,8 @@ class StatusCommand(BaseTimesheetCommand):
         else:
             self.view.show_status(
                 timesheet_collection.get_entries(self.date, regroup=True),
-                self.alias_mappings
+                self.alias_mappings,
+                self.settings
             )
 
 

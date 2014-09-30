@@ -219,7 +219,7 @@ class BaseUi(object):
         "To ignore this error, re-run taxi with the option "
         "`--ignore-date-error`" % ', '.join(dates))
 
-    def show_status(self, entries_dict, alias_mappings):
+    def show_status(self, entries_dict, alias_mappings, settings):
         self.msg(u'Staging changes :\n')
         entries_list = entries_dict.items()
         entries_list = sorted(entries_list)
@@ -251,6 +251,12 @@ class BaseUi(object):
 
                 self.msg(u'%-30s %-5.2f %s' % (project_name, entry.hours,
                                                entry.description))
+
+                if entry.alias not in alias_mappings:
+                    close_matches = settings.get_close_matches(entry.alias)
+                    if close_matches:
+                        self.msg(u'\tDid you mean one of the following: %s?' %
+                                 ', '.join(close_matches))
 
                 if entry.alias not in alias_mappings or not alias_mappings.is_local(entry.alias):
                     subtotal_hours += entry.hours or 0
