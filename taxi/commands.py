@@ -633,7 +633,7 @@ class StopCommand(BaseTimesheetCommand):
         except NoActivityInProgressError:
             self.view.err(u"You don't have any activity in progress for today")
         else:
-            t.file.write(current_timesheet.entries)
+            current_timesheet.file.write(current_timesheet.entries)
 
 
 class UpdateCommand(BaseCommand):
