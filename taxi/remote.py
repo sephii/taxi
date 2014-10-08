@@ -175,12 +175,14 @@ class ZebraRemote(Remote):
                         project['budget'])
 
             try:
-                p.start_date = datetime.strptime(project['startdate'], '%Y-%m-%d')
+                p.start_date = datetime.strptime(
+                    project['startdate'], '%Y-%m-%d').date()
             except ValueError:
                 p.start_date = None
 
             try:
-                p.end_date = datetime.strptime(project['enddate'], '%Y-%m-%d')
+                p.end_date = datetime.strptime(
+                    project['enddate'], '%Y-%m-%d').date()
             except ValueError:
                 p.end_date = None
 

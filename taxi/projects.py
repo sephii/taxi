@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
+import copy
 import datetime
-import pickle
+import json
 import re
 
 from taxi.exceptions import TaxiException
@@ -28,7 +29,7 @@ class Project:
 
     STR_TUPLE_REGEXP = r'^(\d{1,4})(?:/(\d{1,4}))?$'
 
-    def __init__(self, id, name, status = None, description = None, budget = None):
+    def __init__(self, id, name, status=None, description=None, budget=None):
         self.id = int(id)
         self.name = name
         self.activities = []
@@ -92,9 +93,9 @@ Description: %s""" % (
     def is_active(self):
         return (self.status == self.STATUS_ACTIVE and
                 (self.start_date is None or
-                    self.start_date <= datetime.datetime.now()) and
+                    self.start_date <= datetime.date.today()) and
                 (self.end_date is None or self.end_date >=
-                    datetime.datetime.now()))
+                    datetime.date.today()))
 
     def get_short_status(self):
         if self.status not in self.SHORT_STATUSES:
@@ -149,15 +150,10 @@ class ProjectsDb:
             return projects_cache
 
         try:
-            input = open(self.path, 'r')
+            with open(self.path, 'r') as projects_db:
+                lpdb = json.load(projects_db, cls=LocalProjectsDbDecoder)
 
-            try:
-                lpdb = pickle.load(input)
-            except ImportError:
-                raise TaxiException('Your projects db is out of date, please '
-                        'run `taxi update` to update it')
-
-            if not isinstance(lpdb, LocalProjectsDb) or lpdb.VERSION < LocalProjectsDb.VERSION:
+            if lpdb.VERSION < LocalProjectsDb.VERSION:
                 raise TaxiException('Your projects db is out of date, please' \
                         ' run `taxi update` to update it')
 
@@ -170,8 +166,8 @@ class ProjectsDb:
     def update(self, projects):
         lpdb = LocalProjectsDb(projects)
 
-        output = open(self.path, 'w')
-        pickle.dump(lpdb, output)
+        with open(self.path, 'w') as output:
+            json.dump(lpdb.get_dump_object(), output)
 
     def search(self, search, active_only=False):
         projects = self._get_projects()
@@ -220,9 +216,55 @@ class ProjectsDb:
 
         return (project, activity)
 
+
 class LocalProjectsDb:
     projects = []
     VERSION = 2
 
     def __init__(self, projects):
         self.projects = projects
+
+    def get_dump_object(self):
+        return {
+            'VERSION': self.VERSION,
+            'projects': [
+                self.dump_project(project) for project in self.projects
+            ]
+        }
+
+    def dump_project(self, project):
+        project_dict = copy.copy(project.__dict__)
+
+        for date_type in ['start_date', 'end_date']:
+            if project_dict[date_type] is not None:
+                project_dict[date_type] = project_dict[date_type].isoformat()
+
+        project_dict['activities'] = [
+            activity.__dict__ for activity in project_dict['activities']
+        ]
+
+        return project_dict
+
+
+class LocalProjectsDbDecoder(json.JSONDecoder):
+    def decode(self, s):
+        s = super(LocalProjectsDbDecoder, self).decode(s)
+
+        projects = s['projects']
+        projects_copy = []
+        for project in projects:
+            project['activities'] = [
+                Activity(activity['id'], activity['name'], activity['price']) for activity in project['activities']
+            ]
+            for date_type in ['start_date', 'end_date']:
+                if project[date_type] is not None:
+                    project[date_type] = datetime.datetime.strptime(project[date_type], '%Y-%m-%d').date()
+
+            p_copy = Project(project['id'], project['name'])
+            p_copy.__dict__.update(project)
+            projects_copy.append(p_copy)
+
+        lpdb = LocalProjectsDb(projects_copy)
+        lpdb.VERSION = s['VERSION']
+
+        return lpdb
