@@ -53,26 +53,30 @@ def test_parse_time_valid_decimal():
 
 
 def test_parse_time_valid_integer():
-    TimesheetParser.parse_time('3') == 3.0
+    assert TimesheetParser.parse_time('3') == 3.0
 
 
 def test_parse_time_valid_big_integer():
-    TimesheetParser.parse_time('0900') == 900.0
+    assert TimesheetParser.parse_time('0900') == 900.0
 
 
 def test_parse_time_valid_timespan():
-    TimesheetParser.parse_time('0900-1015') == (datetime.time(9, 0), datetime.time(10, 15))
+    assert TimesheetParser.parse_time('0900-1015') == (datetime.time(9, 0),
+                                                       datetime.time(10, 15))
 
 
 def test_parse_time_valid_timespan_with_separators():
-    TimesheetParser.parse_time('09:00-10:15') == (datetime.time(9, 0), datetime.time(10, 15))
+    assert TimesheetParser.parse_time('09:00-10:15') == (datetime.time(9, 0),
+                                                         datetime.time(10, 15))
+
 
 def test_parse_time_valid_timespan_without_end():
-    TimesheetParser.parse_time('09:00-?') == (datetime.time(9, 0), None)
+    assert TimesheetParser.parse_time('09:00-?') == (datetime.time(9, 0), None)
 
 
 def test_parse_time_valid_timespan_without_start():
-    TimesheetParser.parse_time('-10:15') == (None, datetime.time(10, 15))
+    assert TimesheetParser.parse_time('-10:15') == (None,
+                                                    datetime.time(10, 15))
 
 
 def test_parse_time_invalid_string():
@@ -89,41 +93,44 @@ def test_parse_time_minutes_out_of_range():
     with pytest.raises(ParseError):
         TimesheetParser.parse_time('-1061')
 
+
 def test_parse_time_separator_without_timespan():
     with pytest.raises(ParseError):
         TimesheetParser.parse_time('-')
 
 
-class TestPlainTextParser(unittest.TestCase):
-    def test_alias_before_date(self):
-        content = """my_alias_1 1 foo bar
+def test_alias_before_date():
+    content = """my_alias_1 1 foo bar
 11.10.2013
 my_alias 2 foo"""
 
-        with pytest.raises(ParseError):
-            TimesheetParser.parse(content)
+    with pytest.raises(ParseError):
+        TimesheetParser.parse(content)
 
-        content = """# comment
+    content = """# comment
 11.10.2013
 my_alias 2 foo"""
 
-        lines = TimesheetParser.parse(content)
-        self.assertEqual(len(lines), 3)
+    lines = TimesheetParser.parse(content)
+    assert len(lines) == 3
 
-    def test_invalid_date(self):
-        with pytest.raises(ParseError):
-            TimesheetParser.parse("1110.2013")
-            TimesheetParser.parse("11102013")
 
-    def test_invalid_line(self):
-        content = """10.01.2013
+def test_invalid_date():
+    with pytest.raises(ParseError):
+        TimesheetParser.parse("1110.2013")
+        TimesheetParser.parse("11102013")
+
+
+def test_invalid_line():
+    content = """10.01.2013
 foobar 0900-1000 baz
 foo"""
-        with pytest.raises(ParseError):
-            TimesheetParser.parse(content)
+    with pytest.raises(ParseError):
+        TimesheetParser.parse(content)
 
-    def test_parsing(self):
-        contents = """01.01.13
+
+def test_parsing():
+    contents = """01.01.13
 
 foobar 0900-1000 baz
 # comment
@@ -133,46 +140,48 @@ foo -1100 bar
 bar 10:00-? ?
 foo? 2 foobar"""
 
-        lines = TimesheetParser.parse(contents)
+    lines = TimesheetParser.parse(contents)
 
-        self.assertEquals(len(lines), 9)
-        self.assertIsInstance(lines[0], DateLine)
-        self.assertEquals(lines[0].date, datetime.date(2013, 1, 1))
-        self.assertIsInstance(lines[1], TextLine)
-        self.assertEquals(lines[1].text, '')
-        self.assertIsInstance(lines[2], EntryLine)
-        self.assertEquals(lines[2].alias, 'foobar')
-        self.assertEquals(lines[2].duration,
-                          (datetime.time(9, 0), datetime.time(10, 0)))
-        self.assertEquals(lines[2].description, 'baz')
-        self.assertIsInstance(lines[3], TextLine)
-        self.assertEquals(lines[3].text, '# comment')
-        self.assertEquals(lines[4].alias, 'foo')
-        self.assertEquals(lines[4].duration, (None, datetime.time(11, 0)))
-        self.assertEquals(lines[4].description, 'bar')
-        self.assertIsInstance(lines[6], DateLine)
-        self.assertEquals(lines[6].date, datetime.date(2013, 9, 23))
-        self.assertIsInstance(lines[7], EntryLine)
-        self.assertEquals(lines[7].duration, (datetime.time(10, 0), None))
-        self.assertIsInstance(lines[8], EntryLine)
-        self.assertEquals(lines[8].alias, 'foo')
-        self.assertTrue(lines[8].ignored)
+    assert len(lines) == 9
+    assert isinstance(lines[0], DateLine)
+    assert lines[0].date == datetime.date(2013, 1, 1)
+    assert isinstance(lines[1], TextLine)
+    assert lines[1].text == ''
+    assert isinstance(lines[2], EntryLine)
+    assert lines[2].alias == 'foobar'
+    assert lines[2].duration == (datetime.time(9, 0), datetime.time(10, 0))
+    assert lines[2].description == 'baz'
+    assert isinstance(lines[3], TextLine)
+    assert lines[3].text == '# comment'
+    assert lines[4].alias == 'foo'
+    assert lines[4].duration == (None, datetime.time(11, 0))
+    assert lines[4].description == 'bar'
+    assert isinstance(lines[6], DateLine)
+    assert lines[6].date == datetime.date(2013, 9, 23)
+    assert isinstance(lines[7], EntryLine)
+    assert lines[7].duration == (datetime.time(10, 0), None)
+    assert isinstance(lines[8], EntryLine)
+    assert lines[8].alias == 'foo'
+    assert lines[8].ignored
 
-    def test_empty(self):
-        self.assertEquals(len(TimesheetParser.parse('')), 0)
 
-    def test_stripping_empty(self):
-        lines = TimesheetParser.parse("""
+def test_empty():
+    assert len(TimesheetParser.parse('')) == 0
+
+
+def test_stripping_empty():
+    lines = TimesheetParser.parse("""
 
 """)
-        self.assertEquals(len(lines), 0)
+    assert len(lines) == 0
 
-    def test_stripping_not_empty(self):
-        lines = TimesheetParser.parse("""
+
+def test_stripping_not_empty():
+    lines = TimesheetParser.parse("""
 
 10.01.2013
 
 foobar 0900-1000 baz
 
 """)
-        self.assertEquals(len(lines), 3)
+    assert len(lines) == 3
