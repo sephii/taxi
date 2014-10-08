@@ -222,6 +222,10 @@ class EntriesCollection(collections.defaultdict):
                 )
                 timesheet_entry.ignored = line.ignored
                 timesheet_entry.line = line
+                if len(self[current_date]) > 0:
+                    timesheet_entry.previous_entry = self[current_date][-1]
+                    self[current_date][-1].next_entry = timesheet_entry
+
                 self[current_date].append(timesheet_entry)
 
     def to_lines(self):
@@ -256,10 +260,6 @@ class EntriesList(list):
         """
         super(EntriesList, self).append(x)
 
-        if (len(self) > 1 and isinstance(x.duration, tuple) and
-                isinstance(self[-2].duration, tuple) and x.duration[0] is None):
-            x.duration = (self[-2].duration[1], x.duration[1])
-
         if self.entries_collection is not None:
             self.entries_collection.add_entry(self.date, x)
 
@@ -282,6 +282,8 @@ class TimesheetEntry(object):
         self.line = None
         self.ignored = False
         self.commented = False
+        self.previous_entry = None
+        self.next_entry = None
 
         self.alias = alias
         self.description = description
@@ -317,27 +319,73 @@ class TimesheetEntry(object):
     def is_ignored(self):
         return self.ignored or self.hours == 0
 
+    def get_start_time(self):
+        """
+        Return the start time of the entry as a `datetime.time` object. If the
+        start time is `None`, the end time of the previous entry will be
+        returned instead. If the current entry has not a duration in the form
+        of a tuple, if there's no previous entry or if the previous entry has
+        no end time, the value `None` will be returned.
+        """
+        if not isinstance(self.duration, tuple):
+            return None
+
+        if self.duration[0] is not None:
+            return self.duration[0]
+        else:
+            if (self.previous_entry and
+                    isinstance(self.previous_entry.duration, tuple) and
+                    self.previous_entry.duration[1] is not None):
+                return self.previous_entry.duration[1]
+
+        return None
+
     @property
     def hours(self):
-        if isinstance(self.duration, tuple):
-            if None in self.duration:
-                return 0
+        """
+        Return the duration of the entry in hours. If the entry has a standard
+        duration, it's returned as-is. If it has a tuple duration, it will
+        return the number of hours represented by the tuple.
+        """
+        if not isinstance(self.duration, tuple):
+            return self.duration
 
-            now = datetime.datetime.now()
-            time_start = now.replace(
-                hour=self.duration[0].hour,
-                minute=self.duration[0].minute, second=0
+        if self.duration[1] is None:
+            return 0
+
+        time_start = self.get_start_time()
+
+        # This can happen if the previous entry has a non-tuple duration
+        # and the current entry has a tuple duration without a start time
+        if time_start is None:
+            return 0
+
+        now = datetime.datetime.now()
+        time_start = now.replace(
+            hour=time_start.hour,
+            minute=time_start.minute, second=0
+        )
+        time_end = now.replace(
+            hour=self.duration[1].hour,
+            minute=self.duration[1].minute, second=0
+        )
+        total_time = time_end - time_start
+        total_hours = total_time.seconds / 3600.0
+
+        return total_hours
+
+    def fix_start_time(self):
+        """
+        Set the start time of the entry to the end time of the previous entry
+        if the current entry is using an tuple duration with no start time and
+        the previous entry got commented.
+        """
+        if (isinstance(self.duration, tuple) and self.duration[0] is None and
+                self.previous_entry.commented):
+            self.duration = (
+                self.get_start_time(),
+                self.duration[1]
             )
-            time_end = now.replace(
-                hour=self.duration[1].hour,
-                minute=self.duration[1].minute, second=0
-            )
-            total_time = time_end - time_start
-            total_hours = total_time.seconds / 3600.0
-
-            return total_hours
-
-        return self.duration
 
 
 class AggregatedTimesheetEntry(object):

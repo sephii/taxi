@@ -141,7 +141,6 @@ class ZebraRemote(Remote):
                                      "not very useful!)")
                             failed_entries.append((entry, error))
                     else:
-                        entry.pushed = True
                         pushed_entries.append(entry)
                 finally:
                     if callback is not None:

@@ -396,6 +396,9 @@ class CommitCommand(BaseTimesheetCommand):
             for entry in local_entries_list + pushed_entries:
                 entry.commented = True
 
+            for entry in failed_entries:
+                entry.fix_start_time()
+
             timesheet.file.write(timesheet.entries)
 
             all_pushed_entries.extend(pushed_entries)

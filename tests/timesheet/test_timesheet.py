@@ -36,7 +36,7 @@ bar -11:00 foobar"""
         self.assertEquals(len(lines), 3)
         self.assertEquals(lines[0], '10.10.2012')
         self.assertEquals(lines[1], 'foo 09:00-10:00 baz')
-        self.assertEquals(lines[2], 'bar 10:00-11:00 foobar')
+        self.assertEquals(lines[2], 'bar -11:00 foobar')
 
         t.entries[datetime.date(2012, 9, 29)].append(
             TimesheetEntry('foo', (datetime.time(15, 0), None), 'bar')
@@ -65,7 +65,7 @@ foo 0900-1000 baz"""
         contents = """10.10.2012
 foo 0900-1000 baz
 bar     -1100 bar
-foo     -1200 bar"""
+foo     -1300 bar"""
 
         t = self._create_timesheet(contents)
         entries = t.entries
@@ -73,10 +73,13 @@ foo     -1200 bar"""
         self.assertEquals(len(entries_list), 3)
         self.assertEquals(entries_list[0].duration, (datetime.time(9, 0),
                                                      datetime.time(10, 0)))
-        self.assertEquals(entries_list[1].duration, (datetime.time(10, 0),
+        self.assertEquals(entries_list[0].hours, 1)
+        self.assertEquals(entries_list[1].duration, (None,
                                                      datetime.time(11, 0)))
-        self.assertEquals(entries_list[2].duration, (datetime.time(11, 0),
-                                                     datetime.time(12, 0)))
+        self.assertEquals(entries_list[1].hours, 1)
+        self.assertEquals(entries_list[2].duration, (None,
+                                                     datetime.time(13, 0)))
+        self.assertEquals(entries_list[2].hours, 2)
 
         contents = """10.10.2012
 foo 0900-1000 baz
@@ -116,9 +119,9 @@ foo 1400-? ?"""
 
         self.assertEquals(lines, [
             "10.10.2012", "foo 0900-1000 baz", "", "11.10.2012",
-            "foo 0900-0915 Daily scrum", "bar 09:15-11:00 Fooing the bar",
+            "foo 0900-0915 Daily scrum", "bar     -1100 Fooing the bar",
             "", "12.10.2012", "foobar? 1200-1300 Baring the foo",
-            "foo 13:00-14:00 Fooed on bar because foo", "foo 0 Ignored foobar",
+            "foo -1400 Fooed on bar because foo", "foo 0 Ignored foobar",
             "foo 1400-? ?"])
 
         ignored_entries = t.get_ignored_entries()
