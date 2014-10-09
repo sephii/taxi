@@ -44,6 +44,10 @@ auto_add = auto
 # but that will never be pushed
 # local_aliases = _lunch, _coffee_break
 
+# How many previous files should Taxi parse? This allows you to make sure you
+# don't forget hours in files from previous months when starting a new month
+# nb_previous_files = 1
+
 # This section contains your project name <-> id mapping. The format is:
 # project_name = project_id/activity_id
 [wrmap]
