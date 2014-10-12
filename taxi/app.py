@@ -5,6 +5,7 @@ import inspect
 import locale
 from optparse import OptionParser
 import os
+from pkg_resources import resource_filename
 import sys
 import shutil
 
@@ -174,15 +175,20 @@ Available commands:
 
     def create_config_file(self, filename):
         """
-        Create config file if not exists
+        Create main configuration file if it doesn't exist.
         """
         if not os.path.isfile(filename):
-            response = raw_input("Config file does not exist yet.\nDo you want to create it now %s ? [yes, no] : " % filename)
+            response = raw_input(
+                "The configuration file %s does not exist yet.\nDo you want to"
+                " create it now? [Y/n]: " % filename
+            )
 
-            if response.lower() != "yes":
-                sys.exit(0)
-
-            shutil.copy(os.path.dirname(__file__) + "/../doc/tksrc.sample", filename)
+            if not response or response.lower() == 'y':
+                src_config = resource_filename('taxi', 'doc/tksrc.sample')
+                shutil.copy(src_config, filename)
+            else:
+                print("Aborting.")
+                sys.exit(1)
 
 
 def term_unicode(string):

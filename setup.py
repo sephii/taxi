@@ -48,4 +48,7 @@ setup(
     tests_require=tests_require,
     include_package_data=False,
     cmdclass = {'test': PyTest},
+    package_data={
+        'taxi': ['doc/*']
+    }
 )
