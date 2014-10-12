@@ -6,6 +6,7 @@ import locale
 from optparse import OptionParser
 import os
 import sys
+import shutil
 
 from taxi import __version__, commands
 from taxi.exceptions import TaxiException, UsageError
@@ -90,6 +91,10 @@ Available commands:
         options = options.copy()
         args = list(args)
 
+        options['config'] = os.path.expanduser(options['config'])
+
+        self.create_config_file(options['config'])
+
         settings = Settings(options['config'])
         if not os.path.exists(settings.TAXI_PATH):
             os.mkdir(settings.TAXI_PATH)
@@ -165,6 +170,19 @@ Available commands:
                 action.run()
             except TaxiException as e:
                 view.err(e)
+
+
+    def create_config_file(self, filename):
+        """
+        Create config file if not exists
+        """
+        if not os.path.isfile(filename):
+            response = raw_input("Config file does not exist yet.\nDo you want to create it now %s ? [yes, no] : " % filename)
+
+            if response.lower() != "yes":
+                sys.exit(0)
+
+            shutil.copy(os.path.dirname(__file__) + "/../doc/tksrc.sample", filename)
 
 
 def term_unicode(string):
