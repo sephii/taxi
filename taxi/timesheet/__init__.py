@@ -148,7 +148,8 @@ class Timesheet(object):
             cur_date += datetime.timedelta(days=1)
 
         while cur_date <= limit:
-            if cur_date.weekday() in auto_fill_days:
+            if (cur_date.weekday() in auto_fill_days and
+                    cur_date not in self.entries):
                 self.entries[cur_date] = []
 
             cur_date = cur_date + datetime.timedelta(days=1)
