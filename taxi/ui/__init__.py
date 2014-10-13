@@ -219,6 +219,28 @@ class BaseUi(object):
         "To ignore this error, re-run taxi with the option "
         "`--ignore-date-error`" % ', '.join(dates))
 
+    def get_entry_status(self, entry, alias_mappings):
+        if entry.alias not in alias_mappings:
+            status = 'not mapped'
+        elif entry.is_ignored():
+            status = 'ignored'
+        elif alias_mappings.is_local(entry.alias):
+            status = 'local'
+        elif entry.alias in alias_mappings:
+            status = '/'.join([
+                str(part) for part in alias_mappings[entry.alias]
+            ])
+        else:
+            status = ''
+
+        if status:
+            project_name = u'%s (%s)' % (entry.alias, status)
+        else:
+            project_name = entry.alias
+
+        return u'%-30s %-5.2f %s' % (project_name, entry.hours,
+                                     entry.description)
+
     def show_status(self, entries_dict, alias_mappings, settings):
         self.msg(u'Staging changes :\n')
         entries_list = entries_dict.items()
@@ -235,26 +257,7 @@ class BaseUi(object):
             self.msg(u'# %s #' %
                      date_utils.unicode_strftime(date, '%A %d %B').capitalize())
             for entry in entries:
-                if entry.alias not in alias_mappings:
-                    status = 'not mapped'
-                elif entry.is_ignored():
-                    status = 'ignored'
-                elif alias_mappings.is_local(entry.alias):
-                    status = 'local'
-                elif entry.alias in alias_mappings:
-                    status = '/'.join([
-                        str(part) for part in alias_mappings[entry.alias]
-                    ])
-                else:
-                    status = ''
-
-                if status:
-                    project_name = u'%s (%s)' % (entry.alias, status)
-                else:
-                    project_name = entry.alias
-
-                self.msg(u'%-30s %-5.2f %s' % (project_name, entry.hours,
-                                               entry.description))
+                self.msg(self.get_entry_status(entry, alias_mappings))
 
                 if entry.alias not in alias_mappings:
                     close_matches = settings.get_close_matches(entry.alias)
@@ -271,14 +274,14 @@ class BaseUi(object):
         self.msg(u'%-29s %5.2f' % ('Total', total_hours))
         self.msg(u'\nUse `taxi ci` to commit staging changes to the server')
 
-    def pushed_entry(self, entry, error):
+    def pushed_entry(self, entry, error, alias_mappings):
         if error:
             self.msg(u"%s - Failed, reason: %s" % (
-                unicode(entry),
+                self.get_entry_status(entry, alias_mappings),
                 error
             ), colorama.Style.BRIGHT + colorama.Fore.RED)
         else:
-            self.msg(unicode(entry))
+            self.msg(self.get_entry_status(entry, alias_mappings))
 
     def pushed_entries_summary(self, pushed_entries, failed_entries,
                                ignored_entries):

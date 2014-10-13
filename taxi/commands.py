@@ -413,7 +413,7 @@ class CommitCommand(BaseTimesheetCommand):
                                          ignored_entries_list)
 
     def _entry_pushed(self, entry, error):
-        self.view.pushed_entry(entry, error)
+        self.view.pushed_entry(entry, error, self.alias_mappings)
 
 
 class EditCommand(BaseTimesheetCommand):
