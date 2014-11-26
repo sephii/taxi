@@ -1,6 +1,5 @@
 import datetime
 import pytest
-import unittest
 
 from taxi.timesheet.parser import (
     DateLine, EntryLine, ParseError, TextLine, TimesheetParser
@@ -235,3 +234,10 @@ def test_detect_formatting_time_format_separator():
 def test_detect_formatting_time_hours():
     formatting = TimesheetParser.detect_formatting('foobar 4 description')
     assert formatting['time_format'] == '%H%M'
+
+
+def test_parse_error_contains_line_number():
+    try:
+        TimesheetParser.parse("hello world")
+    except ParseError as e:
+        assert e.line_number == 1

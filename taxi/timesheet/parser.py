@@ -149,23 +149,27 @@ class TimesheetParser(object):
     def parser(cls, lines):
         current_date = None
 
-        for line in lines:
+        for (lineno, line) in enumerate(lines, 1):
             line = line.strip()
 
-            if len(line) == 0 or line.startswith('#'):
-                yield TextLine(line)
-            else:
-                try:
-                    date = cls.extract_date(line)
-                except ValueError:
-                    if current_date is None:
-                        raise ParseError("Entries must be defined inside a"
-                                         " date section")
-
-                    yield cls.parse_entry_line(line)
+            try:
+                if len(line) == 0 or line.startswith('#'):
+                    yield TextLine(line)
                 else:
-                    current_date = date
-                    yield DateLine(date, line)
+                    try:
+                        date = cls.extract_date(line)
+                    except ValueError:
+                        if current_date is None:
+                            raise ParseError("Entries must be defined inside a"
+                                             " date section")
+
+                        yield cls.parse_entry_line(line)
+                    else:
+                        current_date = date
+                        yield DateLine(date, line)
+            except ParseError as e:
+                e.line_number = lineno
+                raise e
 
     @classmethod
     def parse_entry_line(cls, line):
