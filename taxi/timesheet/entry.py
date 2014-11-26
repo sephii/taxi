@@ -323,9 +323,9 @@ class TimesheetEntry(object):
         """
         Return the start time of the entry as a `datetime.time` object. If the
         start time is `None`, the end time of the previous entry will be
-        returned instead. If the current entry has not a duration in the form
-        of a tuple, if there's no previous entry or if the previous entry has
-        no end time, the value `None` will be returned.
+        returned instead. If the current entry doesn't have a duration in the
+        form of a tuple, if there's no previous entry or if the previous entry
+        has no end time, the value `None` will be returned.
         """
         if not isinstance(self.duration, tuple):
             return None

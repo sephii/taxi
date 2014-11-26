@@ -18,7 +18,7 @@ class CommitCommandTestCase(CommandTestCase):
 fail     0745-0830  Repair coffee machine
 alias_1 -0900 Play ping-pong
 alias_1 -0915 Check coffee machine uptime
-fail     -1145 Make printer work
+fail    -1145 Make printer work
 fail   1300-1400 Printer is down again
 """)
         self.run_command('commit', options=self.default_options)
@@ -26,7 +26,7 @@ fail   1300-1400 Printer is down again
         with open(self.entries_file, 'r') as entries:
             lines = entries.readlines()
 
-        self.assertEqual(lines[4], 'fail 09:15-11:45 Make printer work\n')
+        self.assertEqual(lines[4], 'fail    0915-1145 Make printer work\n')
 
     def test_commit_date(self):
         options = self.default_options.copy()

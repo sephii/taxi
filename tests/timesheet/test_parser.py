@@ -185,3 +185,53 @@ foobar 0900-1000 baz
 
 """)
     assert len(lines) == 3
+
+
+def test_detect_formatting_no_alias_padding():
+    formatting = TimesheetParser.detect_formatting('foobar 4 description')
+    assert formatting['width'][0] == 7
+
+
+def test_detect_formatting_padded_alias():
+    formatting = TimesheetParser.detect_formatting('foobar   4 description')
+    assert formatting['width'][0] == 9
+
+
+def test_detect_formatting_no_time_padding():
+    formatting = TimesheetParser.detect_formatting(
+        'foobar 1500-1600 description'
+    )
+    assert formatting['width'][1] == 10
+
+
+def test_detect_formatting_padded_time():
+    formatting = TimesheetParser.detect_formatting(
+        'foobar 1500-1600    description'
+    )
+    assert formatting['width'][1] == 13
+
+
+def test_detect_formatting_padded_time_and_alias():
+    formatting = TimesheetParser.detect_formatting(
+        'foobar  1500-1600    description'
+    )
+    assert formatting['width'] == (8, 13)
+
+
+def test_detect_formatting_time_format_no_separator():
+    formatting = TimesheetParser.detect_formatting(
+        'foobar 1500-1600 description'
+    )
+    assert formatting['time_format'] == '%H%M'
+
+
+def test_detect_formatting_time_format_separator():
+    formatting = TimesheetParser.detect_formatting(
+        'foobar 15:00-16:00 description'
+    )
+    assert formatting['time_format'] == '%H:%M'
+
+
+def test_detect_formatting_time_hours():
+    formatting = TimesheetParser.detect_formatting('foobar 4 description')
+    assert formatting['time_format'] == '%H%M'

@@ -40,6 +40,7 @@ class EntryLine(TextLine):
         self._alias = alias
         self.duration = duration
         self.description = description
+        self.formatting = None
 
         # These should normally be always set to False, but can be changed
         # later
@@ -56,11 +57,28 @@ class EntryLine(TextLine):
             self._text = None
 
     def generate_text(self):
+        """
+        Return a textual representation of the line.
+
+        An effort is made to preserve the original formatting of the line since
+        some OCD people like to have perfectly aligned timesheets.
+        """
+        formatting = self.formatting
+
+        if not formatting:
+            formatting = {
+                'width': (None, None),
+                'time_format': '%H:%M'
+            }
+
         if isinstance(self.duration, tuple):
-            start = (self.duration[0].strftime('%H:%M')
-                     if self.duration[0] is not None else '')
-            end = (self.duration[1].strftime('%H:%M')
-                   if self.duration[1] is not None else '?')
+            start = (self.duration[0].strftime(formatting['time_format'])
+                     if self.duration[0] is not None
+                     else '')
+
+            end = (self.duration[1].strftime(formatting['time_format'])
+                   if self.duration[1] is not None
+                   else '?')
 
             duration = u'%s-%s' % (start, end)
         else:
@@ -70,12 +88,20 @@ class EntryLine(TextLine):
         commented_prefix = '# ' if self.commented else ''
         alias = u'%s?' % self.alias if self.ignored else self.alias
 
-        return u'%s%s %s %s' % (
-            commented_prefix,
-            alias,
-            duration,
-            self.description
-        )
+        padding1 = (1 if formatting['width'][0] is None
+                    else max(1, formatting['width'][0] - len(alias)))
+        padding2 = (1 if formatting['width'][1] is None
+                    else max(1, formatting['width'][1] - len(duration)))
+
+        text = (u'{commented}{alias}{padding1}{duration}{padding2}'
+                '{description}'.format(commented=commented_prefix,
+                                       alias=alias,
+                                       padding1=' ' * padding1,
+                                       duration=duration,
+                                       description=self.description,
+                                       padding2=' ' * padding2))
+
+        return text
 
     @property
     def text(self):
@@ -107,6 +133,11 @@ class TimesheetParser(object):
     """
     TODO: document text structure
     """
+    time_match_re = re.compile(r'(?:(\d{1,2}):?(\d{1,2}))?-(?:(?:(\d{1,2}):?(\d{1,2}))|\?)')
+    date_match_re = re.compile(r'(\d{1,2})\D(\d{1,2})\D(\d{4}|\d{2})')
+    us_date_match_re = re.compile(r'(\d{4})\D(\d{1,2})\D(\d{1,2})')
+    formatting_match_re = re.compile(r'([^\s]+\s+)([^\s]+\s+)')
+
     @classmethod
     def parse(cls, text):
         text = text.strip()
@@ -121,7 +152,7 @@ class TimesheetParser(object):
         for line in lines:
             line = line.strip()
 
-            if len(line) == 0 or line[0] == '#':
+            if len(line) == 0 or line.startswith('#'):
                 yield TextLine(line)
             else:
                 try:
@@ -131,30 +162,64 @@ class TimesheetParser(object):
                         raise ParseError("Entries must be defined inside a"
                                          " date section")
 
-                    yield cls._parse_entry_line(line)
+                    yield cls.parse_entry_line(line)
                 else:
                     current_date = date
                     yield DateLine(date, line)
 
     @classmethod
-    def _parse_entry_line(cls, line):
+    def parse_entry_line(cls, line):
+        split_line = cls.split_line(line)
+
+        alias = split_line[0].replace('?', '')
+        time = cls.parse_time(split_line[1])
+        description = split_line[2]
+        formatting = cls.detect_formatting(line)
+
+        ignored = split_line[0].endswith('?') or split_line[0].startswith('?')
+
+        entry_line = EntryLine(alias, time, description, line, ignored)
+        entry_line.formatting = formatting
+
+        return entry_line
+
+    @staticmethod
+    def split_line(line):
         split_line = line.split(None, 2)
 
         if len(split_line) != 3:
             raise ParseError("Couldn't split line into 3 chunks")
 
-        alias = split_line[0].replace('?', '')
-        time = cls.parse_time(split_line[1])
-        description = split_line[2]
+        return split_line
 
-        ignored = split_line[0].endswith('?') or split_line[0].startswith('?')
+    @classmethod
+    def detect_formatting(cls, line):
+        """
+        Extract the width (= number of columns) of the different components of
+        the line as well as the time format. The returned data is a dictionary
+        with 2 values, 'width' containing a 2-items tuple representing the
+        width of the two first components of the line (alias and duration), and
+        'time_format' containing the format of the time as a string usable by
+        strftime.
+        """
+        width = re.match(cls.formatting_match_re, line)
+        split_line = cls.split_line(line)
 
-        return EntryLine(alias, time, description, line, ignored)
+        if width and len(width.groups()) == 2:
+            width = tuple(len(separator) for separator in width.groups())
+        else:
+            return None
 
-    @staticmethod
-    def parse_time(str_time):
-        time = re.match(r'(?:(\d{1,2}):?(\d{1,2}))?-(?:(?:(\d{1,2}):?(\d{1,2}))|\?)',
-                        str_time)
+        time_format = '%H:%M' if ':' in split_line[1] else '%H%M'
+
+        return {
+            'width': width,
+            'time_format': time_format
+        }
+
+    @classmethod
+    def parse_time(cls, str_time):
+        time = re.match(cls.time_match_re, str_time)
         time_end = None
 
         # HH:mm-HH:mm syntax found
@@ -182,14 +247,14 @@ class TimesheetParser(object):
 
         return total_hours
 
-    @staticmethod
-    def extract_date(line):
+    @classmethod
+    def extract_date(cls, line):
         # Try to match dd/mm/yyyy format
-        date_matches = re.match(r'(\d{1,2})\D(\d{1,2})\D(\d{4}|\d{2})', line)
+        date_matches = re.match(cls.date_match_re, line)
 
         # If no match, try with yyyy/mm/dd format
         if date_matches is None:
-            date_matches = re.match(r'(\d{4})\D(\d{1,2})\D(\d{1,2})', line)
+            date_matches = re.match(cls.us_date_match_re, line)
 
         if date_matches is None:
             raise ValueError("No date could be extracted from the given value")

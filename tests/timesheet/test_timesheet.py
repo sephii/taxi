@@ -29,14 +29,14 @@ foo 09:00-10:00 baz"""
     def test_to_lines(self):
         contents = """10.10.2012
 foo 09:00-10:00 baz
-bar -11:00 foobar"""
+bar      -11:00 foobar"""
 
         t = self._create_timesheet(contents, True)
         lines = t.entries.to_lines()
         self.assertEquals(len(lines), 3)
         self.assertEquals(lines[0], '10.10.2012')
         self.assertEquals(lines[1], 'foo 09:00-10:00 baz')
-        self.assertEquals(lines[2], 'bar -11:00 foobar')
+        self.assertEquals(lines[2], 'bar      -11:00 foobar')
 
         t.entries[datetime.date(2012, 9, 29)].append(
             TimesheetEntry('foo', (datetime.time(15, 0), None), 'bar')
@@ -110,19 +110,19 @@ bar     -1100 Fooing the bar
 
 12.10.2012
 foobar? 1200-1300 Baring the foo
-foo -1400 Fooed on bar because foo
-foo 0 Ignored foobar
-foo 1400-? ?"""
+foo         -1400 Fooed on bar because foo
+foo     0         Ignored foobar
+foo     1400-?    ?"""
 
         t = self._create_timesheet(contents)
         lines = t.entries.to_lines()
 
         self.assertEquals(lines, [
-            "10.10.2012", "foo 0900-1000 baz", "", "11.10.2012",
-            "foo 0900-0915 Daily scrum", "bar     -1100 Fooing the bar",
-            "", "12.10.2012", "foobar? 1200-1300 Baring the foo",
-            "foo -1400 Fooed on bar because foo", "foo 0 Ignored foobar",
-            "foo 1400-? ?"])
+            u"10.10.2012", u"foo 0900-1000 baz", u"", u"11.10.2012",
+            u"foo 0900-0915 Daily scrum", u"bar     -1100 Fooing the bar",
+            u"", "12.10.2012", u"foobar? 1200-1300 Baring the foo",
+            u"foo         -1400 Fooed on bar because foo", u"foo     0         Ignored foobar",
+            u"foo     1400-?    ?"])
 
         ignored_entries = t.get_ignored_entries()
         self.assertEquals(len(ignored_entries), 3)
@@ -131,7 +131,7 @@ foo 1400-? ?"""
         t.continue_entry(datetime.date(2012, 10, 12), datetime.time(15, 12))
 
         lines = t.entries.to_lines()
-        self.assertEquals(lines[-1], "foo 14:00-15:15 ?")
+        self.assertEquals(lines[-1], "foo     1400-1515 ?")
 
         entries = t.get_entries(datetime.date(2012, 10, 12))
         self.assertEquals(len(entries), 1)
@@ -207,7 +207,7 @@ foo 1 bar"""
 
         lines = t.entries.to_lines()
         self.assertEquals(lines, [
-            "01.04.2013", "# foo 2 bar", "# bar 09:00-10:00 bar", "31.03.2013",
+            "01.04.2013", "# foo 2 bar", "# bar 0900-1000 bar", "31.03.2013",
             "foo 1 bar"
         ])
 
@@ -265,7 +265,7 @@ foo 1 bar"""
             entry.commented = True
         lines = t.entries.to_lines()
         self.assertEquals(lines, ["01.04.2013", "# foo 2 bar",
-                                  "# bar 09:00-10:00 bar", "# foo 1 bar"])
+                                  "# bar 0900-1000 bar", "# foo 1 bar"])
 
 
 def test_empty_timesheet():
