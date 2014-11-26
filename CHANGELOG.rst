@@ -1,13 +1,31 @@
+#########
+Changelog
+#########
+
 3.2.0 (unreleased)
 ==================
 
-* Add changelog
-* Add local aliases support. This be controlled with the ``local_aliases`` setting. Thanks @krtek4 (#24)
-* Regroup entries that have the same activity and description and that are on the same date (#14)
-* Add previous entries files parsing. This can be controlled with the ``nb_previous_files`` setting (#15)
-* Add colors to easily spot entries that failed to be pushed (#39)
-* Make Taxi commands still work even if some entries contain unmapped aliases (#54)
-* The ``alias`` command now orders aliases by id (#28)
-* The ``update`` command doesn't add shared aliases belonging to closed projects anymore (#50)
-* The ``clean-aliases`` command now also cleans shared aliases (#35)
-* Improve error output by displaying the stacktrace only of Python exceptions
+Added
+-----
+
+* Add changelog.
+* Add local aliases support. This can be controlled with the ``local_aliases``
+  setting. Thanks @krtek4 (#24). Refer to ``doc/tksrc.sample`` for more details. 
+* Regroup entries that have the same activity and description and that are on
+  the same date (#14).
+* Add previous entries files parsing. This can be controlled with the
+  ``nb_previous_files`` setting (#15). Refer to ``doc/tksrc.sample`` for more
+  details.
+* Add colors to easily spot entries that failed to be pushed. Thanks @krtek4
+  (#39).
+
+Changed
+-------
+
+* Ignore shared aliases belonging to closed projects when running the
+  ``update`` command (#50).
+* Improve error output by displaying the stacktrace only of Python exceptions.
+* Make the ``clean-aliases`` command also clean shared aliases (#35).
+* Make Taxi commands still work even if some entries contain unmapped aliases
+  (#54).
+* Order aliases by id in ``alias`` command output (#28).
