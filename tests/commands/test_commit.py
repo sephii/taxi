@@ -1,7 +1,6 @@
 import os
 import shutil
 import tempfile
-import datetime
 
 from freezegun import freeze_time
 

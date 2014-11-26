@@ -282,7 +282,7 @@ def test_timesheet_with_entries():
     assert len(timesheet.entries) == 2
 
 
-def test_timesheet_get_entries():
+def test_get_entries():
     entries = EntriesCollection("""10.10.2014\nfoo 2 bar\n11.10.2014\nfoo 1 bar""")
 
     timesheet = Timesheet(entries)
