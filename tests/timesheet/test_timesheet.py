@@ -2,6 +2,8 @@
 import datetime
 import pytest
 
+from freezegun import freeze_time
+
 from taxi.timesheet import Timesheet
 from taxi.timesheet.entry import (
     AggregatedTimesheetEntry, EntriesCollection, TimesheetEntry,
@@ -285,3 +287,26 @@ def test_timesheet_get_entries():
 
     timesheet = Timesheet(entries)
     assert len(timesheet.get_entries(datetime.date(2014, 10, 10))) == 1
+
+
+@freeze_time('2014-01-02')
+def test_current_workday_entries():
+    entries = EntriesCollection("""01.01.2014\nfoo 2 bar""")
+
+    timesheet = Timesheet(entries)
+    assert len(timesheet.get_non_current_workday_entries()) == 0
+
+
+@freeze_time('2014-01-03')
+def test_non_current_workday_entries():
+    entries = EntriesCollection("""01.01.2014\nfoo 2 bar""")
+
+    timesheet = Timesheet(entries)
+    assert len(timesheet.get_non_current_workday_entries()) == 1
+
+
+def test_non_current_workday_entries_ignored():
+    entries = EntriesCollection("""04.01.2014\nfoo? 2 bar""")
+
+    timesheet = Timesheet(entries)
+    assert len(timesheet.get_non_current_workday_entries()) == 0

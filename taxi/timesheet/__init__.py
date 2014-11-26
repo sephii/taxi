@@ -105,15 +105,16 @@ class Timesheet(object):
         return alias in self.mappings
 
     def get_non_current_workday_entries(self):
-        non_workday_entries = {}
+        non_workday_entries = defaultdict(list)
 
         today = datetime.date.today()
         yesterday = date_utils.get_previous_working_day(today)
 
         for (date, date_entries) in self.entries.iteritems():
             if date not in (today, yesterday) or date.strftime('%w') in [6, 0]:
-                if date_entries:
-                    non_workday_entries[date] = date_entries
+                for entry in date_entries:
+                    if not entry.is_ignored():
+                        non_workday_entries[date].append(entry)
 
         return non_workday_entries
 
