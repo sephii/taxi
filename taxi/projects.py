@@ -13,22 +13,22 @@ class Project:
     STATUS_CANCELLED = 3
 
     STATUSES = {
-            STATUS_NOT_STARTED: 'Not started',
-            STATUS_ACTIVE: 'Active',
-            STATUS_FINISHED: 'Finished',
-            STATUS_CANCELLED: 'Cancelled',
+        STATUS_NOT_STARTED: 'Not started',
+        STATUS_ACTIVE: 'Active',
+        STATUS_FINISHED: 'Finished',
+        STATUS_CANCELLED: 'Cancelled',
     }
 
     SHORT_STATUSES = {
-            STATUS_NOT_STARTED: 'N',
-            STATUS_ACTIVE: 'A',
-            STATUS_FINISHED: 'F',
-            STATUS_CANCELLED: 'C',
+        STATUS_NOT_STARTED: 'N',
+        STATUS_ACTIVE: 'A',
+        STATUS_FINISHED: 'F',
+        STATUS_CANCELLED: 'C',
     }
 
     STR_TUPLE_REGEXP = r'^(\d{1,4})(?:/(\d{1,4}))?$'
 
-    def __init__(self, id, name, status = None, description = None, budget = None):
+    def __init__(self, id, name, status=None, description=None, budget=None):
         self.id = int(id)
         self.name = name
         self.activities = []
@@ -59,14 +59,8 @@ Status: %s
 Start date: %s
 End date: %s
 Budget: %s
-Description: %s""" % (
-        self.id, self.name,
-        status,
-        start_date,
-        end_date,
-        self.budget,
-        self.description
-    )
+Description: %s""" % (self.id, self.name, status, start_date, end_date,
+                      self.budget, self.description)
 
     def get_formatted_date(self, date):
         if date is not None:
@@ -114,7 +108,9 @@ Description: %s""" % (
         if not matches or len(matches.groups()) != 2:
             return None
 
-        return tuple([int(item) if item else None for item in matches.groups()])
+        return tuple(
+            [int(item) if item else None for item in matches.groups()]
+        )
 
     @classmethod
     def tuple_to_str(cls, t):
@@ -154,12 +150,13 @@ class ProjectsDb:
             try:
                 lpdb = pickle.load(input)
             except ImportError:
-                raise TaxiException('Your projects db is out of date, please '
-                        'run `taxi update` to update it')
+                raise TaxiException("Your projects db is out of date, please"
+                                    " run `taxi update` to update it")
 
-            if not isinstance(lpdb, LocalProjectsDb) or lpdb.VERSION < LocalProjectsDb.VERSION:
-                raise TaxiException('Your projects db is out of date, please' \
-                        ' run `taxi update` to update it')
+            if (not isinstance(lpdb, LocalProjectsDb)
+                    or lpdb.VERSION < LocalProjectsDb.VERSION):
+                raise TaxiException("Your projects db is out of date, please"
+                                    " run `taxi update` to update it")
 
             setattr(self, '_projects_cache', lpdb.projects)
 
@@ -219,6 +216,7 @@ class ProjectsDb:
             return (project, None)
 
         return (project, activity)
+
 
 class LocalProjectsDb:
     projects = []

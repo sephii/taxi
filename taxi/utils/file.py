@@ -15,6 +15,7 @@ def create_file(filepath):
         myfile = codecs.open(filepath, 'w', 'utf-8')
         myfile.close()
 
+
 def spawn_editor(filepath, editor=None):
     if editor is None:
         editor = 'sensible-editor'
@@ -32,6 +33,7 @@ def spawn_editor(filepath, editor=None):
         editor = shlex.split(os.environ['EDITOR'])
         editor.append(filepath)
         subprocess.call(editor)
+
 
 def expand_filename(filename, date=None):
     if date is None:

@@ -16,8 +16,10 @@ from taxi.settings import Settings
 from taxi.utils.file import expand_filename
 from taxi.ui.tty import TtyUi
 
+
 class AppContainer(object):
     pass
+
 
 class Taxi(object):
     def run(self):
@@ -39,17 +41,22 @@ Available commands:
   update \t\tupdates your project database with the one on the server"""
 
         opt = OptionParser(usage=usage, version='%prog ' + __version__)
-        opt.add_option('-c', '--config', dest='config', help='use CONFIG file '
-                'instead of ~/.tksrc', default='~/.tksrc')
-        opt.add_option('-v', '--verbose', dest='verbose', action='store_true', help='make taxi verbose', default=False)
-        opt.add_option('-f', '--file', dest='file', help='parse FILE instead of the '\
-                'one defined in your CONFIG file')
-        opt.add_option('-d', '--date', dest='date', help='only process entries for date '\
-                'DATE (eg. 31.01.2011, 31.01.2011-05.02.2011)')
-        opt.add_option('--ignore-date-error',
-                dest='ignore_date_error', help='suppresses the error if'\
-                ' you\'re trying to commit a date that\'s on a week-end or on another'\
-                ' day than the current day or the day before', action='store_true', default=False)
+        opt.add_option('-c', '--config', dest='config',
+                       help='use CONFIG file instead of ~/.tksrc',
+                       default='~/.tksrc')
+        opt.add_option('-v', '--verbose', dest='verbose', action='store_true',
+                       help='make taxi verbose', default=False)
+        opt.add_option('-f', '--file', dest='file', help='parse FILE instead'
+                       ' of the one defined in your CONFIG file')
+        opt.add_option('-d', '--date', dest='date', help='only process entries'
+                       ' for date DATE (eg. 31.01.2011,'
+                       ' 31.01.2011-05.02.2011)')
+        opt.add_option(
+            '--ignore-date-error', dest='ignore_date_error', help="suppresses"
+            " the error if you're trying to commit a date that's on a week-end"
+            " or on another day than the current day or the day before",
+            action='store_true', default=False
+        )
         opt.add_option('-y', '--force-yes', dest='force_yes',
                        help='assume "yes"', action='store_true', default=False)
         (options, args) = opt.parse_args()
@@ -121,20 +128,23 @@ Available commands:
                     split_date = options['date'].split('-', 1)
 
                     options['date'] = (
-                            datetime.datetime.strptime(split_date[0],
-                                                       date_format).date(),
-                            datetime.datetime.strptime(split_date[1],
-                                                       date_format).date())
+                        datetime.datetime.strptime(split_date[0],
+                                                   date_format).date(),
+                        datetime.datetime.strptime(split_date[1],
+                                                   date_format).date())
                 else:
-                    options['date'] = datetime.datetime.strptime(options['date'],
-                                                              date_format).date()
+                    options['date'] = datetime.datetime.strptime(
+                        options['date'], date_format
+                    ).date()
             except ValueError:
                 raise UsageError("Invalid date format (must be dd.mm.yyyy)")
         else:
             options['date'] = None
 
         if 'projects_db' not in options:
-            options['projects_db'] = os.path.join(settings.TAXI_PATH, 'projects.db')
+            options['projects_db'] = os.path.join(
+                settings.TAXI_PATH, 'projects.db'
+            )
 
         projects_db = ProjectsDb(options['projects_db'])
 
@@ -172,7 +182,6 @@ Available commands:
             except TaxiException as e:
                 view.err(e)
 
-
     def create_config_file(self, filename):
         """
         Create main configuration file if it doesn't exist.
@@ -193,6 +202,7 @@ Available commands:
 
 def term_unicode(string):
     return unicode(string, sys.stdin.encoding)
+
 
 def main():
     locale.setlocale(locale.LC_ALL, '')

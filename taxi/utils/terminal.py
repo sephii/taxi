@@ -1,5 +1,6 @@
 import re
 
+
 def select_number(max, description, min=0):
     while True:
         char = raw_input('\n%s' % description)
@@ -11,6 +12,7 @@ def select_number(max, description, min=0):
                 print(u'Number out of range, try again')
         except ValueError:
             print(u'Please enter a number')
+
 
 def select_string(description, format=None, regexp_flags=0, default=None):
     while True:

@@ -144,7 +144,9 @@ class TimesheetParser(object):
     For the parsed string to be a valid timesheet, any entry line needs to
     be preceded by at least a date line.
     """
-    time_match_re = re.compile(r'(?:(\d{1,2}):?(\d{1,2}))?-(?:(?:(\d{1,2}):?(\d{1,2}))|\?)')
+    time_match_re = re.compile(
+        r'(?:(\d{1,2}):?(\d{1,2}))?-(?:(?:(\d{1,2}):?(\d{1,2}))|\?)'
+    )
     date_match_re = re.compile(r'(\d{1,2})\D(\d{1,2})\D(\d{4}|\d{2})')
     us_date_match_re = re.compile(r'(\d{4})\D(\d{1,2})\D(\d{1,2})')
     formatting_match_re = re.compile(r'([^\s]+\s+)([^\s]+\s+)')
@@ -243,13 +245,19 @@ class TimesheetParser(object):
                 # -HH:mm syntax found
                 if time.group(1) is None and time.group(2) is None:
                     if time.group(3) is not None and time.group(4) is not None:
-                        time_end = datetime.time(int(time.group(3)), int(time.group(4)))
+                        time_end = datetime.time(
+                            int(time.group(3)), int(time.group(4))
+                        )
 
                     total_hours = (None, time_end)
                 else:
-                    time_start = datetime.time(int(time.group(1)), int(time.group(2)))
+                    time_start = datetime.time(
+                        int(time.group(1)), int(time.group(2))
+                    )
                     if time.group(3) is not None and time.group(4) is not None:
-                        time_end = datetime.time(int(time.group(3)), int(time.group(4)))
+                        time_end = datetime.time(
+                            int(time.group(3)), int(time.group(4))
+                        )
                     total_hours = (time_start, time_end)
             except ValueError as e:
                 raise ParseError(e.message)

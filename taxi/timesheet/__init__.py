@@ -52,7 +52,9 @@ class Timesheet(object):
                     else:
                         # Get the first occurence of the entry in the
                         # entries_for_date list
-                        existing_entry = entries_for_date[aggregated_entries[entry.hash]]
+                        existing_entry = entries_for_date[
+                            aggregated_entries[entry.hash]
+                        ]
 
                         # The entry could already have been replaced by an
                         # AggregatedEntry if there's more than 2 occurences
@@ -62,7 +64,9 @@ class Timesheet(object):
                             aggregated_entry = AggregatedTimesheetEntry()
                             aggregated_entry.entries.append(existing_entry)
                             aggregated_entry.entries.append(entry)
-                            entries_for_date[aggregated_entries[entry.hash]] = aggregated_entry
+                            entries_for_date[
+                                aggregated_entries[entry.hash]
+                            ] = aggregated_entry
                         else:
                             # The entry we found is already an
                             # AggregatedEntry, let's just append the
@@ -82,11 +86,14 @@ class Timesheet(object):
         return filtered_entries
 
     def get_entries(self, date=None, exclude_ignored=False,
-                    exclude_local=False, exclude_unmapped=False, regroup=False):
+                    exclude_local=False, exclude_unmapped=False,
+                    regroup=False):
         def entry_filter(entry):
             return (not (exclude_ignored and entry.is_ignored())
-                    and not (exclude_local and self.is_alias_local(entry.alias))
-                    and (not exclude_unmapped or self.is_alias_mapped(entry.alias)))
+                    and not (exclude_local
+                             and self.is_alias_local(entry.alias))
+                    and (not exclude_unmapped
+                         or self.is_alias_mapped(entry.alias)))
 
         return self.get_filtered_entries(date, entry_filter, regroup)
 
@@ -203,7 +210,8 @@ class TimesheetCollection:
         Return the entries (as a {date: entries} dict) of all timesheets in the
         collection.
         """
-        entries_list = self._timesheets_callback('get_entries')(*args, **kwargs)
+        entries_list = self._timesheets_callback(
+            'get_entries')(*args, **kwargs)
         entries = {}
 
         for entries_dict in entries_list:
@@ -216,7 +224,8 @@ class TimesheetCollection:
         Return the ignored entries (as a {date: entries} dict) of all
         timesheets in the collection.
         """
-        entries_list = self._timesheets_callback('get_ignored_entries')(*args, **kwargs)
+        entries_list = self._timesheets_callback(
+            'get_ignored_entries')(*args, **kwargs)
         entries = {}
 
         for entries_dict in entries_list:
@@ -229,7 +238,8 @@ class TimesheetCollection:
         Return the non current workday entries (as a {date: entries} dict) of
         all timesheets in the collection.
         """
-        entries_list = self._timesheets_callback('get_non_current_workday_entries')(*args, **kwargs)
+        entries_list = self._timesheets_callback(
+            'get_non_current_workday_entries')(*args, **kwargs)
         entries = {}
 
         for entries_dict in entries_list:

@@ -4,11 +4,7 @@ import calendar
 import datetime
 
 from taxi import remote
-from taxi.exceptions import (
-    CancelException,
-    UndefinedAliasError,
-    UsageError
-)
+from taxi.exceptions import CancelException, UsageError
 from taxi.projects import Project
 from taxi.timesheet import (
     NoActivityInProgressError, Timesheet, TimesheetCollection, TimesheetFile
@@ -75,7 +71,8 @@ class BaseTimesheetCommand(BaseCommand):
                     Settings.AUTO_ADD_OPTIONS['TOP'],
                     Settings.AUTO_ADD_OPTIONS['BOTTOM']]):
                 t.entries.add_date_to_bottom = (
-                    self.settings.get('auto_add') == Settings.AUTO_ADD_OPTIONS['BOTTOM']
+                    self.settings.get('auto_add') ==
+                    Settings.AUTO_ADD_OPTIONS['BOTTOM']
                 )
 
             timesheet_collection.timesheets.append(t)
@@ -257,7 +254,8 @@ class AliasCommand(BaseCommand):
         if self.mode == self.MODE_LIST_ALIASES:
             for m in self.settings.search_mappings(self.alias):
                 self.view.alias_detail(
-                    m, self.projects_db.get(m[1][0]) if m[1] is not None else None
+                    m,
+                    self.projects_db.get(m[1][0]) if m[1] is not None else None
                 )
 
     def _add_alias(self, alias_name, mapping):
@@ -374,7 +372,9 @@ class CommitCommand(BaseTimesheetCommand):
 
         if (self.options.get('date', None) is None
                 and not self.options.get('ignore_date_error', False)):
-            non_workday_entries = timesheet_collection.get_non_current_workday_entries()
+            non_workday_entries = (
+                timesheet_collection.get_non_current_workday_entries()
+            )
 
             if non_workday_entries:
                 self.view.non_working_dates_commit_error(
@@ -397,9 +397,9 @@ class CommitCommand(BaseTimesheetCommand):
                 exclude_local=True, exclude_unmapped=True, regroup=True
             )
 
-            (pushed_entries, failed_entries) = r.send_entries(entries_to_push,
-                                                              self.alias_mappings,
-                                                              self._entry_pushed)
+            (pushed_entries, failed_entries) = r.send_entries(
+                entries_to_push, self.alias_mappings, self._entry_pushed
+            )
 
             local_entries = timesheet.get_local_entries(
                 self.options.get('date', None)
@@ -419,12 +419,15 @@ class CommitCommand(BaseTimesheetCommand):
             all_pushed_entries.extend(pushed_entries)
             all_failed_entries.extend(failed_entries)
 
-        ignored_entries = timesheet_collection.get_ignored_entries(self.options.get('date', None))
+        ignored_entries = timesheet_collection.get_ignored_entries(
+            self.options.get('date', None)
+        )
         ignored_entries_list = []
         for (date, entries) in ignored_entries.iteritems():
             ignored_entries_list.extend(entries)
 
-        self.view.pushed_entries_summary(all_pushed_entries, all_failed_entries,
+        self.view.pushed_entries_summary(all_pushed_entries,
+                                         all_failed_entries,
                                          ignored_entries_list)
 
     def _entry_pushed(self, entry, error):
@@ -449,8 +452,9 @@ class EditCommand(BaseTimesheetCommand):
         if timesheet_collection:
             t = timesheet_collection.timesheets[0]
 
-            if (self.settings.get('auto_add') != Settings.AUTO_ADD_OPTIONS['NO'] and
-                    not self.options.get('forced_file')):
+            if (self.settings.get('auto_add') !=
+                    Settings.AUTO_ADD_OPTIONS['NO']
+                    and not self.options.get('forced_file')):
                 auto_fill_days = self.settings.get_auto_fill_days()
                 if auto_fill_days:
                     t.prefill(auto_fill_days, limit=None)

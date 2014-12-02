@@ -5,21 +5,22 @@ import difflib
 
 from .timesheet import AliasMappings
 
+
 class Settings:
     TAXI_PATH = os.path.expanduser('~/.taxi')
     AUTO_ADD_OPTIONS = {
-            'NO': 'no',
-            'TOP': 'top',
-            'BOTTOM': 'bottom',
-            'AUTO': 'auto'
+        'NO': 'no',
+        'TOP': 'top',
+        'BOTTOM': 'bottom',
+        'AUTO': 'auto'
     }
 
     DEFAULTS = {
-            'auto_fill_days': '0,1,2,3,4',
-            'date_format': '%d/%m/%Y',
-            'auto_add': 'auto',
-            'nb_previous_files': '1',
-            'use_colors': '1'
+        'auto_fill_days': '0,1,2,3,4',
+        'date_format': '%d/%m/%Y',
+        'auto_add': 'auto',
+        'nb_previous_files': '1',
+        'use_colors': '1'
     }
 
     def __init__(self, file):
@@ -30,7 +31,9 @@ class Settings:
             with open(self.filepath, 'r') as fp:
                 self.config.readfp(fp)
         except IOError:
-            raise IOError('The specified configuration file `%s` doesn\'t exist' % file)
+            raise IOError(
+                "The specified configuration file `%s` doesn't exist" % file
+            )
 
     def get(self, key, section='default'):
         try:
@@ -93,8 +96,9 @@ class Settings:
         aliases = []
 
         for (user_alias, mapped_alias) in self.get_aliases().iteritems():
-            if (mapped_alias is None or mapped_alias[0] != mapping[0] or
-                    (mapping[1] is not None and mapped_alias[1] != mapping[1])):
+            if (mapped_alias is None or mapped_alias[0] != mapping[0]
+                    or (mapping[1] is not None
+                        and mapped_alias[1] != mapping[1])):
                 continue
 
             aliases.append((user_alias, mapped_alias))
@@ -115,8 +119,8 @@ class Settings:
         return aliases
 
     def get_close_matches(self, project_name):
-        return difflib.get_close_matches(project_name, self.get_aliases().keys(),
-                                         cutoff=0.2)
+        return difflib.get_close_matches(project_name,
+                                         self.get_aliases().keys(), cutoff=0.2)
 
     def add_alias(self, alias, projectid, activityid):
         self.config.set('wrmap', alias, '%s/%s' % (projectid, activityid))
