@@ -37,7 +37,7 @@ class EntriesCollection(collections.defaultdict):
         self.synchronized = True
         # Whether to add new dates at the start or at the end in the textual
         # representation
-        self.add_date_to_bottom = False
+        self.add_date_to_bottom = None
         self.date_format = date_format
 
         # If there are initial entries to import, disable synchronization and

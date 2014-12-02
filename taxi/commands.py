@@ -80,6 +80,21 @@ class BaseTimesheetCommand(BaseCommand):
 
             timesheet_collection.timesheets.append(t)
 
+        # Fix `add_date_to_bottom` attribute of timesheet entries based on
+        # previous timesheets. When a new timesheet is started it won't have
+        # any direction defined, so we take the one from the previous
+        # timesheet, if any
+        previous_timesheet = None
+        for timesheet in reversed(timesheet_collection.timesheets):
+            if (timesheet.entries.add_date_to_bottom is None
+                    and previous_timesheet
+                    and previous_timesheet.entries.add_date_to_bottom
+                    is not None):
+                timesheet.entries.add_date_to_bottom = (
+                    previous_timesheet.entries.add_date_to_bottom
+                )
+            previous_timesheet = timesheet
+
         setattr(self, '_current_timesheet_collection', timesheet_collection)
 
         return timesheet_collection
