@@ -131,7 +131,18 @@ class DateLine(TextLine):
 
 class TimesheetParser(object):
     """
-    TODO: document text structure
+    Parse a string and transform it into a list of parsed lines (date line,
+    entry line, text line). The basic structure is as follows:
+
+    Date line: <date>, where `date` is formatted as dd.mm.yyyy (the `.`
+    separator can be replaced by any non-word character)
+    Entry line: <alias> <duration> <description>, where `duration` can either
+    be expressed as a float/int to mean hours or as a time range (eg.
+    `09:00-09:30`, the `:` separator being optional)
+    Comment line: any line starting with `#` will be ignored
+
+    For the parsed string to be a valid timesheet, any entry line needs to
+    be preceded by at least a date line.
     """
     time_match_re = re.compile(r'(?:(\d{1,2}):?(\d{1,2}))?-(?:(?:(\d{1,2}):?(\d{1,2}))|\?)')
     date_match_re = re.compile(r'(\d{1,2})\D(\d{1,2})\D(\d{4}|\d{2})')
