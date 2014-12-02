@@ -454,9 +454,9 @@ class EditCommand(BaseTimesheetCommand):
         except ParseError as e:
             self.view.err(e)
         else:
-            t = timesheet_collection.timesheets[0]
             self.view.show_status(
-                t.get_entries(regroup=True), self.alias_mappings, self.settings
+                timesheet_collection.get_entries(regroup=True),
+                self.alias_mappings, self.settings
             )
 
 
