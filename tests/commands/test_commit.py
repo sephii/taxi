@@ -28,6 +28,31 @@ fail   1300-1400 Printer is down again
         self.assertEqual(lines[4], 'fail    0915-1145 Make printer work\n')
 
     @freeze_time('2014-01-21')
+    def test_fix_ignored_entries_start_time(self):
+        config = self.default_config.copy()
+        config['wrmap']['fail'] = '456/789'
+
+        self.write_entries("""21/01/2014
+alias_1     0745-0830  Repair coffee machine
+alias_1 -0900 Play ping-pong
+ignored_alias -0915 Check coffee machine uptime
+ignored_alias -1000 Check coffee machine uptime
+""")
+        self.run_command('commit', options=self.default_options)
+
+        with open(self.entries_file, 'r') as entries:
+            lines = entries.readlines()
+
+        self.assertEqual(
+            lines[3],
+            'ignored_alias 0900-0915 Check coffee machine uptime\n'
+        )
+        self.assertEqual(
+            lines[4],
+            'ignored_alias -1000 Check coffee machine uptime\n'
+        )
+
+    @freeze_time('2014-01-21')
     def test_commit_date(self):
         options = self.default_options.copy()
         options['date'] = '21.01.2014'

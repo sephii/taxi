@@ -98,7 +98,11 @@ class Timesheet(object):
         return self.get_filtered_entries(date, entry_filter, regroup)
 
     def get_ignored_entries(self, date=None):
-        return self.get_filtered_entries(date, lambda e: e.is_ignored())
+        def entry_filter(entry):
+            return (entry.is_ignored() or self.is_alias_local(entry.alias)
+                    or not self.is_alias_mapped(entry.alias))
+
+        return self.get_filtered_entries(date, entry_filter)
 
     def get_local_entries(self, date=None):
         return self.get_filtered_entries(

@@ -414,6 +414,12 @@ class CommitCommand(BaseTimesheetCommand):
             for (entry, _) in failed_entries:
                 entry.fix_start_time()
 
+            # Also fix start time for ignored entries. Since they won't get
+            # pushed, there's a chance their previous sibling gets commented
+            for (date, entries) in timesheet.get_ignored_entries().items():
+                for entry in entries:
+                    entry.fix_start_time()
+
             timesheet.file.write(timesheet.entries)
 
             all_pushed_entries.extend(pushed_entries)
