@@ -13,9 +13,9 @@ Added
   setting. Thanks @krtek4 (#24). Refer to ``doc/tksrc.sample`` for more details. 
 * Regroup entries that have the same activity and description and that are on
   the same date (#14).
-* Add previous entries files parsing. This can be controlled with the
-  ``nb_previous_files`` setting (#15). Refer to ``doc/tksrc.sample`` for more
-  details.
+* Add previous entries files parsing. The default is to parse 1 previous file
+  but this can be controlled with the ``nb_previous_files`` setting (#15).
+  Refer to ``doc/tksrc.sample`` for more details.
 * Add colors to easily spot entries that failed to be pushed. Thanks @krtek4
   (#39).
 
