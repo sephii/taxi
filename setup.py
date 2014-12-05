@@ -45,6 +45,7 @@ setup(
     scripts=['bin/taxi'],
     url='https://github.com/sephii/taxi',
     install_requires=install_requires,
+    license=open('LICENSE').read(),
     tests_require=tests_require,
     include_package_data=False,
     cmdclass = {'test': PyTest},
