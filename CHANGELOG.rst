@@ -18,6 +18,7 @@ Added
   Refer to ``doc/tksrc.sample`` for more details.
 * Add colors to easily spot entries that failed to be pushed. Thanks @krtek4
   (#39).
+* Create a default configuration file if none exists. Thanks @ghn.
 
 Changed
 -------
