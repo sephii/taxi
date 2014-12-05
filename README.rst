@@ -26,7 +26,7 @@ The easiest way to install taxi is by using ``pip``. This will fetch the latest
 stable version and install it on your system (this can also be used to upgrade
 an existing taxi install) ::
 
-    sudo pip install git+git://github.com/sephii/taxi@master
+    sudo pip install -U taxi
 
 That's it! You can now skip to the `Configuration`_ section.
 
