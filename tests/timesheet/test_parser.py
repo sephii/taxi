@@ -236,6 +236,21 @@ def test_detect_formatting_time_hours():
     assert formatting['time_format'] == '%H%M'
 
 
+def test_formatting_space():
+    formatting = TimesheetParser.detect_formatting('foobar 4 description')
+    assert formatting['spacer'] == (' ', ' ')
+
+
+def test_detect_formatting_tabs():
+    formatting = TimesheetParser.detect_formatting('foobar\t4\tdescription')
+    assert formatting['spacer'] == ('\t', '\t')
+
+
+def test_detect_formatting_space_tabs():
+    formatting = TimesheetParser.detect_formatting('foobar\t4 description')
+    assert formatting['spacer'] == ('\t', ' ')
+
+
 def test_parse_error_contains_line_number():
     try:
         TimesheetParser.parse("hello world")
