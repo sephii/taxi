@@ -35,12 +35,18 @@ If you don't have ``pip``, you should be able to install it with
 
     sudo easy_install pip
 
-Installing without pip
-------------------------
+Installing from the source
+--------------------------
 
-Fetch the source, extract it, and run the following command ::
+Fetch the source, extract it, and install dependency with ::
 
-    sudo python setup.py install
+    git clone git@github.com:sephii/taxi.git && cd taxi
+    python setup.py install
+
+If you want to modifiy the source code and test it (aka start to be a contributor) ::
+
+    python setup.py develop
+
 
 Configuration
 =============
