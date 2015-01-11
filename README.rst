@@ -38,15 +38,22 @@ If you don't have ``pip``, you should be able to install it with
 Installing from the source
 --------------------------
 
-Fetch the source, extract it, and install dependency with ::
+Fetch the source, extract it, and install dependencies with ::
 
     git clone git@github.com:sephii/taxi.git && cd taxi
-    python setup.py install
+    ./setup.py install
 
 If you want to modifiy the source code and test it (aka start to be a contributor) ::
 
-    python setup.py develop
+    ./setup.py develop
 
+This command will link the ``taxi`` binary to the directory where you cloned
+taxi. It is recommended you run this command in a virtualenv so that it doesn't
+interfere with the version of taxi installed on your system.
+
+To run the tests, use the following command::
+
+    ./setup.py test
 
 Configuration
 =============
@@ -155,10 +162,3 @@ Getting help
 Run taxi without any argument to get an overview of available commands and
 options. You can also use the ``help`` command followed by the name of a command
 to get detailed help on any command.
-
-Running tests
-=============
-
-To run the tests, just run the following command::
-
-    ./setup.py test
