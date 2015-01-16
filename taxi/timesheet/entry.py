@@ -377,11 +377,12 @@ class TimesheetEntry(object):
     def fix_start_time(self):
         """
         Set the start time of the entry to the end time of the previous entry
-        if the current entry is using an tuple duration with no start time and
+        if the current entry is using a tuple duration with no start time and
         the previous entry got commented.
         """
-        if (isinstance(self.duration, tuple) and self.duration[0] is None and
-                self.previous_entry.commented):
+        if (isinstance(self.duration, tuple) and self.duration[0] is None
+                and self.previous_entry is not None
+                and self.previous_entry.commented):
             self.duration = (
                 self.get_start_time(),
                 self.duration[1]

@@ -68,7 +68,8 @@ class EntryLine(TextLine):
         if not formatting:
             formatting = {
                 'width': (None, None),
-                'time_format': '%H:%M'
+                'time_format': '%H:%M',
+                'spacer': (' ', ' ')
             }
 
         if isinstance(self.duration, tuple):
@@ -96,10 +97,10 @@ class EntryLine(TextLine):
         text = (u'{commented}{alias}{padding1}{duration}{padding2}'
                 '{description}'.format(commented=commented_prefix,
                                        alias=alias,
-                                       padding1=' ' * padding1,
+                                       padding1=formatting['spacer'][0] * padding1,
                                        duration=duration,
                                        description=self.description,
-                                       padding2=' ' * padding2))
+                                       padding2=formatting['spacer'][1] * padding2))
 
         return text
 
@@ -214,16 +215,19 @@ class TimesheetParser(object):
         """
         Extract the width (= number of columns) of the different components of
         the line as well as the time format. The returned data is a dictionary
-        with 2 values, 'width' containing a 2-items tuple representing the
-        width of the two first components of the line (alias and duration), and
+        with 3 values, 'width' containing a 2-items tuple representing the
+        width of the two first components of the line (alias and duration),
         'time_format' containing the format of the time as a string usable by
-        strftime.
+        strftime and 'spacer' containing a 2-items tuple representing the space
+        format used for the two first components (either a space or a tabulation)
         """
-        width = re.match(cls.formatting_match_re, line)
+        components = re.match(cls.formatting_match_re, line)
         split_line = cls.split_line(line)
 
-        if width and len(width.groups()) == 2:
-            width = tuple(len(separator) for separator in width.groups())
+        if components and len(components.groups()) == 2:
+            width = tuple(len(separator) for separator in components.groups())
+            spacer = tuple('\t' if separator[-1] == '\t' else ' '
+                           for separator in components.groups())
         else:
             return None
 
@@ -231,7 +235,8 @@ class TimesheetParser(object):
 
         return {
             'width': width,
-            'time_format': time_format
+            'time_format': time_format,
+            'spacer': spacer
         }
 
     @classmethod

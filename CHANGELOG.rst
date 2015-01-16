@@ -2,6 +2,15 @@
 Changelog
 #########
 
+3.2.1 (unreleased)
+==================
+
+Changed
+-------
+
+* Preserve space character (tab or space) used in timesheets. Thanks @krtek4
+  (#62).
+
 3.2.0 (2014-12-04)
 ==================
 
