@@ -243,3 +243,18 @@ _pingpong 0800-0900 Play ping-pong
 
         stdout = self.run_command('commit', options=self.default_options)
         self.assertIn("Total pushed                   0.00", stdout)
+
+    @freeze_time('2014-01-21')
+    def test_fix_entries_start_time(self):
+        config = self.default_config.copy()
+        config['wrmap']['fail'] = '456/789'
+
+        self.write_entries("""21/01/2014
+fail     -0830  Repair coffee machine
+""")
+        self.run_command('commit', options=self.default_options)
+
+        with open(self.entries_file, 'r') as entries:
+            lines = entries.readlines()
+
+        self.assertEqual(lines[1], 'fail     -0830  Repair coffee machine\n')
