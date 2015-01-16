@@ -223,10 +223,10 @@ class BaseUi(object):
                  "`--ignore-date-error`" % ', '.join(dates))
 
     def get_entry_status(self, entry, alias_mappings):
-        if entry.alias not in alias_mappings:
-            status = 'not mapped'
-        elif entry.is_ignored():
+        if entry.is_ignored():
             status = 'ignored'
+        elif entry.alias not in alias_mappings:
+            status = 'not mapped'
         elif alias_mappings.is_local(entry.alias):
             status = 'local'
         elif entry.alias in alias_mappings:
@@ -262,7 +262,8 @@ class BaseUi(object):
             for entry in entries:
                 self.msg(self.get_entry_status(entry, alias_mappings))
 
-                if entry.alias not in alias_mappings:
+                if (not entry.is_ignored() and entry.alias not in
+                        alias_mappings):
                     close_matches = settings.get_close_matches(entry.alias)
                     if close_matches:
                         self.msg(u'\tDid you mean one of the following: %s?' %

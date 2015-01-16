@@ -84,3 +84,14 @@ alias_1 1200-1300 Play ping-pong
             "alias_1 (123/456)              2.00  Play ping-pong",
             stdout
         )
+
+    def test_status_ignored_not_mapped(self):
+        self.write_entries("""20/01/2014
+unmapped? 0800-0900 Play ping-pong
+""")
+
+        stdout = self.run_command('status', options=self.default_options)
+        self.assertIn(
+            "unmapped (ignored)             1.00  Play ping-pong",
+            stdout
+        )
