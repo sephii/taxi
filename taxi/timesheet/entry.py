@@ -406,6 +406,15 @@ class AggregatedTimesheetEntry(object):
         for entry in self.entries:
             setattr(entry, name, value)
 
+    def __unicode__(self):
+        if self.is_ignored():
+            project_name = u'%s (ignored)' % self.alias
+        else:
+            project_name = self.alias
+
+        return u'%-30s %-5.2f %s' % (project_name, self.hours,
+                                     self.description)
+
     @property
     def hours(self):
         return sum([entry.hours for entry in self.entries])

@@ -49,7 +49,8 @@ class CommandTestCase(TestCase):
                 'use_colors': '0'
             },
             'wrmap': {
-                'alias_1': '123/456'
+                'alias_1': '123/456',
+                'fail': '456/789'
             }
         }
 

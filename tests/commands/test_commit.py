@@ -10,9 +10,6 @@ from . import CommandTestCase
 class CommitCommandTestCase(CommandTestCase):
     @freeze_time('2014-01-21')
     def test_fix_entries_start_time(self):
-        config = self.default_config.copy()
-        config['wrmap']['fail'] = '456/789'
-
         self.write_entries("""21/01/2014
 fail     0745-0830  Repair coffee machine
 alias_1 -0900 Play ping-pong
@@ -29,9 +26,6 @@ fail   1300-1400 Printer is down again
 
     @freeze_time('2014-01-21')
     def test_fix_ignored_entries_start_time(self):
-        config = self.default_config.copy()
-        config['wrmap']['fail'] = '456/789'
-
         self.write_entries("""21/01/2014
 alias_1     0745-0830  Repair coffee machine
 alias_1 -0900 Play ping-pong
@@ -241,14 +235,12 @@ alias_1 1 february 2014
 _pingpong 0800-0900 Play ping-pong
 """)
 
-        stdout = self.run_command('commit', options=self.default_options)
+        stdout = self.run_command('commit', options=self.default_options,
+                                  config_options=config)
         self.assertIn("Total pushed                   0.00", stdout)
 
     @freeze_time('2014-01-21')
     def test_fix_entries_start_time(self):
-        config = self.default_config.copy()
-        config['wrmap']['fail'] = '456/789'
-
         self.write_entries("""21/01/2014
 fail     -0830  Repair coffee machine
 """)
@@ -258,3 +250,13 @@ fail     -0830  Repair coffee machine
             lines = entries.readlines()
 
         self.assertEqual(lines[1], 'fail     -0830  Repair coffee machine\n')
+
+    @freeze_time('2014-01-21')
+    def test_failed_aggregated_entries_status(self):
+        self.write_entries("""21/01/2014
+fail     1  Repair coffee machine
+fail     2  Repair coffee machine
+""")
+        stdout = self.run_command('commit', options=self.default_options)
+
+        self.assertNotIn('AggregatedTimesheetEntry', stdout)
