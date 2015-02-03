@@ -1,14 +1,23 @@
 # -*- coding: utf-8 -*-
 import inspect
-import locale
 import re
 import sys
 
 from taxi.utils import date as date_utils, terminal
 from taxi.exceptions import CancelException
-from taxi.models import Project
+from taxi.projects import Project
+
+import colorama
+
 
 class BaseUi(object):
+    def __init__(self, stdout, use_colors=True):
+        self.stdout = stdout
+        self.use_colors = use_colors
+
+        if self.use_colors:
+            colorama.init()
+
     @staticmethod
     def _get_encoding():
         # Encoding is None if the output is piped through another command (eg.
@@ -20,11 +29,22 @@ class BaseUi(object):
 
         return encoding
 
-    def msg(self, message):
-        print(message.encode(self._get_encoding()))
+    def msg(self, message, color=None):
+        if self.use_colors and color is not None:
+            message = u"%s%s" % (color, message)
+
+        self.stdout.write(message.encode(self._get_encoding()))
+
+        if self.use_colors and color is not None:
+            self.stdout.write(
+                colorama.Back.RESET + colorama.Fore.RESET +
+                colorama.Style.RESET_ALL
+            )
+
+        self.stdout.write("\n")
 
     def err(self, message):
-        self.msg(u"Error: %s" % message)
+        self.msg(u"Error: %s" % message, colorama.Fore.RED)
 
     def projects_list(self, projects, numbered=False):
         for (key, project) in enumerate(projects):
@@ -33,7 +53,8 @@ class BaseUi(object):
             else:
                 self.msg(u"%4s %s" % (key, project.id, project.name))
 
-    def project_with_activities(self, project, mappings={}, numbered_activities=False):
+    def project_with_activities(self, project, mappings={},
+                                numbered_activities=False):
         self.msg(unicode(project))
         self.msg(u"\nActivities:")
         for (key, activity) in enumerate(project.activities):
@@ -80,9 +101,9 @@ class BaseUi(object):
 
     def select_alias(self):
         try:
-            return terminal.select_string(u"Enter the alias for .tksrc (a-z, - "
-                                          "and _ allowed), (Ctrl-C) to exit: ",
-                                          r'^[\w-]+$')
+            return terminal.select_string(
+                u"Enter the alias for .tksrc (a-z, - and _ allowed), (Ctrl-C)"
+                " to exit: ", r'^[\w-]+$')
         except KeyboardInterrupt:
             raise CancelException()
 
@@ -101,7 +122,9 @@ class BaseUi(object):
         s = (u"The alias `%s` is already mapped to `%s`.\nDo you want to "
              "overwrite it [%s]? " % (alias, mapping_name, choices))
 
-        overwrite = terminal.select_string(s, choice_regexp, re.I, default_choice)
+        overwrite = terminal.select_string(
+            s, choice_regexp, re.I, default_choice
+        )
 
         if overwrite == 'n':
             return False
@@ -116,19 +139,24 @@ class BaseUi(object):
         self.msg(u"The following alias has been added to your configuration "
                  "file: %s = %s" % (alias, mapping_name))
 
-    def _show_mapping(self, mapping, project, alias_first=True):
-        (alias, t) = mapping
+    def _show_mapping(self, alias_mapping, project, alias_first=True):
+        (alias, mapping) = alias_mapping
 
-        mapping_name = '%s/%s' % t
+        # Handle local aliases
+        if mapping is None:
+            self.msg(u"%s -> local alias" % alias)
+            return
+
+        mapping_name = '%s/%s' % mapping
 
         if not project:
-            project_name = '?'
+            project_name = ''
         else:
-            if t[1] is None:
+            if mapping[1] is None:
                 project_name = project.name
-                mapping_name = t[0]
+                mapping_name = mapping[0]
             else:
-                activity = project.get_activity(t[1])
+                activity = project.get_activity(mapping[1])
 
                 if activity is None:
                     project_name = u'%s, ?' % (project.name)
@@ -136,11 +164,13 @@ class BaseUi(object):
                     project_name = u'%s, %s' % (project.name, activity.name)
 
         if alias_first:
-            args = (alias, mapping_name, project_name)
+            args = [alias, mapping_name]
         else:
-            args = (mapping_name, alias, project_name)
+            args = [mapping_name, alias]
 
-        self.msg(u"%s -> %s (%s)" % args)
+        args.append(' (%s)' % project_name if project_name else '')
+
+        self.msg(u"%s -> %s%s" % tuple(args))
 
     def mapping_detail(self, mapping, project):
         self._show_mapping(mapping, project, False)
@@ -154,35 +184,67 @@ class BaseUi(object):
         for (mapping, project) in aliases:
             self.alias_detail(mapping, project)
 
-        confirm = terminal.select_string(u"\nDo you want to clean them [y/N]? ",
-                                         r'^[yn]$', re.I, 'n')
+        confirm = terminal.select_string(
+            u"\nDo you want to clean them [y/N]? ", r'^[yn]$', re.I, 'n')
 
         return confirm == 'y'
 
-    def pushed_entries_total(self, pushed_entries):
-        total_hours = 0
-        for entry in pushed_entries:
-            total_hours += entry.get_duration()
+    def display_entries_list(self, entries, msg, details=True):
+        total = 0
+        for entry in entries:
+            if isinstance(entry, tuple):
+                reason = entry[1]
+                entry = entry[0]
+                line = "%s - %s" % (unicode(entry), reason)
+            else:
+                line = unicode(entry)
 
-        self.msg(u'\n%-29s %5.2f' % ('Total pushed', total_hours))
+            total += entry.hours
+            if details:
+                self.msg(line)
+
+        self.msg(u'\n%-29s %5.2f' % (msg, total))
+
+    def pushed_entries_total(self, pushed_entries):
+        self.display_entries_list(pushed_entries, 'Total pushed', False)
 
     def ignored_entries_list(self, ignored_entries):
-        ignored_hours = 0
-        for entry in ignored_entries:
-            ignored_hours += entry.get_duration()
-            self.msg(unicode(entry))
+        self.display_entries_list(ignored_entries, 'Total ignored')
 
-        self.msg(u'\n%-29s %5.2f' % ('Total ignored', ignored_hours))
+    def failed_entries_list(self, failed_entries):
+        self.display_entries_list(failed_entries, 'Total failed')
 
     def non_working_dates_commit_error(self, dates):
         dates = [date_utils.unicode_strftime(d, '%A %d %B') for d in dates]
 
         self.err(u"You're trying to commit for a day that's "
-        " on a week-end or that's not yesterday nor today (%s).\n"
-        "To ignore this error, re-run taxi with the option "
-        "`--ignore-date-error`" % ', '.join(dates))
+                 " on a week-end or that's not yesterday nor today (%s).\n"
+                 "To ignore this error, re-run taxi with the option "
+                 "`--ignore-date-error`" % ', '.join(dates))
 
-    def show_status(self, entries_dict):
+    def get_entry_status(self, entry, alias_mappings):
+        if entry.is_ignored():
+            status = 'ignored'
+        elif entry.alias not in alias_mappings:
+            status = 'not mapped'
+        elif alias_mappings.is_local(entry.alias):
+            status = 'local'
+        elif entry.alias in alias_mappings:
+            status = '/'.join([
+                str(part) for part in alias_mappings[entry.alias]
+            ])
+        else:
+            status = ''
+
+        if status:
+            project_name = u'%s (%s)' % (entry.alias, status)
+        else:
+            project_name = entry.alias
+
+        return u'%-30s %-5.2f %s' % (project_name, entry.hours,
+                                     entry.description)
+
+    def show_status(self, entries_dict, alias_mappings, settings):
         self.msg(u'Staging changes :\n')
         entries_list = entries_dict.items()
         entries_list = sorted(entries_list)
@@ -195,11 +257,21 @@ class BaseUi(object):
             subtotal_hours = 0
             # The encoding of date.strftime output depends on the current
             # locale, so we decode it to get a unicode string
-            self.msg(u'# %s #' %
-                     date_utils.unicode_strftime(date, '%A %d %B').capitalize())
+            self.msg(u'# %s #' % date_utils.unicode_strftime(
+                date, '%A %d %B').capitalize())
             for entry in entries:
-                self.msg(unicode(entry))
-                subtotal_hours += entry.get_duration() or 0
+                self.msg(self.get_entry_status(entry, alias_mappings))
+
+                if (not entry.is_ignored() and entry.alias not in
+                        alias_mappings):
+                    close_matches = settings.get_close_matches(entry.alias)
+                    if close_matches:
+                        self.msg(u'\tDid you mean one of the following: %s?' %
+                                 ', '.join(close_matches))
+
+                if (entry.alias not in alias_mappings
+                        or not alias_mappings.is_local(entry.alias)):
+                    subtotal_hours += entry.hours or 0
 
             self.msg(u'%-29s %5.2f\n' % ('', subtotal_hours))
             total_hours += subtotal_hours
@@ -207,30 +279,37 @@ class BaseUi(object):
         self.msg(u'%-29s %5.2f' % ('Total', total_hours))
         self.msg(u'\nUse `taxi ci` to commit staging changes to the server')
 
-    def pushed_entry(self, entry, error):
+    def pushed_entry(self, entry, error, alias_mappings):
         if error:
-            self.msg(u"%s - Failed, reason: %s " % (unicode(entry), error))
+            self.msg(u"%s - Failed, reason: %s" % (
+                self.get_entry_status(entry, alias_mappings),
+                error
+            ), colorama.Style.BRIGHT + colorama.Fore.RED)
         else:
-            self.msg(unicode(entry))
-
-    def failed_entries_list(self, failed_entries):
-        for failed_entry in failed_entries:
-            self.msg(u"%s, reason: %s" % failed_entry)
+            self.msg(self.get_entry_status(entry, alias_mappings))
 
     def pushed_entries_summary(self, pushed_entries, failed_entries,
                                ignored_entries):
         self.pushed_entries_total(pushed_entries)
 
         if ignored_entries:
-            self.msg(u"\nIgnored entries:\n")
+            self.msg(u"\nIgnored entries\n",
+                     colorama.Style.BRIGHT + colorama.Fore.YELLOW)
             self.ignored_entries_list(ignored_entries)
+
+        if failed_entries:
+            self.msg(u"\nFailed entries\n",
+                     colorama.Style.BRIGHT + colorama.Fore.RED)
+            self.failed_entries_list(failed_entries)
 
     def pushing_entries(self):
         self.msg(u"Pushing entries...\n")
 
     def search_results(self, projects):
         for project in projects:
-            self.msg(u'%s %4s %s' % (project.get_short_status(), project.id, project.name))
+            self.msg(u'%s %4s %s' % (
+                project.get_short_status(), project.id, project.name
+            ))
 
     def suggest_aliases(self, not_found_alias, aliases):
         self.err(u"The alias `%s` is not mapped in your configuration file." %

@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
-class UsageError(Exception):
+class TaxiException(Exception):
     pass
 
-class CancelException(Exception):
+
+class UsageError(TaxiException):
     pass
 
-class NoActivityInProgressError(Exception):
+
+class CancelException(TaxiException):
     pass
 
-class UndefinedAliasError(Exception):
-    pass
 
-class UnknownDirectionError(Exception):
+class UndefinedAliasError(TaxiException):
     pass

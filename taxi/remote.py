@@ -1,9 +1,13 @@
 # -*- coding: utf-8 -*-
-import urllib, urllib2, urlparse, cookielib
-import json
+import cookielib
 from datetime import datetime
+import json
+import urllib
+import urllib2
 
-from taxi.models import Project, Activity
+from taxi.projects import Project, Activity
+from taxi.exceptions import TaxiException
+
 
 class Remote(object):
     # Default timeout for HTTP-related operations, in seconds
@@ -12,10 +16,10 @@ class Remote(object):
     def __init__(self, base_url):
         self.base_url = base_url
 
-    def _get_request(self, url, body = None, headers = {}):
+    def _get_request(self, url, body=None, headers={}):
         return urllib2.Request('%s/%s' % (self.base_url, url), body, headers)
 
-    def _request(self, url, body = None, headers = {}):
+    def _request(self, url, body=None, headers={}):
         request = self._get_request(url, body, headers)
         opener = urllib2.build_opener()
         response = opener.open(request)
@@ -39,6 +43,7 @@ class Remote(object):
     def get_projects(self):
         pass
 
+
 class ZebraRemote(Remote):
     def __init__(self, base_url, username, password):
         super(ZebraRemote, self).__init__(base_url)
@@ -48,20 +53,23 @@ class ZebraRemote(Remote):
         self.username = username
         self.password = password
 
-    def _get_request(self, url, body = None, headers = {}):
+    def _get_request(self, url, body=None, headers={}):
         if 'User-Agent' not in headers:
-            headers['User-Agent'] = 'Taxi Zebra Client';
+            headers['User-Agent'] = 'Taxi Zebra Client'
 
         return super(ZebraRemote, self)._get_request(url, body, headers)
 
-    def _request(self, url, body = None, headers = {}):
+    def _request(self, url, body=None, headers={}):
         request = self._get_request(url, body, headers)
-        opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.cookiejar))
+        opener = urllib2.build_opener(
+            urllib2.HTTPCookieProcessor(self.cookiejar)
+        )
 
         try:
             response = opener.open(request, timeout=self.DEFAULT_TIMEOUT)
         except urllib2.URLError:
-            raise Exception('Unable to connect to Zebra. Check your connection status and try again.')
+            raise TaxiException("Unable to connect to Zebra. Check your"
+                                " connection status and try again.")
 
         self.cookiejar.extract_cookies(response, request)
 
@@ -80,15 +88,15 @@ class ZebraRemote(Remote):
         parameters = self._encode_parameters(parameters_dict)
 
         response = self._request(login_url, parameters)
-        response_body = response.read()
 
-        if not response.info().getheader('Content-Type').startswith('application/json'):
+        if (not response.info().getheader('Content-Type')
+                               .startswith('application/json')):
             self.logged_in = False
-            raise Exception('Unable to login')
+            raise TaxiException('Unable to login')
         else:
             self.logged_in = True
 
-    def send_entries(self, entries, callback=None):
+    def send_entries(self, entries, mappings, callback=None):
         post_url = '/timesheet/create/.json'
 
         pushed_entries = []
@@ -98,9 +106,9 @@ class ZebraRemote(Remote):
         for (date, entries) in entries.iteritems():
             for entry in entries:
                 parameters_dict = {
-                    'time':         entry.get_duration(),
-                    'project_id':   entry.project_id,
-                    'activity_id':  entry.activity_id,
+                    'time':         entry.hours,
+                    'project_id':   mappings[entry.alias][0],
+                    'activity_id':  mappings[entry.alias][1],
                     'day':          date.day,
                     'month':        date.month,
                     'year':         date.year,
@@ -140,7 +148,6 @@ class ZebraRemote(Remote):
                                      "not very useful!)")
                             failed_entries.append((entry, error))
                     else:
-                        entry.pushed = True
                         pushed_entries.append(entry)
                 finally:
                     if callback is not None:
@@ -162,8 +169,8 @@ class ZebraRemote(Remote):
         activities_dict = {}
 
         for activity in activities:
-            a = Activity(int(activity['id']),
-                    activity['name'], activity['rate_eur'])
+            a = Activity(int(activity['id']), activity['name'],
+                         activity['rate_eur'])
             activities_dict[a.id] = a
 
         projects_list = []
@@ -175,7 +182,9 @@ class ZebraRemote(Remote):
                         project['budget'])
 
             try:
-                p.start_date = datetime.strptime(project['startdate'], '%Y-%m-%d')
+                p.start_date = datetime.strptime(
+                    project['startdate'], '%Y-%m-%d'
+                )
             except ValueError:
                 p.start_date = None
 
@@ -215,6 +224,7 @@ class ZebraRemote(Remote):
 
         return projects_list
 
+
 class DummyRemote(Remote):
     projects = {
         111: [222, 333],
@@ -224,25 +234,17 @@ class DummyRemote(Remote):
     def __init__(self):
         super(DummyRemote, self).__init__('dummy')
 
-    def send_entries(self, entries, callback=None):
+    def send_entries(self, entries, mappings, callback=None):
         pushed_entries = []
         failed_entries = []
 
         for (date, entries) in entries.iteritems():
             for entry in entries:
                 error = None
-                parameters_dict = {
-                    'time':         entry.get_duration(),
-                    'project_id':   entry.project_id,
-                    'activity_id':  entry.activity_id,
-                    'day':          date.day,
-                    'month':        date.month,
-                    'year':         date.year,
-                    'description':  entry.description,
-                }
 
-                if (entry.project_id not in self.projects or
-                        entry.activity_id not in self.projects[entry.project_id]):
+                if (entry.project_id not in self.projects
+                        or entry.activity_id not in
+                        self.projects[entry.project_id]):
                     error = 'Project doesn\'t exist'
                     failed_entries.append((entry, error))
                 else:

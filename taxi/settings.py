@@ -3,19 +3,24 @@ import ConfigParser
 import os
 import difflib
 
+from .timesheet import AliasMappings
+
+
 class Settings:
     TAXI_PATH = os.path.expanduser('~/.taxi')
     AUTO_ADD_OPTIONS = {
-            'NO': 'no',
-            'TOP': 'top',
-            'BOTTOM': 'bottom',
-            'AUTO': 'auto'
+        'NO': 'no',
+        'TOP': 'top',
+        'BOTTOM': 'bottom',
+        'AUTO': 'auto'
     }
 
     DEFAULTS = {
-            'auto_fill_days': '',
-            'date_format': '%d/%m/%Y',
-            'auto_add': 'auto',
+        'auto_fill_days': '0,1,2,3,4',
+        'date_format': '%d/%m/%Y',
+        'auto_add': 'auto',
+        'nb_previous_files': '1',
+        'use_colors': '1'
     }
 
     def __init__(self, file):
@@ -26,7 +31,9 @@ class Settings:
             with open(self.filepath, 'r') as fp:
                 self.config.readfp(fp)
         except IOError:
-            raise IOError('The specified configuration file `%s` doesn\'t exist' % file)
+            raise IOError(
+                "The specified configuration file `%s` doesn't exist" % file
+            )
 
     def get(self, key, section='default'):
         try:
@@ -45,8 +52,8 @@ class Settings:
 
         return [int(e.strip()) for e in auto_fill_days.split(',')]
 
-    def get_aliases(self, include_shared=True):
-        aliases = {}
+    def get_aliases(self, include_shared=True, include_local=True):
+        aliases = AliasMappings()
         config_aliases = self.config.items('wrmap')
         shared_config_aliases = (self.config.items('shared_wrmap')
                                  if self.config.has_section('shared_wrmap')
@@ -68,6 +75,16 @@ class Settings:
                         (alias, mapping)
                     )
 
+        if include_local:
+            try:
+                local_aliases = self.config.get('default', 'local_aliases')
+            except ConfigParser.NoOptionError:
+                local_aliases = ''
+
+            if local_aliases:
+                for alias in local_aliases.split(','):
+                    aliases[alias.strip()] = None
+
         return aliases
 
     def get_reversed_aliases(self, include_shared=True):
@@ -79,11 +96,14 @@ class Settings:
         aliases = []
 
         for (user_alias, mapped_alias) in self.get_aliases().iteritems():
-            if (mapped_alias[0] != mapping[0] or
-                    (mapping[1] is not None and mapped_alias[1] != mapping[1])):
+            if (mapped_alias is None or mapped_alias[0] != mapping[0]
+                    or (mapping[1] is not None
+                        and mapped_alias[1] != mapping[1])):
                 continue
 
             aliases.append((user_alias, mapped_alias))
+
+        aliases = sorted(aliases, key=lambda alias: alias[1])
 
         return aliases
 
@@ -94,18 +114,27 @@ class Settings:
             if search_alias is None or user_alias.startswith(search_alias):
                 aliases.append((user_alias, mapped_alias))
 
+        aliases = sorted(aliases, key=lambda alias: alias[1])
+
         return aliases
 
     def get_close_matches(self, project_name):
-        return difflib.get_close_matches(project_name, self.get_aliases().keys(),
-                                         cutoff=0.2)
+        return difflib.get_close_matches(project_name,
+                                         self.get_aliases().keys(), cutoff=0.2)
 
     def add_alias(self, alias, projectid, activityid):
         self.config.set('wrmap', alias, '%s/%s' % (projectid, activityid))
 
     def remove_aliases(self, aliases):
+        # Look in mapping sections in this order, once the mapping has been
+        # found in a section, don't go further
+        search_in_sections = ['wrmap', 'shared_wrmap']
+
         for alias in aliases:
-            self.config.remove_option('wrmap', alias)
+            for section in search_in_sections:
+                if self.config.has_option(section, alias):
+                    self.config.remove_option(section, alias)
+                    break
 
     def write_config(self):
         with open(self.filepath, 'w') as file:

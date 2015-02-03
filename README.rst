@@ -26,7 +26,7 @@ The easiest way to install taxi is by using ``pip``. This will fetch the latest
 stable version and install it on your system (this can also be used to upgrade
 an existing taxi install) ::
 
-    sudo pip install git+git://github.com/sephii/taxi@stable
+    sudo pip install -U taxi
 
 That's it! You can now skip to the `Configuration`_ section.
 
@@ -35,12 +35,25 @@ If you don't have ``pip``, you should be able to install it with
 
     sudo easy_install pip
 
-Installing without pip
-------------------------
+Installing from the source
+--------------------------
 
-Fetch the source, extract it, and run the following command ::
+Fetch the source, extract it, and install dependencies with ::
 
-    sudo python setup.py install
+    git clone git@github.com:sephii/taxi.git && cd taxi
+    ./setup.py install
+
+If you want to modifiy the source code and test it (aka start to be a contributor) ::
+
+    ./setup.py develop
+
+This command will link the ``taxi`` binary to the directory where you cloned
+taxi. It is recommended you run this command in a virtualenv so that it doesn't
+interfere with the version of taxi installed on your system.
+
+To run the tests, use the following command::
+
+    ./setup.py test
 
 Configuration
 =============
