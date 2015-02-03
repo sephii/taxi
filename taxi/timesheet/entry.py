@@ -37,7 +37,7 @@ class EntriesCollection(collections.defaultdict):
         self.synchronized = True
         # Whether to add new dates at the start or at the end in the textual
         # representation
-        self.add_date_to_bottom = False
+        self.add_date_to_bottom = None
         self.date_format = date_format
 
         # If there are initial entries to import, disable synchronization and
@@ -323,9 +323,9 @@ class TimesheetEntry(object):
         """
         Return the start time of the entry as a `datetime.time` object. If the
         start time is `None`, the end time of the previous entry will be
-        returned instead. If the current entry has not a duration in the form
-        of a tuple, if there's no previous entry or if the previous entry has
-        no end time, the value `None` will be returned.
+        returned instead. If the current entry doesn't have a duration in the
+        form of a tuple, if there's no previous entry or if the previous entry
+        has no end time, the value `None` will be returned.
         """
         if not isinstance(self.duration, tuple):
             return None
@@ -377,11 +377,12 @@ class TimesheetEntry(object):
     def fix_start_time(self):
         """
         Set the start time of the entry to the end time of the previous entry
-        if the current entry is using an tuple duration with no start time and
+        if the current entry is using a tuple duration with no start time and
         the previous entry got commented.
         """
-        if (isinstance(self.duration, tuple) and self.duration[0] is None and
-                self.previous_entry.commented):
+        if (isinstance(self.duration, tuple) and self.duration[0] is None
+                and self.previous_entry is not None
+                and self.previous_entry.commented):
             self.duration = (
                 self.get_start_time(),
                 self.duration[1]

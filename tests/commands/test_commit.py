@@ -1,15 +1,14 @@
 import os
 import shutil
 import tempfile
-import datetime
 
 from freezegun import freeze_time
 
 from . import CommandTestCase
 
 
-@freeze_time('2014-01-21')
 class CommitCommandTestCase(CommandTestCase):
+    @freeze_time('2014-01-21')
     def test_fix_entries_start_time(self):
         config = self.default_config.copy()
         config['wrmap']['fail'] = '456/789'
@@ -18,7 +17,7 @@ class CommitCommandTestCase(CommandTestCase):
 fail     0745-0830  Repair coffee machine
 alias_1 -0900 Play ping-pong
 alias_1 -0915 Check coffee machine uptime
-fail     -1145 Make printer work
+fail    -1145 Make printer work
 fail   1300-1400 Printer is down again
 """)
         self.run_command('commit', options=self.default_options)
@@ -26,8 +25,34 @@ fail   1300-1400 Printer is down again
         with open(self.entries_file, 'r') as entries:
             lines = entries.readlines()
 
-        self.assertEqual(lines[4], 'fail 09:15-11:45 Make printer work\n')
+        self.assertEqual(lines[4], 'fail    0915-1145 Make printer work\n')
 
+    @freeze_time('2014-01-21')
+    def test_fix_ignored_entries_start_time(self):
+        config = self.default_config.copy()
+        config['wrmap']['fail'] = '456/789'
+
+        self.write_entries("""21/01/2014
+alias_1     0745-0830  Repair coffee machine
+alias_1 -0900 Play ping-pong
+ignored_alias -0915 Check coffee machine uptime
+ignored_alias -1000 Check coffee machine uptime
+""")
+        self.run_command('commit', options=self.default_options)
+
+        with open(self.entries_file, 'r') as entries:
+            lines = entries.readlines()
+
+        self.assertEqual(
+            lines[3],
+            'ignored_alias 0900-0915 Check coffee machine uptime\n'
+        )
+        self.assertEqual(
+            lines[4],
+            'ignored_alias -1000 Check coffee machine uptime\n'
+        )
+
+    @freeze_time('2014-01-21')
     def test_commit_date(self):
         options = self.default_options.copy()
         options['date'] = '21.01.2014'
@@ -53,6 +78,7 @@ alias_1 2 foobar
         stdout = self.run_command('commit', options=self.default_options)
         self.assertIn('--ignore-date-error', stdout)
 
+    @freeze_time('2014-01-21')
     def test_ignore_date_error_previous_day(self):
         self.write_entries("""17/01/2014
 alias_1 2 foobar
@@ -60,6 +86,7 @@ alias_1 2 foobar
         stdout = self.run_command('commit', options=self.default_options)
         self.assertIn('--ignore-date-error', stdout)
 
+    @freeze_time('2014-01-21')
     def test_commit_previous_file_previous_month(self):
         tmp_entries_dir = tempfile.mkdtemp()
         config = self.default_config.copy()
@@ -89,6 +116,7 @@ alias_1 2 january
         self.assertIn('january', stdout)
         self.assertIn('february', stdout)
 
+    @freeze_time('2014-01-21')
     def test_commit_previous_file_previous_year(self):
         tmp_entries_dir = tempfile.mkdtemp()
         config = self.default_config.copy()
@@ -110,8 +138,8 @@ alias_1 2 december
 
         with freeze_time('2014-01-01'):
             self.write_entries("""01/01/2014
-    alias_1 4 january
-    """)
+alias_1 4 january
+""")
 
             options = self.default_options.copy()
             options['ignore_date_error'] = True
@@ -124,6 +152,7 @@ alias_1 2 december
         self.assertIn('december', stdout)
         self.assertIn('january', stdout)
 
+    @freeze_time('2014-01-21')
     def test_commit_previous_files_previous_months(self):
         tmp_entries_dir = tempfile.mkdtemp()
         config = self.default_config.copy()
@@ -160,6 +189,7 @@ alias_1 4 march
         self.assertIn('february', stdout)
         self.assertIn('march', stdout)
 
+    @freeze_time('2014-01-21')
     def test_commit_previous_file_year_format(self):
         tmp_entries_dir = tempfile.mkdtemp()
         config = self.default_config.copy()
@@ -202,6 +232,7 @@ alias_1 1 february 2014
         self.assertIn('january 2014', stdout)
         self.assertIn('february 2014', stdout)
 
+    @freeze_time('2014-01-21')
     def test_local_alias(self):
         config = self.default_config.copy()
         config['default']['local_aliases'] = '_pingpong'
@@ -212,3 +243,18 @@ _pingpong 0800-0900 Play ping-pong
 
         stdout = self.run_command('commit', options=self.default_options)
         self.assertIn("Total pushed                   0.00", stdout)
+
+    @freeze_time('2014-01-21')
+    def test_fix_entries_start_time(self):
+        config = self.default_config.copy()
+        config['wrmap']['fail'] = '456/789'
+
+        self.write_entries("""21/01/2014
+fail     -0830  Repair coffee machine
+""")
+        self.run_command('commit', options=self.default_options)
+
+        with open(self.entries_file, 'r') as entries:
+            lines = entries.readlines()
+
+        self.assertEqual(lines[1], 'fail     -0830  Repair coffee machine\n')

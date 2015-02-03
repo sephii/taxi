@@ -53,7 +53,8 @@ class BaseUi(object):
             else:
                 self.msg(u"%4s %s" % (key, project.id, project.name))
 
-    def project_with_activities(self, project, mappings={}, numbered_activities=False):
+    def project_with_activities(self, project, mappings={},
+                                numbered_activities=False):
         self.msg(unicode(project))
         self.msg(u"\nActivities:")
         for (key, activity) in enumerate(project.activities):
@@ -100,9 +101,9 @@ class BaseUi(object):
 
     def select_alias(self):
         try:
-            return terminal.select_string(u"Enter the alias for .tksrc (a-z, - "
-                                          "and _ allowed), (Ctrl-C) to exit: ",
-                                          r'^[\w-]+$')
+            return terminal.select_string(
+                u"Enter the alias for .tksrc (a-z, - and _ allowed), (Ctrl-C)"
+                " to exit: ", r'^[\w-]+$')
         except KeyboardInterrupt:
             raise CancelException()
 
@@ -121,7 +122,9 @@ class BaseUi(object):
         s = (u"The alias `%s` is already mapped to `%s`.\nDo you want to "
              "overwrite it [%s]? " % (alias, mapping_name, choices))
 
-        overwrite = terminal.select_string(s, choice_regexp, re.I, default_choice)
+        overwrite = terminal.select_string(
+            s, choice_regexp, re.I, default_choice
+        )
 
         if overwrite == 'n':
             return False
@@ -181,8 +184,8 @@ class BaseUi(object):
         for (mapping, project) in aliases:
             self.alias_detail(mapping, project)
 
-        confirm = terminal.select_string(u"\nDo you want to clean them [y/N]? ",
-                                         r'^[yn]$', re.I, 'n')
+        confirm = terminal.select_string(
+            u"\nDo you want to clean them [y/N]? ", r'^[yn]$', re.I, 'n')
 
         return confirm == 'y'
 
@@ -215,9 +218,31 @@ class BaseUi(object):
         dates = [date_utils.unicode_strftime(d, '%A %d %B') for d in dates]
 
         self.err(u"You're trying to commit for a day that's "
-        " on a week-end or that's not yesterday nor today (%s).\n"
-        "To ignore this error, re-run taxi with the option "
-        "`--ignore-date-error`" % ', '.join(dates))
+                 " on a week-end or that's not yesterday nor today (%s).\n"
+                 "To ignore this error, re-run taxi with the option "
+                 "`--ignore-date-error`" % ', '.join(dates))
+
+    def get_entry_status(self, entry, alias_mappings):
+        if entry.is_ignored():
+            status = 'ignored'
+        elif entry.alias not in alias_mappings:
+            status = 'not mapped'
+        elif alias_mappings.is_local(entry.alias):
+            status = 'local'
+        elif entry.alias in alias_mappings:
+            status = '/'.join([
+                str(part) for part in alias_mappings[entry.alias]
+            ])
+        else:
+            status = ''
+
+        if status:
+            project_name = u'%s (%s)' % (entry.alias, status)
+        else:
+            project_name = entry.alias
+
+        return u'%-30s %-5.2f %s' % (project_name, entry.hours,
+                                     entry.description)
 
     def show_status(self, entries_dict, alias_mappings, settings):
         self.msg(u'Staging changes :\n')
@@ -232,37 +257,20 @@ class BaseUi(object):
             subtotal_hours = 0
             # The encoding of date.strftime output depends on the current
             # locale, so we decode it to get a unicode string
-            self.msg(u'# %s #' %
-                     date_utils.unicode_strftime(date, '%A %d %B').capitalize())
+            self.msg(u'# %s #' % date_utils.unicode_strftime(
+                date, '%A %d %B').capitalize())
             for entry in entries:
-                if entry.alias not in alias_mappings:
-                    status = 'not mapped'
-                elif entry.is_ignored():
-                    status = 'ignored'
-                elif alias_mappings.is_local(entry.alias):
-                    status = 'local'
-                elif entry.alias in alias_mappings:
-                    status = '/'.join([
-                        str(part) for part in alias_mappings[entry.alias]
-                    ])
-                else:
-                    status = ''
+                self.msg(self.get_entry_status(entry, alias_mappings))
 
-                if status:
-                    project_name = u'%s (%s)' % (entry.alias, status)
-                else:
-                    project_name = entry.alias
-
-                self.msg(u'%-30s %-5.2f %s' % (project_name, entry.hours,
-                                               entry.description))
-
-                if entry.alias not in alias_mappings:
+                if (not entry.is_ignored() and entry.alias not in
+                        alias_mappings):
                     close_matches = settings.get_close_matches(entry.alias)
                     if close_matches:
                         self.msg(u'\tDid you mean one of the following: %s?' %
                                  ', '.join(close_matches))
 
-                if entry.alias not in alias_mappings or not alias_mappings.is_local(entry.alias):
+                if (entry.alias not in alias_mappings
+                        or not alias_mappings.is_local(entry.alias)):
                     subtotal_hours += entry.hours or 0
 
             self.msg(u'%-29s %5.2f\n' % ('', subtotal_hours))
@@ -271,14 +279,14 @@ class BaseUi(object):
         self.msg(u'%-29s %5.2f' % ('Total', total_hours))
         self.msg(u'\nUse `taxi ci` to commit staging changes to the server')
 
-    def pushed_entry(self, entry, error):
+    def pushed_entry(self, entry, error, alias_mappings):
         if error:
             self.msg(u"%s - Failed, reason: %s" % (
-                unicode(entry),
+                self.get_entry_status(entry, alias_mappings),
                 error
             ), colorama.Style.BRIGHT + colorama.Fore.RED)
         else:
-            self.msg(unicode(entry))
+            self.msg(self.get_entry_status(entry, alias_mappings))
 
     def pushed_entries_summary(self, pushed_entries, failed_entries,
                                ignored_entries):
@@ -299,7 +307,9 @@ class BaseUi(object):
 
     def search_results(self, projects):
         for project in projects:
-            self.msg(u'%s %4s %s' % (project.get_short_status(), project.id, project.name))
+            self.msg(u'%s %4s %s' % (
+                project.get_short_status(), project.id, project.name
+            ))
 
     def suggest_aliases(self, not_found_alias, aliases):
         self.err(u"The alias `%s` is not mapped in your configuration file." %

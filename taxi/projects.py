@@ -14,17 +14,17 @@ class Project:
     STATUS_CANCELLED = 3
 
     STATUSES = {
-            STATUS_NOT_STARTED: 'Not started',
-            STATUS_ACTIVE: 'Active',
-            STATUS_FINISHED: 'Finished',
-            STATUS_CANCELLED: 'Cancelled',
+        STATUS_NOT_STARTED: 'Not started',
+        STATUS_ACTIVE: 'Active',
+        STATUS_FINISHED: 'Finished',
+        STATUS_CANCELLED: 'Cancelled',
     }
 
     SHORT_STATUSES = {
-            STATUS_NOT_STARTED: 'N',
-            STATUS_ACTIVE: 'A',
-            STATUS_FINISHED: 'F',
-            STATUS_CANCELLED: 'C',
+        STATUS_NOT_STARTED: 'N',
+        STATUS_ACTIVE: 'A',
+        STATUS_FINISHED: 'F',
+        STATUS_CANCELLED: 'C',
     }
 
     STR_TUPLE_REGEXP = r'^(\d{1,4})(?:/(\d{1,4}))?$'
@@ -60,14 +60,8 @@ Status: %s
 Start date: %s
 End date: %s
 Budget: %s
-Description: %s""" % (
-        self.id, self.name,
-        status,
-        start_date,
-        end_date,
-        self.budget,
-        self.description
-    )
+Description: %s""" % (self.id, self.name, status, start_date, end_date,
+                      self.budget, self.description)
 
     def get_formatted_date(self, date):
         if date is not None:
@@ -115,7 +109,9 @@ Description: %s""" % (
         if not matches or len(matches.groups()) != 2:
             return None
 
-        return tuple([int(item) if item else None for item in matches.groups()])
+        return tuple(
+            [int(item) if item else None for item in matches.groups()]
+        )
 
     @classmethod
     def tuple_to_str(cls, t):

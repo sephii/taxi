@@ -50,10 +50,10 @@ alias_1 2 foo
 
     def test_use_previous_end_time_as_start_time(self):
         entries = """20/01/2014
-alias_1 0900-1000 foobar
+alias_1 09:00-10:00 foobar
 """
         expected = """20/01/2014
-alias_1 0900-1000 foobar
+alias_1 09:00-10:00 foobar
 alias_1 10:00-? ?
 """
         self.compare_entries_with_expected(entries, expected)

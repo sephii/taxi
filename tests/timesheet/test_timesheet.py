@@ -2,6 +2,8 @@
 import datetime
 import pytest
 
+from freezegun import freeze_time
+
 from taxi.timesheet import Timesheet
 from taxi.timesheet.entry import (
     AggregatedTimesheetEntry, EntriesCollection, TimesheetEntry,
@@ -29,14 +31,14 @@ foo 09:00-10:00 baz"""
     def test_to_lines(self):
         contents = """10.10.2012
 foo 09:00-10:00 baz
-bar -11:00 foobar"""
+bar      -11:00 foobar"""
 
         t = self._create_timesheet(contents, True)
         lines = t.entries.to_lines()
         self.assertEquals(len(lines), 3)
         self.assertEquals(lines[0], '10.10.2012')
         self.assertEquals(lines[1], 'foo 09:00-10:00 baz')
-        self.assertEquals(lines[2], 'bar -11:00 foobar')
+        self.assertEquals(lines[2], 'bar      -11:00 foobar')
 
         t.entries[datetime.date(2012, 9, 29)].append(
             TimesheetEntry('foo', (datetime.time(15, 0), None), 'bar')
@@ -110,19 +112,19 @@ bar     -1100 Fooing the bar
 
 12.10.2012
 foobar? 1200-1300 Baring the foo
-foo -1400 Fooed on bar because foo
-foo 0 Ignored foobar
-foo 1400-? ?"""
+foo         -1400 Fooed on bar because foo
+foo     0         Ignored foobar
+foo     1400-?    ?"""
 
         t = self._create_timesheet(contents)
         lines = t.entries.to_lines()
 
         self.assertEquals(lines, [
-            "10.10.2012", "foo 0900-1000 baz", "", "11.10.2012",
-            "foo 0900-0915 Daily scrum", "bar     -1100 Fooing the bar",
-            "", "12.10.2012", "foobar? 1200-1300 Baring the foo",
-            "foo -1400 Fooed on bar because foo", "foo 0 Ignored foobar",
-            "foo 1400-? ?"])
+            u"10.10.2012", u"foo 0900-1000 baz", u"", u"11.10.2012",
+            u"foo 0900-0915 Daily scrum", u"bar     -1100 Fooing the bar",
+            u"", "12.10.2012", u"foobar? 1200-1300 Baring the foo",
+            u"foo         -1400 Fooed on bar because foo", u"foo     0         Ignored foobar",
+            u"foo     1400-?    ?"])
 
         ignored_entries = t.get_ignored_entries()
         self.assertEquals(len(ignored_entries), 3)
@@ -131,7 +133,7 @@ foo 1400-? ?"""
         t.continue_entry(datetime.date(2012, 10, 12), datetime.time(15, 12))
 
         lines = t.entries.to_lines()
-        self.assertEquals(lines[-1], "foo 14:00-15:15 ?")
+        self.assertEquals(lines[-1], "foo     1400-1515 ?")
 
         entries = t.get_entries(datetime.date(2012, 10, 12))
         self.assertEquals(len(entries), 1)
@@ -207,7 +209,7 @@ foo 1 bar"""
 
         lines = t.entries.to_lines()
         self.assertEquals(lines, [
-            "01.04.2013", "# foo 2 bar", "# bar 09:00-10:00 bar", "31.03.2013",
+            "01.04.2013", "# foo 2 bar", "# bar 0900-1000 bar", "31.03.2013",
             "foo 1 bar"
         ])
 
@@ -265,7 +267,7 @@ foo 1 bar"""
             entry.commented = True
         lines = t.entries.to_lines()
         self.assertEquals(lines, ["01.04.2013", "# foo 2 bar",
-                                  "# bar 09:00-10:00 bar", "# foo 1 bar"])
+                                  "# bar 0900-1000 bar", "# foo 1 bar"])
 
 
 def test_empty_timesheet():
@@ -280,8 +282,31 @@ def test_timesheet_with_entries():
     assert len(timesheet.entries) == 2
 
 
-def test_timesheet_get_entries():
+def test_get_entries():
     entries = EntriesCollection("""10.10.2014\nfoo 2 bar\n11.10.2014\nfoo 1 bar""")
 
     timesheet = Timesheet(entries)
     assert len(timesheet.get_entries(datetime.date(2014, 10, 10))) == 1
+
+
+@freeze_time('2014-01-02')
+def test_current_workday_entries():
+    entries = EntriesCollection("""01.01.2014\nfoo 2 bar""")
+
+    timesheet = Timesheet(entries)
+    assert len(timesheet.get_non_current_workday_entries()) == 0
+
+
+@freeze_time('2014-01-03')
+def test_non_current_workday_entries():
+    entries = EntriesCollection("""01.01.2014\nfoo 2 bar""")
+
+    timesheet = Timesheet(entries)
+    assert len(timesheet.get_non_current_workday_entries()) == 1
+
+
+def test_non_current_workday_entries_ignored():
+    entries = EntriesCollection("""04.01.2014\nfoo? 2 bar""")
+
+    timesheet = Timesheet(entries)
+    assert len(timesheet.get_non_current_workday_entries()) == 0

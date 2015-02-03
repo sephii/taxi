@@ -29,7 +29,7 @@ def test_edit_entry_description():
     )
     entries_collection[datetime.date(2014, 1, 20)][0].description = "Fix printer"
 
-    assert entries_collection.lines[-1].text == u"_internal 08:00-09:00 Fix printer"
+    assert entries_collection.lines[-1].text == u"_internal 0800-0900 Fix printer"
 
 def test_edit_entry_duration():
     entries_collection = EntriesCollection(
@@ -37,7 +37,7 @@ def test_edit_entry_duration():
     )
     entries_collection[datetime.date(2014, 1, 20)][0].duration = 5
 
-    assert entries_collection.lines[-1].text == u"_internal 5 Fix coffee machine"
+    assert entries_collection.lines[-1].text == u"_internal 5         Fix coffee machine"
 
 def test_edit_entry_alias():
     entries_collection = EntriesCollection(
@@ -45,7 +45,7 @@ def test_edit_entry_alias():
     )
     entries_collection[datetime.date(2014, 1, 20)][0].alias = 'taxi'
 
-    assert entries_collection.lines[-1].text == u"taxi 08:00-09:00 Fix coffee machine"
+    assert entries_collection.lines[-1].text == u"taxi      0800-0900 Fix coffee machine"
 
 
 def test_edit_entry_commented():
@@ -54,7 +54,7 @@ def test_edit_entry_commented():
     )
     entries_collection[datetime.date(2014, 1, 20)][0].commented = True
 
-    assert entries_collection.lines[-1].text == u"# _internal 08:00-09:00 Fix coffee machine"
+    assert entries_collection.lines[-1].text == u"# _internal 0800-0900 Fix coffee machine"
 
 
 def test_edit_entry_ignored():
@@ -63,7 +63,7 @@ def test_edit_entry_ignored():
     )
     entries_collection[datetime.date(2014, 1, 20)][0].ignored = True
 
-    assert entries_collection.lines[-1].text == u"_internal? 08:00-09:00 Fix coffee machine"
+    assert entries_collection.lines[-1].text == u"_internal? 0800-0900 Fix coffee machine"
 
 
 def test_remove_entry_removes_line():

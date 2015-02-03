@@ -23,7 +23,7 @@ class CommandTestCase(TestCase):
                     if pushed:
                         pushed_entries.append(entry)
                     else:
-                        failed_entries.append(entry)
+                        failed_entries.append((entry, 'fail'))
 
                     callback(entry,
                              entry.description if not pushed else None)
