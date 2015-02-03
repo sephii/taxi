@@ -140,24 +140,29 @@ class ProjectsDb:
     def __init__(self, path):
         self.path = path
 
-    def _get_projects(self):
+    def get_projects(self):
         projects_cache = getattr(self, '_projects_cache', None)
         if projects_cache is not None:
             return projects_cache
 
-        try:
-            with open(self.path, 'r') as projects_db:
-                lpdb = json.load(projects_db, cls=LocalProjectsDbDecoder)
+        with open(self.path, 'r') as projects_db:
+            if projects_db.read():
+                projects_db.seek(0)
+                try:
+                    lpdb = json.load(projects_db, cls=LocalProjectsDbDecoder)
+                # Pre-3.3 used a pickle-based format for the projects db
+                except ValueError:
+                    raise OutdatedProjectsDbException()
 
-            if lpdb.VERSION < LocalProjectsDb.VERSION:
-                raise TaxiException('Your projects db is out of date, please' \
-                        ' run `taxi update` to update it')
+            else:
+                lpdb = LocalProjectsDb()
 
-            setattr(self, '_projects_cache', lpdb.projects)
+        if lpdb.VERSION < LocalProjectsDb.VERSION:
+            raise OutdatedProjectsDbException()
 
-            return lpdb.projects
-        except (IOError, EOFError):
-            return []
+        setattr(self, '_projects_cache', lpdb.projects)
+
+        return lpdb.projects
 
     def update(self, projects):
         lpdb = LocalProjectsDb(projects)
@@ -166,7 +171,7 @@ class ProjectsDb:
             json.dump(lpdb.get_dump_object(), output)
 
     def search(self, search, active_only=False):
-        projects = self._get_projects()
+        projects = self.get_projects()
         found_list = []
 
         for project in projects:
@@ -189,7 +194,7 @@ class ProjectsDb:
     def get(self, id):
         projects_hash = getattr(self, '_projects_hash', None)
         if projects_hash is None:
-            projects = self._get_projects()
+            projects = self.get_projects()
             projects_hash = {}
 
             for project in projects:
@@ -214,10 +219,12 @@ class ProjectsDb:
 
 
 class LocalProjectsDb:
-    projects = []
     VERSION = 2
 
-    def __init__(self, projects):
+    def __init__(self, projects=None):
+        if not projects:
+            projects = []
+
         self.projects = projects
 
     def get_dump_object(self):
@@ -250,11 +257,13 @@ class LocalProjectsDbDecoder(json.JSONDecoder):
         projects_copy = []
         for project in projects:
             project['activities'] = [
-                Activity(activity['id'], activity['name'], activity['price']) for activity in project['activities']
+                Activity(activity['id'], activity['name'], activity['price'])
+                for activity in project['activities']
             ]
             for date_type in ['start_date', 'end_date']:
                 if project[date_type] is not None:
-                    project[date_type] = datetime.datetime.strptime(project[date_type], '%Y-%m-%d').date()
+                    project[date_type] = datetime.datetime.strptime(
+                        project[date_type], '%Y-%m-%d').date()
 
             p_copy = Project(project['id'], project['name'])
             p_copy.__dict__.update(project)
@@ -264,3 +273,13 @@ class LocalProjectsDbDecoder(json.JSONDecoder):
         lpdb.VERSION = s['VERSION']
 
         return lpdb
+
+
+class OutdatedProjectsDbException(TaxiException):
+    def __init__(self, *args, **kwargs):
+        self.message = (
+            "Your projects db is outdated, please run `taxi update` to update"
+            " it"
+        )
+
+        super(OutdatedProjectsDbException, self).__init__(*args, **kwargs)
