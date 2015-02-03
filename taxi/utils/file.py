@@ -24,15 +24,19 @@ def spawn_editor(filepath, editor=None):
     editor.append(filepath)
 
     try:
-        subprocess.call(editor)
-    except OSError:
-        if 'EDITOR' not in os.environ:
-            raise TaxiException("Can't find any suitable editor. Check your"
-                                " EDITOR env var.")
+        try:
+            subprocess.call(editor)
+        except OSError:
+            if 'EDITOR' not in os.environ:
+                raise TaxiException("Can't find any suitable editor. Check"
+                                    " your EDITOR env var.")
 
-        editor = shlex.split(os.environ['EDITOR'])
-        editor.append(filepath)
-        subprocess.call(editor)
+            editor = shlex.split(os.environ['EDITOR'])
+            editor.append(filepath)
+            subprocess.call(editor)
+    # Ignore ctrl-c if the editor has been launched in the background
+    except KeyboardInterrupt:
+        pass
 
 
 def expand_filename(filename, date=None):
