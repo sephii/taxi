@@ -398,7 +398,7 @@ class CommitCommand(BaseTimesheetCommand):
             )
 
             (pushed_entries, failed_entries) = r.send_entries(
-                entries_to_push, self.alias_mappings, self._entry_pushed
+                entries_to_push, self.alias_mappings, self._entry_pushed, self.options.get('not_today', False)
             )
 
             local_entries = timesheet.get_local_entries(

@@ -96,7 +96,7 @@ class ZebraRemote(Remote):
         else:
             self.logged_in = True
 
-    def send_entries(self, entries, mappings, callback=None):
+    def send_entries(self, entries, mappings, callback=None, skip_today=False):
         post_url = '/timesheet/create/.json'
 
         pushed_entries = []
@@ -105,6 +105,11 @@ class ZebraRemote(Remote):
 
         for (date, entries) in entries.iteritems():
             for entry in entries:
+
+                if skip_today and date == datetime.today().date():
+                    failed_entries.append((entry, u"Skipped (today)"))
+                    continue
+
                 parameters_dict = {
                     'time':         entry.hours,
                     'project_id':   mappings[entry.alias][0],
