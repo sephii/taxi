@@ -390,15 +390,16 @@ class CommitCommand(BaseTimesheetCommand):
 
         all_pushed_entries = []
         all_failed_entries = []
+        not_today = self.options.get('not_today', False)
 
         for timesheet in timesheet_collection.timesheets:
             entries_to_push = timesheet.get_entries(
-                self.options.get('date', None), exclude_ignored=True,
-                exclude_local=True, exclude_unmapped=True, regroup=True
+                self.options.get('date', None), exclude_ignored=True, exclude_local=True,
+                exclude_unmapped=True, regroup=True, exclude_today=not_today
             )
 
             (pushed_entries, failed_entries) = r.send_entries(
-                entries_to_push, self.alias_mappings, self._entry_pushed, self.options.get('not_today', False)
+                entries_to_push, self.alias_mappings, self._entry_pushed
             )
 
             local_entries = timesheet.get_local_entries(
@@ -406,6 +407,8 @@ class CommitCommand(BaseTimesheetCommand):
             )
             local_entries_list = []
             for (date, entries) in local_entries.iteritems():
+                if not_today and date == datetime.date.today():
+                    continue
                 local_entries_list.extend(entries)
 
             for entry in local_entries_list + pushed_entries:

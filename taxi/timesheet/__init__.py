@@ -14,7 +14,7 @@ class Timesheet(object):
         self.file = file
 
     def get_filtered_entries(self, date=None, filter_callback=None,
-                             regroup=False):
+                             regroup=False, exclude_today=False):
         # Date can either be a single date (only 1 day) or a tuple for a
         # date range
         if date is not None and not isinstance(date, tuple):
@@ -25,6 +25,9 @@ class Timesheet(object):
         for (entries_date, entries) in self.entries.iteritems():
             if (date is not None
                     and (entries_date < date[0] or entries_date > date[1])):
+                continue
+
+            if exclude_today and entries_date == datetime.date.today():
                 continue
 
             entries_for_date = []
@@ -85,9 +88,8 @@ class Timesheet(object):
 
         return filtered_entries
 
-    def get_entries(self, date=None, exclude_ignored=False,
-                    exclude_local=False, exclude_unmapped=False,
-                    regroup=False):
+    def get_entries(self, date=None, exclude_ignored=False, exclude_local=False,
+                    exclude_unmapped=False, exclude_today=False, regroup=False):
         def entry_filter(entry):
             return (not (exclude_ignored and entry.is_ignored())
                     and not (exclude_local
@@ -95,7 +97,7 @@ class Timesheet(object):
                     and (not exclude_unmapped
                          or self.is_alias_mapped(entry.alias)))
 
-        return self.get_filtered_entries(date, entry_filter, regroup)
+        return self.get_filtered_entries(date, entry_filter, regroup, exclude_today)
 
     def get_ignored_entries(self, date=None):
         def entry_filter(entry):
