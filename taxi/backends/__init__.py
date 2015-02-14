@@ -3,27 +3,39 @@ import pkg_resources
 
 class BackendRegistry(object):
     def __init__(self):
-        self._backend_registry = {}
+        self._backends_registry = {}
+        self._backends_loaded = False
 
     def __getitem__(self, key):
-        if key not in self._backend_registry:
-            for backend in pkg_resources.iter_entry_points('taxi.backends'):
-                if backend.name == key:
-                    self._backend_registry[backend.name] = backend.load()
-                    break
+        self.load_backends()
 
-        return self._backend_registry[key]
+        return self._backends_registry[key]
 
     def __setitem__(self, key, value):
-        self._backend_registry[key] = value
+        self._backends_registry[key] = value
 
     def __iter__(self):
-        return iter(self._backend_registry)
+        self.load_backends()
+
+        return iter(self._backends_registry)
 
     def __delitem__(self, key):
-        self._backend_registry.__delitem__(key)
+        self.load_backends()
+        self._backends_registry.__delitem__(key)
 
     def __contains__(self, key):
-        return key in self._backend_registry
+        self.load_backends()
 
-backends = BackendRegistry()
+        return key in self._backends_registry
+
+    def items(self):
+        return self._backends_registry.items()
+
+    def load_backends(self):
+        if self._backends_loaded:
+            return
+
+        for backend in pkg_resources.iter_entry_points('taxi.backends'):
+            self._backends_registry[backend.name] = backend.load()
+
+backends_registry = BackendRegistry()

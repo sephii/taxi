@@ -3,6 +3,7 @@ from ConfigParser import NoOptionError
 import calendar
 import datetime
 
+from .backends import backends_registry
 from .exceptions import CancelException, UsageError
 from .projects import Project
 from .timesheet import (
@@ -682,19 +683,23 @@ class UpdateCommand(BaseCommand):
     aliases.
 
     """
-    def setup(self):
-        self.site = self.settings.get('site')
-        self.username = self.settings.get('username')
-        self.password = self.settings.get('password')
-
     def run(self):
         self.view.updating_projects_database()
 
-        aliases_before_update = self.settings.get_aliases()
-        local_aliases = self.settings.get_aliases(include_shared=False)
+        aliases_before_update = alias_database.aliases
+        # TODO
+        local_aliases = []
+        projects = []
 
-        r = remote.ZebraRemote(self.site, self.username, self.password)
-        projects = r.get_projects()
+        for backend_name, backend_uri in self.settings.get_backends():
+            backend = self.settings.get_backend(backend_name)
+            backend_projects = backend.get_projects()
+
+            for project in backend_projects:
+                project.backend = backend_name
+
+            projects += backend_projects
+
         self.projects_db.update(projects)
 
         # Put the shared aliases in the config file
@@ -702,11 +707,13 @@ class UpdateCommand(BaseCommand):
         for project in projects:
             if project.is_active():
                 for alias, activity_id in project.aliases.iteritems():
-                    self.settings.add_shared_alias(alias, project.id,
-                                                   activity_id)
-                    shared_aliases[alias] = (project.id, activity_id)
+                    mapping = Mapping(mapping=(project.id, activity_id),
+                                      backend=project.backend)
+                    self.settings.add_shared_alias(alias, mapping)
+                    shared_aliases[alias] = mapping
 
         aliases_after_update = self.settings.get_aliases()
+        import pdb; pdb.set_trace()
 
         self.settings.write_config()
 

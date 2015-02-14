@@ -5,7 +5,7 @@ import os
 import difflib
 import urlparse
 
-from .backends import backends
+from .backends import backends_registry
 from .alias import Mapping
 from .projects import Project
 
@@ -92,7 +92,7 @@ class Settings(dict):
         self.config.set(section, alias, '%s/%s' % mapping.mapping)
 
     def get_aliases(self):
-        backends = self.config.items('backends')
+        backends = self.get_backends()
         aliases = defaultdict(dict)
 
         for (backend, uri) in backends:
@@ -122,10 +122,13 @@ class Settings(dict):
         parsed = urlparse.urlparse(backend_uri)
         options = dict(urlparse.parse_qsl(parsed.query))
 
-        return backends[parsed.scheme](
+        return backends_registry[parsed.scheme](
             parsed.username, parsed.password, parsed.hostname, parsed.port,
             parsed.path, options
         )
+
+    def get_backends(self):
+        return self.config.items('backends')
 
 
 def get_alias_section_name(backend_name, shared_section=False):
