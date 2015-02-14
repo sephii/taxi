@@ -7,8 +7,7 @@ Mapping = collections.namedtuple('Mapping', ['mapping', 'backend'])
 
 class AliasDatabase(object):
     def __init__(self):
-        self.local_aliases = set()
-        self.aliases = {}
+        self.reset()
 
     def __getitem__(self, key):
         if key in self.local_aliases:
@@ -35,6 +34,10 @@ class AliasDatabase(object):
 
     def update(self, other):
         self.aliases.update(other)
+
+    def reset(self):
+        self.local_aliases = set()
+        self.aliases = {}
 
     def local_aliases_to_dict(self):
         return dict((alias, None) for alias in self.local_aliases)

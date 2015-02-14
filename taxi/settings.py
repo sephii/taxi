@@ -5,8 +5,9 @@ import os
 import difflib
 import urlparse
 
-from .backend import backends
+from .backends import backends
 from .alias import Mapping
+from .projects import Project
 
 
 class Settings(dict):
@@ -30,6 +31,7 @@ class Settings(dict):
     def __init__(self, file):
         self.config = ConfigParser.RawConfigParser()
         self.filepath = os.path.expanduser(file)
+        self._backends_registry = {}
 
         try:
             with open(self.filepath, 'r') as fp:
@@ -55,13 +57,6 @@ class Settings(dict):
             return []
 
         return [int(e.strip()) for e in auto_fill_days.split(',')]
-
-    def get_aliases(self):
-        # TODO shared aliases
-        # TODO local aliases
-        backends_aliases = self.load_backends()
-
-        return backends_aliases
 
     def get_local_aliases(self):
         return [alias.strip()
@@ -96,13 +91,11 @@ class Settings(dict):
 
         self.config.set(section, alias, '%s/%s' % mapping.mapping)
 
-    def load_backends(self):
+    def get_aliases(self):
         backends = self.config.items('backends')
         aliases = defaultdict(dict)
 
         for (backend, uri) in backends:
-            self.load_backend(uri)
-
             for shared_section in [False, True]:
                 backend_aliases_section = get_alias_section_name(
                     backend, shared_section
@@ -110,11 +103,20 @@ class Settings(dict):
 
                 if self.config.has_section(backend_aliases_section):
                     for (alias, mapping) in self.config.items(backend_aliases_section):
-                        mapping = tuple([int(m) for m in mapping.split('/')])
+                        mapping = Project.str_to_tuple(mapping)
                         mapping_obj = Mapping(mapping, backend)
                         aliases[alias] = mapping_obj
 
         return aliases
+
+    def get_backend(self, backend_name):
+        if backend_name not in self._backends_registry:
+            backend_uri = self.get(backend_name, 'backends')
+            backend = self.load_backend(backend_uri)
+            self._backends_registry[backend_name] = backend
+            backend.authenticate()
+
+        return self._backends_registry[backend_name]
 
     def load_backend(self, backend_uri):
         parsed = urlparse.urlparse(backend_uri)

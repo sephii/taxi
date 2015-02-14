@@ -53,6 +53,6 @@ setup(
         'taxi': ['doc/*']
     },
     entry_points={
-        'taxi_backends': 'dummy = taxi.backend.dummy:DummyBackend'
+        'taxi.backends': 'dummy = taxi.backends.dummy:DummyBackend'
     }
 )

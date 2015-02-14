@@ -1,0 +1,2 @@
+class PushEntryFailedException(Exception):
+    pass

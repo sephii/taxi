@@ -387,22 +387,34 @@ class CommitCommand(BaseTimesheetCommand):
                 return
 
         self.view.pushing_entries()
-        r = remote.ZebraRemote(self.settings.get('site'),
-                               self.settings.get('username'),
-                               self.settings.get('password'))
-
         all_pushed_entries = []
         all_failed_entries = []
 
         for timesheet in timesheet_collection.timesheets:
+            pushed_entries = []
+            failed_entries = []
+
             entries_to_push = timesheet.get_entries(
                 self.options.get('date', None), exclude_ignored=True,
                 exclude_local=True, exclude_unmapped=True, regroup=True
             )
 
-            (pushed_entries, failed_entries) = r.send_entries(
-                entries_to_push, alias_database, self._entry_pushed
-            )
+            for (date, entries) in entries_to_push.items():
+                for entry in entries:
+                    error = None
+                    backend = self.settings.get_backend(
+                        alias_database[entry.alias].backend
+                    )
+
+                    try:
+                        backend.push_entry(date, entry)
+                    except PushEntryFailedException as e:
+                        failed_entries.append(entry)
+                        error = e.message
+                    else:
+                        pushed_entries.append(entry)
+                    finally:
+                        self.view.pushed_entry(entry, error)
 
             local_entries = timesheet.get_local_entries(
                 self.options.get('date', None)
@@ -438,9 +450,6 @@ class CommitCommand(BaseTimesheetCommand):
         self.view.pushed_entries_summary(all_pushed_entries,
                                          all_failed_entries,
                                          ignored_entries_list)
-
-    def _entry_pushed(self, entry, error):
-        self.view.pushed_entry(entry, error)
 
 
 class EditCommand(BaseTimesheetCommand):

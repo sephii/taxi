@@ -7,7 +7,7 @@ class BackendRegistry(object):
 
     def __getitem__(self, key):
         if key not in self._backend_registry:
-            for backend in pkg_resources.iter_entry_points('taxi_backends'):
+            for backend in pkg_resources.iter_entry_points('taxi.backends'):
                 if backend.name == key:
                     self._backend_registry[backend.name] = backend.load()
                     break

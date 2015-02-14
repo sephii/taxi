@@ -53,7 +53,7 @@ class CommandTestCase(TestCase):
             },
             'dummy_aliases': {
                 'alias_1': '123/456'
-            }
+            },
         }
 
         self.default_options = {
