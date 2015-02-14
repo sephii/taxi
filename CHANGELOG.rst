@@ -2,7 +2,7 @@
 Changelog
 #########
 
-3.2.1 (unreleased)
+3.2.1 (2015-01-16)
 ==================
 
 Changed
@@ -10,6 +10,10 @@ Changed
 
 * Preserve space character (tab or space) used in timesheets. Thanks @krtek4
   (#62).
+* Don't crash when trying to push entries that don't have a start time and
+  don't have a previous entry (#68).
+* Correctly show ignored unmapped entries as ignored instead of not mapped in
+  status output (#61).
 
 3.2.0 (2014-12-04)
 ==================

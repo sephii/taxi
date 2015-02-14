@@ -7,7 +7,7 @@ from setuptools.command.test import test as TestCommand
 
 
 tests_require = [
-    'freezegun==0.2.2',
+    'freezegun==0.2.8',
     'mock==1.0.1',
     'pytest==2.6.4',
 ]
@@ -45,7 +45,7 @@ setup(
     scripts=['bin/taxi'],
     url='https://github.com/sephii/taxi',
     install_requires=install_requires,
-    license=open('LICENSE').read(),
+    license='wtfpl',
     tests_require=tests_require,
     include_package_data=False,
     cmdclass = {'test': PyTest},
