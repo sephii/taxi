@@ -7,7 +7,7 @@ from setuptools.command.test import test as TestCommand
 
 
 tests_require = [
-    'freezegun==0.2.2',
+    'freezegun==0.2.8',
     'mock==1.0.1',
     'pytest==2.6.4',
 ]
