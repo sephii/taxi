@@ -39,6 +39,7 @@ class Project:
         self.aliases = {}
         self.start_date = None
         self.end_date = None
+        self.backend = None
 
     def __unicode__(self):
         if self.status in self.STATUSES:
@@ -170,6 +171,8 @@ class ProjectsDb:
         with open(self.path, 'w') as output:
             json.dump(lpdb.get_dump_object(), output)
 
+        self._projects_cache = None
+
     def search(self, search, active_only=False):
         projects = self.get_projects()
         found_list = []
@@ -191,18 +194,13 @@ class ProjectsDb:
 
         return found_list
 
-    def get(self, id):
-        projects_hash = getattr(self, '_projects_hash', None)
-        if projects_hash is None:
-            projects = self.get_projects()
-            projects_hash = {}
+    def get(self, id, backend):
+        # TODO optimize?
+        projects = self.get_projects()
 
-            for project in projects:
-                projects_hash[project.id] = project
-
-            setattr(self, '_projects_hash', projects_hash)
-
-        return projects_hash[id] if id in projects_hash else None
+        for project in projects:
+            if project.id == id and project.backend == backend:
+                return project
 
     def mapping_to_project(self, mapping_tuple):
         project = self.get(mapping_tuple[0])

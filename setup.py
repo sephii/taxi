@@ -51,5 +51,8 @@ setup(
     cmdclass = {'test': PyTest},
     package_data={
         'taxi': ['doc/*']
+    },
+    entry_points={
+        'taxi_backends': 'dummy = taxi.backend.dummy:DummyBackend'
     }
 )

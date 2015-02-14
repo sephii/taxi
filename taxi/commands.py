@@ -14,6 +14,8 @@ from taxi.timesheet.parser import ParseError
 from taxi.settings import Settings
 from taxi.utils import file
 from taxi.utils.structures import OrderedSet
+from taxi.alias import alias_database
+from .alias import Mapping
 
 
 class BaseCommand(object):
@@ -48,8 +50,6 @@ class BaseTimesheetCommand(BaseCommand):
             int(self.settings.get('nb_previous_files'))
         )
 
-        self.alias_mappings = self.settings.get_aliases()
-
         for file_path in timesheet_files:
             timesheet_file = TimesheetFile(file_path)
             try:
@@ -62,7 +62,7 @@ class BaseTimesheetCommand(BaseCommand):
                     timesheet_contents,
                     self.settings.get('date_format')
                 ),
-                self.alias_mappings,
+                alias_database,
                 timesheet_file
             )
 
@@ -176,8 +176,8 @@ class AddCommand(BaseCommand):
             except CancelException:
                 return
 
-            if self.settings.activity_exists(alias):
-                mapping = self.settings.get_aliases()[alias]
+            if alias in alias_database:
+                mapping = alias_database[alias]
                 overwrite = self.view.overwrite_alias(alias, mapping)
 
                 if not overwrite:
@@ -202,7 +202,7 @@ class AliasCommand(BaseCommand):
     Usage: alias [alias]
            alias [project_id]
            alias [project_id/activity_id]
-           alias [alias] [project_id/activity_id]
+           alias [alias] [project_id/activity_id] [backend]
 
     - The first form will display the mappings whose aliases start with the
       search string you entered
@@ -221,13 +221,17 @@ class AliasCommand(BaseCommand):
     MODE_LIST_ALIASES = 2
 
     def validate(self):
-        if len(self.arguments) > 2:
+        if len(self.arguments) > 3:
             raise UsageError()
 
     def setup(self):
-        if len(self.arguments) == 2:
+        if len(self.arguments) == 3:
             self.alias = self.arguments[0]
-            self.mapping = self.arguments[1]
+            mapping = Project.str_to_tuple(self.arguments[1])
+            if mapping is None:
+                raise UsageError("The mapping must be in the format xxxx/yyyy")
+
+            self.mapping = Mapping(mapping=mapping, backend=self.arguments[2])
             self.mode = self.MODE_ADD_ALIAS
         elif len(self.arguments) == 1:
             self.alias = self.arguments[0]
@@ -245,38 +249,38 @@ class AliasCommand(BaseCommand):
             mapping = Project.str_to_tuple(self.alias)
 
             if mapping is not None:
-                for m in self.settings.search_aliases(mapping):
-                    self.view.mapping_detail(m, self.projects_db.get(m[1][0]))
+                for alias, m in alias_database.filter_from_mapping(mapping).items():
+                    self.view.mapping_detail(
+                        (alias, m.mapping if m is not None else None),
+                        self.projects_db.get(m.mapping[0], m.backend)
+                        if m is not None else None
+                    )
             else:
                 self.mode = self.MODE_LIST_ALIASES
 
         # No argument, display the mappings
         if self.mode == self.MODE_LIST_ALIASES:
-            for m in self.settings.search_mappings(self.alias):
+            for alias, m in alias_database.filter_from_alias(self.alias).items():
                 self.view.alias_detail(
-                    m,
-                    self.projects_db.get(m[1][0]) if m[1] is not None else None
+                    (alias, m.mapping if m is not None else None),
+                    self.projects_db.get(m.mapping[0], m.backend)
+                    if m is not None else None
                 )
 
     def _add_alias(self, alias_name, mapping):
-        project_activity = Project.str_to_tuple(mapping)
-
-        if project_activity is None:
-            raise UsageError("The mapping must be in the format xxxx/yyyy")
-
-        if self.settings.activity_exists(alias_name):
-            existing_mapping = self.settings.get_aliases()[alias_name]
-            confirm = self.view.overwrite_alias(alias_name, existing_mapping,
-                                                False)
+        if alias_name in alias_database:
+            existing_mapping = alias_database[alias_name]
+            confirm = self.view.overwrite_alias(
+                alias_name, existing_mapping, False
+            )
 
             if not confirm:
                 return
 
-        self.settings.add_alias(alias_name, project_activity[0],
-                                project_activity[1])
+        self.settings.add_alias(alias_name, mapping)
         self.settings.write_config()
 
-        self.view.alias_added(alias_name, project_activity)
+        self.view.alias_added(alias_name, mapping.mapping)
 
 
 class AutofillCommand(BaseTimesheetCommand):
@@ -329,19 +333,18 @@ class CleanAliasesCommand(BaseCommand):
 
     """
     def run(self):
-        aliases = self.settings.get_aliases()
         inactive_aliases = []
 
-        for (alias, mapping) in aliases.iteritems():
+        for (alias, mapping) in alias_database.iteritems():
             # Ignore local aliases
             if mapping is None:
                 continue
 
-            project = self.projects_db.get(mapping[0])
+            project = self.projects_db.get(mapping.mapping[0], mapping.backend)
 
             if (project is None or not project.is_active() or
-                    (mapping[1] is not None
-                     and project.get_activity(mapping[1]) is None)):
+                    (mapping.mapping[1] is not None
+                     and project.get_activity(mapping.mapping[1]) is None)):
                 inactive_aliases.append(((alias, mapping), project))
 
         if not inactive_aliases:
@@ -353,7 +356,7 @@ class CleanAliasesCommand(BaseCommand):
 
         if self.options.get('force_yes') or confirm:
             self.settings.remove_aliases(
-                [item[0][0] for item in inactive_aliases]
+                [item[0] for item in inactive_aliases]
             )
             self.settings.write_config()
             self.view.msg(u"%d inactive aliases have been successfully"
@@ -398,7 +401,7 @@ class CommitCommand(BaseTimesheetCommand):
             )
 
             (pushed_entries, failed_entries) = r.send_entries(
-                entries_to_push, self.alias_mappings, self._entry_pushed
+                entries_to_push, alias_database, self._entry_pushed
             )
 
             local_entries = timesheet.get_local_entries(
@@ -437,7 +440,7 @@ class CommitCommand(BaseTimesheetCommand):
                                          ignored_entries_list)
 
     def _entry_pushed(self, entry, error):
-        self.view.pushed_entry(entry, error, self.alias_mappings)
+        self.view.pushed_entry(entry, error)
 
 
 class EditCommand(BaseTimesheetCommand):
@@ -481,7 +484,7 @@ class EditCommand(BaseTimesheetCommand):
         else:
             self.view.show_status(
                 timesheet_collection.get_entries(regroup=True),
-                self.alias_mappings, self.settings
+                self.settings
             )
 
 
@@ -628,7 +631,6 @@ class StatusCommand(BaseTimesheetCommand):
         else:
             self.view.show_status(
                 timesheet_collection.get_entries(self.date, regroup=True),
-                self.alias_mappings,
                 self.settings
             )
 

@@ -48,7 +48,10 @@ class CommandTestCase(TestCase):
                 'file': self.entries_file,
                 'use_colors': '0'
             },
-            'wrmap': {
+            'backends': {
+                'dummy': 'dummy://foo:bar@localhost/test?foo=bar',
+            },
+            'dummy_aliases': {
                 'alias_1': '123/456'
             }
         }

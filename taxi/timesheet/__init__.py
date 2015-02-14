@@ -3,6 +3,7 @@ from collections import defaultdict
 import datetime
 import os
 
+from ..alias import AliasDatabase
 from ..utils import date as date_utils
 from .entry import AggregatedTimesheetEntry, EntriesCollection, TimesheetEntry
 
@@ -10,7 +11,7 @@ from .entry import AggregatedTimesheetEntry, EntriesCollection, TimesheetEntry
 class Timesheet(object):
     def __init__(self, entries=None, mappings=None, file=None):
         self.entries = entries if entries is not None else EntriesCollection()
-        self.mappings = mappings if mappings is not None else AliasMappings()
+        self.mappings = mappings if mappings is not None else AliasDatabase()
         self.file = file
 
     def get_filtered_entries(self, date=None, filter_callback=None,
@@ -281,11 +282,6 @@ class TimesheetFile(object):
         with codecs.open(self.file_path, 'w', 'utf-8') as timesheet_file:
             for line in entries.to_lines():
                 timesheet_file.write(u'%s\n' % line)
-
-
-class AliasMappings(dict):
-    def is_local(self, alias):
-        return self[alias] is None
 
 
 class NoActivityInProgressError(Exception):

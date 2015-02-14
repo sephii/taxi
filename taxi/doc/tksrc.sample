@@ -50,20 +50,23 @@ auto_add = auto
 # Default is 1.
 # nb_previous_files = 1
 
+[backends]
+dummy = dumy:///
+
 # This section contains your project name <-> id mapping. The format is:
 # project_name = project_id/activity_id
-[wrmap]
-liip_internal = 7/16
-liip_meeting = 7/11
-liip_presales = 7/8
-liip_infra = 7/17
-liip_marketing = 7/12
-liip_holiday = 7/18
-liip_sick = 7/19
-liip_german = 726/75
-liip_hosting = 7/17
-liip_techday = 1061/72
-liip_techtalk = 1061/71
-liip_hackday = 1061/96
-liip_reise = 7/15
+[dummy_aliases]
+internal = 7/16
+meeting = 7/11
+presales = 7/8
+infra = 7/17
+marketing = 7/12
+holiday = 7/18
+sick = 7/19
+german = 726/75
+hosting = 7/17
+techday = 1061/72
+techtalk = 1061/71
+hackday = 1061/96
+reise = 7/15
 bizdev = 1070/8

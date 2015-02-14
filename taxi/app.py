@@ -9,12 +9,13 @@ from pkg_resources import resource_filename
 import sys
 import shutil
 
-from taxi import __version__, commands
-from taxi.exceptions import TaxiException, UsageError
-from taxi.projects import ProjectsDb
-from taxi.settings import Settings
-from taxi.utils.file import expand_filename
-from taxi.ui.tty import TtyUi
+from . import __version__, commands
+from .alias import alias_database
+from .exceptions import TaxiException, UsageError
+from .projects import ProjectsDb
+from .settings import Settings
+from .utils.file import expand_filename
+from .ui.tty import TtyUi
 
 
 class AppContainer(object):
@@ -147,6 +148,8 @@ Available commands:
             )
 
         projects_db = ProjectsDb(options['projects_db'])
+        self.populate_aliases(settings.get_aliases(),
+                              settings.get_local_aliases())
 
         view = TtyUi(
             options.get('stdout', sys.stdout),
@@ -198,6 +201,12 @@ Available commands:
             else:
                 print("Aborting.")
                 sys.exit(1)
+
+    def populate_aliases(self, aliases, local_aliases):
+        alias_database.update(aliases)
+
+        for alias in local_aliases:
+            alias_database.local_aliases.add(alias)
 
 
 def term_unicode(string):
