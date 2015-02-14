@@ -3,35 +3,12 @@ from StringIO import StringIO
 import tempfile
 from unittest import TestCase
 
-from mock import Mock
-
 from taxi.app import Taxi
-from taxi.remote import ZebraRemote
 from taxi.utils.file import expand_filename
 
 
 class CommandTestCase(TestCase):
     def setUp(self):
-        def zebra_remote_send_entries(entries, mappings, callback):
-            pushed_entries = []
-            failed_entries = []
-
-            for (_, date_entries) in entries.iteritems():
-                for entry in date_entries:
-                    pushed = entry.alias != 'fail'
-
-                    if pushed:
-                        pushed_entries.append(entry)
-                    else:
-                        failed_entries.append((entry, 'fail'))
-
-                    callback(entry,
-                             entry.description if not pushed else None)
-
-            return (pushed_entries, failed_entries)
-
-        self.original_zebra_remote_send_entries = ZebraRemote.send_entries
-        ZebraRemote.send_entries = Mock(side_effect=zebra_remote_send_entries)
         self.stdout = StringIO()
 
         _, self.config_file = tempfile.mkstemp()
@@ -64,8 +41,6 @@ class CommandTestCase(TestCase):
         self.default_options['projects_db'] = self.projects_db
 
     def tearDown(self):
-        ZebraRemote.send_entries = self.original_zebra_remote_send_entries
-
         entries_file = expand_filename(self.entries_file)
 
         os.remove(self.config_file)

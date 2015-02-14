@@ -3,19 +3,18 @@ from ConfigParser import NoOptionError
 import calendar
 import datetime
 
-from taxi import remote
-from taxi.exceptions import CancelException, UsageError
-from taxi.projects import Project
-from taxi.timesheet import (
+from .exceptions import CancelException, UsageError
+from .projects import Project
+from .timesheet import (
     NoActivityInProgressError, Timesheet, TimesheetCollection, TimesheetFile
 )
-from taxi.timesheet.entry import TimesheetEntry, EntriesCollection
-from taxi.timesheet.parser import ParseError
-from taxi.settings import Settings
-from taxi.utils import file
-from taxi.utils.structures import OrderedSet
-from taxi.alias import alias_database
-from .alias import Mapping
+from .timesheet.entry import TimesheetEntry, EntriesCollection
+from .timesheet.parser import ParseError
+from .settings import Settings
+from .utils import file
+from .utils.structures import OrderedSet
+from .alias import alias_database, Mapping
+from .backends.exceptions import PushEntryFailedException
 
 
 class BaseCommand(object):
