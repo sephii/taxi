@@ -6,8 +6,8 @@ from taxi.settings import Settings
 from . import CommandTestCase
 
 
-@freeze_time('2014-01-21')
 class CleanAliasesCommandTestCase(CommandTestCase):
+    @freeze_time('2014-01-21')
     def test_project_status(self):
         config = self.default_config.copy()
         options = self.default_options.copy()
@@ -39,8 +39,8 @@ class CleanAliasesCommandTestCase(CommandTestCase):
             project_cancelled
         ])
 
-        stdout = self.run_command('clean-aliases', options=options,
-                                  config_options=config)
+        self.run_command('clean-aliases', options=options,
+                         config_options=config)
 
         settings = Settings(self.config_file)
         self.assertEqual(settings.get_aliases().keys(), ['alias_active'])

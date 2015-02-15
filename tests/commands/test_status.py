@@ -7,8 +7,8 @@ from freezegun import freeze_time
 from . import CommandTestCase
 
 
-@freeze_time('2014-01-20')
 class StatusCommandTestCase(CommandTestCase):
+    @freeze_time('2014-01-20')
     def test_status_previous_file(self):
         tmp_entries_dir = tempfile.mkdtemp()
         config = self.default_config.copy()
@@ -38,6 +38,7 @@ alias_1 1 february
         self.assertIn('january', stdout)
         self.assertIn('february', stdout)
 
+    @freeze_time('2014-01-20')
     def test_local_alias(self):
         config = self.default_config.copy()
         config['default']['local_aliases'] = '_pingpong'
@@ -53,6 +54,7 @@ _pingpong 0800-0900 Play ping-pong
             stdout
         )
 
+    @freeze_time('2014-01-20')
     def test_multiple_local_aliases(self):
         config = self.default_config.copy()
         config['default']['local_aliases'] = '_pingpong, _coffee'
@@ -73,6 +75,7 @@ _coffee 0900-1000 Drink some coffee
             stdout
         )
 
+    @freeze_time('2014-01-20')
     def test_regrouped_entries(self):
         self.write_entries("""20/01/2014
 alias_1 0800-0900 Play ping-pong
@@ -85,6 +88,7 @@ alias_1 1200-1300 Play ping-pong
             stdout
         )
 
+    @freeze_time('2014-01-20')
     def test_status_ignored_not_mapped(self):
         self.write_entries("""20/01/2014
 unmapped? 0800-0900 Play ping-pong
