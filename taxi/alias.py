@@ -6,8 +6,11 @@ Mapping = collections.namedtuple('Mapping', ['mapping', 'backend'])
 
 
 class AliasDatabase(object):
-    def __init__(self):
+    def __init__(self, aliases=None):
         self.reset()
+
+        if aliases:
+            self.aliases = aliases
 
     def __getitem__(self, key):
         if key in self.local_aliases:
@@ -24,13 +27,22 @@ class AliasDatabase(object):
         return key in self.aliases or key in self.local_aliases
 
     def __iter__(self):
-        return itertools.chain(self.local_aliases_to_dict, self.aliases)
+        return itertools.chain(self.local_aliases_to_dict(), self.aliases)
 
     def iteritems(self):
+        """
+        Python 2 compatibility.
+        """
+        return self.items()
+
+    def items(self):
         return itertools.chain(
             self.local_aliases_to_dict().iteritems(),
             self.aliases.iteritems()
         )
+
+    def keys(self):
+        return self.aliases.keys() + list(self.local_aliases)
 
     def update(self, other):
         self.aliases.update(other)
