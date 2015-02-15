@@ -3,9 +3,7 @@ from collections import defaultdict
 import ConfigParser
 import os
 import difflib
-import urlparse
 
-from .backends import backends_registry
 from .alias import Mapping
 from .projects import Project
 

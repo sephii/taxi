@@ -3,7 +3,7 @@ from ConfigParser import NoOptionError
 import calendar
 import datetime
 
-from .backends import backends_registry
+from .backends.registry import backends_registry
 from .exceptions import CancelException, UsageError
 from .projects import Project
 from .timesheet import (
@@ -388,6 +388,7 @@ class CommitCommand(BaseTimesheetCommand):
         self.view.pushing_entries()
         all_pushed_entries = []
         all_failed_entries = []
+        authenticated_backends = set()
 
         for timesheet in timesheet_collection.timesheets:
             pushed_entries = []
@@ -401,9 +402,11 @@ class CommitCommand(BaseTimesheetCommand):
             for (date, entries) in entries_to_push.items():
                 for entry in entries:
                     error = None
-                    backend = backends_registry[
-                        alias_database[entry.alias].backend
-                    ]
+                    backend_name = alias_database[entry.alias].backend
+                    backend = backends_registry[backend_name]
+
+                    if backend not in authenticated_backends:
+                        backend.authenticate()
 
                     try:
                         backend.push_entry(date, entry)
@@ -438,6 +441,9 @@ class CommitCommand(BaseTimesheetCommand):
 
             all_pushed_entries.extend(pushed_entries)
             all_failed_entries.extend(failed_entries)
+
+        for backend in authenticated_backends:
+            backend.shutdown()
 
         ignored_entries = timesheet_collection.get_ignored_entries(
             self.options.get('date', None)

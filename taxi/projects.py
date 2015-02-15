@@ -4,7 +4,7 @@ import datetime
 import json
 import re
 
-from taxi.exceptions import TaxiException
+from .exceptions import TaxiException
 
 
 class Project:

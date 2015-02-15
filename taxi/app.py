@@ -11,7 +11,7 @@ import shutil
 
 from . import __version__, commands
 from .alias import alias_database
-from .backends import backends_registry
+from .backends.registry import backends_registry
 from .exceptions import TaxiException, UsageError
 from .projects import ProjectsDb
 from .settings import Settings
