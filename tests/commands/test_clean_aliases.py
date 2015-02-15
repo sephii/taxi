@@ -6,8 +6,8 @@ from taxi.settings import Settings
 from . import CommandTestCase
 
 
-@freeze_time('2014-01-21')
 class CleanAliasesCommandTestCase(CommandTestCase):
+    @freeze_time('2014-01-21')
     def test_project_status(self):
         config = self.default_config.copy()
         options = self.default_options.copy()
