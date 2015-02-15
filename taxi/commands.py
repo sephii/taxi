@@ -691,7 +691,7 @@ class UpdateCommand(BaseCommand):
         projects = []
 
         for backend_name, backend_uri in self.settings.get_backends():
-            backend = self.settings.get_backend(backend_name)
+            backend = backends_registry[backend_name]
             backend_projects = backend.get_projects()
 
             for project in backend_projects:
