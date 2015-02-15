@@ -3,6 +3,7 @@ from ConfigParser import NoOptionError
 import calendar
 import datetime
 
+from .backends import PushEntryFailed
 from .backends.registry import backends_registry
 from .exceptions import CancelException, UsageError
 from .projects import Project
@@ -15,7 +16,6 @@ from .settings import Settings
 from .utils import file
 from .utils.structures import OrderedSet
 from .alias import alias_database, Mapping
-from .backends.exceptions import PushEntryFailedException
 
 
 class BaseCommand(object):
@@ -410,7 +410,7 @@ class CommitCommand(BaseTimesheetCommand):
 
                     try:
                         backend.push_entry(date, entry)
-                    except PushEntryFailedException as e:
+                    except PushEntryFailed as e:
                         failed_entries.append(entry)
                         error = e.message
                     else:
