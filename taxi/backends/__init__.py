@@ -12,18 +12,12 @@ class BaseBackend(object):
         self.path = path
         self.options = options
 
-    def authenticate(self):
-        pass
-
     @abc.abstractmethod
     def push_entry(self, date, entry):
         pass
 
     def get_projects(self):
         return []
-
-    def shutdown(self):
-        pass
 
 
 class PushEntryFailed(Exception):
