@@ -62,7 +62,6 @@ class BaseTimesheetCommand(BaseCommand):
                     timesheet_contents,
                     self.settings.get('date_format')
                 ),
-                alias_database,
                 timesheet_file
             )
 
