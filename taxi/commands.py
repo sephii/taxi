@@ -401,9 +401,9 @@ class CommitCommand(BaseTimesheetCommand):
             for (date, entries) in entries_to_push.items():
                 for entry in entries:
                     error = None
-                    backend = self.settings.get_backend(
+                    backend = backends_registry[
                         alias_database[entry.alias].backend
-                    )
+                    ]
 
                     try:
                         backend.push_entry(date, entry)

@@ -11,6 +11,7 @@ import shutil
 
 from . import __version__, commands
 from .alias import alias_database
+from .backends import backends_registry
 from .exceptions import TaxiException, UsageError
 from .projects import ProjectsDb
 from .settings import Settings
@@ -150,6 +151,7 @@ Available commands:
         projects_db = ProjectsDb(options['projects_db'])
         self.populate_aliases(settings.get_aliases(),
                               settings.get_local_aliases())
+        self.populate_backends(settings.get_backends())
 
         view = TtyUi(
             options.get('stdout', sys.stdout),
@@ -207,6 +209,9 @@ Available commands:
 
         for alias in local_aliases:
             alias_database.local_aliases.add(alias)
+
+    def populate_backends(self, backends):
+        backends_registry.populate(dict(backends))
 
 
 def term_unicode(string):

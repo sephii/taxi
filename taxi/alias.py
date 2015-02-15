@@ -6,6 +6,9 @@ Mapping = collections.namedtuple('Mapping', ['mapping', 'backend'])
 
 
 class AliasDatabase(object):
+    """
+    TODO: comment
+    """
     def __init__(self, aliases=None):
         self.reset()
 

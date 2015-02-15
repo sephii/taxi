@@ -113,24 +113,6 @@ class Settings(dict):
 
         return aliases
 
-    def get_backend(self, backend_name):
-        if backend_name not in self._backends_registry:
-            backend_uri = self.get(backend_name, 'backends')
-            backend = self.load_backend(backend_uri)
-            self._backends_registry[backend_name] = backend
-            backend.authenticate()
-
-        return self._backends_registry[backend_name]
-
-    def load_backend(self, backend_uri):
-        parsed = urlparse.urlparse(backend_uri)
-        options = dict(urlparse.parse_qsl(parsed.query))
-
-        return backends_registry[parsed.scheme](
-            parsed.username, parsed.password, parsed.hostname, parsed.port,
-            parsed.path, options
-        )
-
     def get_backends(self):
         return self.config.items('backends')
 

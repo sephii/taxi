@@ -1,5 +1,5 @@
 class DummyBackend(object):
-    def __init__(self, login, password, host, port, path, options):
+    def __init__(self, username, password, hostname, port, path, options):
         pass
 
     def authenticate(self):
