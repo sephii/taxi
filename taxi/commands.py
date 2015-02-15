@@ -159,9 +159,7 @@ class AddCommand(BaseCommand):
             return
 
         project = projects[number]
-        mappings = self.settings.get_reversed_aliases()
-        self.view.project_with_activities(project, mappings,
-                                          numbered_activities=True)
+        self.view.project_with_activities(project, numbered_activities=True)
 
         try:
             number = self.view.select_activity(project.activities)
@@ -579,8 +577,7 @@ class ShowCommand(BaseCommand):
                 u"The project `%s` doesn't exist" % (self.project_id)
             )
         else:
-            mappings = self.settings.get_reversed_aliases()
-            self.view.project_with_activities(project, mappings)
+            self.view.project_with_activities(project)
 
 
 class StartCommand(BaseTimesheetCommand):

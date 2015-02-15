@@ -3,7 +3,7 @@ import inspect
 import re
 import sys
 
-from ..alias import alias_database
+from ..alias import alias_database, Mapping
 from ..utils import date as date_utils, terminal
 from ..exceptions import CancelException
 from ..projects import Project
@@ -54,20 +54,24 @@ class BaseUi(object):
             else:
                 self.msg(u"%4s %s" % (key, project.id, project.name))
 
-    def project_with_activities(self, project, mappings={},
-                                numbered_activities=False):
+    def project_with_activities(self, project, numbered_activities=False):
         self.msg(unicode(project))
         self.msg(u"\nActivities:")
+        mappings = alias_database.get_reversed_aliases()
+
         for (key, activity) in enumerate(project.activities):
+            mapping = Mapping(mapping=(project.id, activity.id),
+                              backend=project.backend)
+
             if numbered_activities:
                 activity_number = '(%d) ' % (key)
             else:
                 activity_number = ''
 
-            if (project.id, activity.id) in mappings:
+            if mapping in mappings:
                 self.msg(u"%s%4s %s (mapped to %s)" % (activity_number,
                          activity.id, activity.name,
-                         mappings[(project.id, activity.id)]))
+                         mappings[mapping]))
             else:
                 self.msg(u'%s%4s %s' % (activity_number, activity.id,
                                         activity.name))
