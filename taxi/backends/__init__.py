@@ -26,5 +26,5 @@ class BaseBackend(object):
         pass
 
 
-class PushEntryFailedException(Exception):
+class PushEntryFailed(Exception):
     pass

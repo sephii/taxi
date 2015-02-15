@@ -7,15 +7,35 @@ Mapping = collections.namedtuple('Mapping', ['mapping', 'backend'])
 
 class AliasDatabase(object):
     """
-    TODO: comment
+    Dict-like object containing aliases and their corresponding mappings. It
+    contains aliases and "local aliases". Local aliases are not mapped to
+    anything, so even if they're present in the database, they'll always have a
+    `None` value.
+
+    Example usage:
+
+        >>> alias_database = AliasDatabase()
+        >>> alias_database['my_alias'] = Mapping(mapping=(1, 2),
+        backend='dummy')
+        >>> 'my_alias' in alias_database
+        True
     """
     def __init__(self, aliases=None):
+        """
+        Create an empty alias database and optionally populate it with the
+        given `aliases`. If `aliases` is given, it must be a dictionary
+        containing :py:class:`Mapping` objects.
+        """
         self.reset()
 
         if aliases:
             self.aliases = aliases
 
     def __getitem__(self, key):
+        """
+        Return the corresponding :py:class:`Mapping` object or `None` if the
+        alias is local.
+        """
         if key in self.local_aliases:
             return None
         else:
@@ -30,6 +50,10 @@ class AliasDatabase(object):
         return key in self.aliases or key in self.local_aliases
 
     def __iter__(self):
+        """
+        Iterate over local aliases and standard aliases. Local aliases always
+        come first in the iteration.
+        """
         return itertools.chain(self.local_aliases_to_dict(), self.aliases)
 
     def iteritems(self):
@@ -51,19 +75,40 @@ class AliasDatabase(object):
         self.aliases.update(other)
 
     def reset(self):
+        """
+        Reset both the aliases and local aliases to an empty state.
+        """
         self.local_aliases = set()
         self.aliases = {}
 
     def local_aliases_to_dict(self):
+        """
+        Transform the local aliases set to a dict with null values.
+        """
         return dict((alias, None) for alias in self.local_aliases)
 
     def is_local(self, alias):
+        """
+        Return `True` if the given alias is in the `local_aliases` set.
+        """
         return alias in self.local_aliases
 
     def get_reversed_aliases(self):
+        """
+        Return the reversed aliases dict. Instead of being in the form
+        {'alias': mapping}, the dict is in the form {mapping: 'alias'}. Local
+        aliases are not included in this list for the obvious reason that
+        they're all mapped to a `None` mapping.
+        """
         return dict((v, k) for k, v in self.aliases.iteritems())
 
     def filter_from_mapping(self, mapping):
+        """
+        Return mappings that either exactly correspond to the given `mapping`
+        tuple, or, if the second item of `mapping` is `None`, include mappings
+        that only match the first item of `mapping` (useful to show all
+        mappings for a given project).
+        """
         def mapping_filter((key, item)):
             return (
                 item.mapping == mapping
@@ -83,6 +128,9 @@ class AliasDatabase(object):
         return aliases
 
     def filter_from_alias(self, alias):
+        """
+        Return aliases that start with the given `alias`.
+        """
         def alias_filter((key, item)):
             return key.startswith(alias)
 

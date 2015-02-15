@@ -3,15 +3,34 @@ import urlparse
 
 
 class BackendRegistry(object):
+    """
+    The backend registry holds information about available backends (registered
+    via entry points) and their configuration. It is also responsible to load
+    the backends and provides a way to easily get backends via a dict-like
+    interface.
+
+    The backend registry should be initialized via :py:meth:`populate`. The
+    list of available backends is automatically discovered by checking the
+    `taxi.backends` entry points.
+
+    Once populated, backends can be loaded and retrieved with the following
+    syntax:
+
+        backends_registry['backend_name']
+    """
     def __init__(self):
         self._entry_points = {}
         self._backends_registry = {}
-        self._backends_loaded = False
 
+        # Load the entry points and index them to avoid iterating every time we
+        # need a specific backend
         for backend in pkg_resources.iter_entry_points('taxi.backends'):
             self._entry_points[backend.name] = backend
 
     def __getitem__(self, key):
+        """
+        Return the backend with the given name.
+        """
         return self._backends_registry[key]
 
     def __setitem__(self, key, value):
@@ -32,18 +51,45 @@ class BackendRegistry(object):
         return self._backends_registry.items()
 
     def populate(self, backends):
+        """
+        Iterate over the given backends list and instantiate every backend
+        found. Can raise :py:exc:`BackendNotFoundException` if a backend
+        could not be found in the registered entry points.
+
+        The `backends` parameter should be a dict with backend names as keys
+        and URIs as values. For details about the URIs or the way backends are
+        loaded, see the :py:meth:`load_backend` method.
+        """
         for name, uri in backends.items():
             self._backends_registry[name] = self.load_backend(uri)
 
     def load_backend(self, backend_uri):
+        """
+        Return the instantiated backend object identified by the given
+        `backend_uri`.
+
+        The entry point that is used to create the backend object is determined
+        by the protocol part of the given URI.
+        """
         parsed = urlparse.urlparse(backend_uri)
         options = dict(urlparse.parse_qsl(parsed.query))
-        backend = self._entry_points[parsed.scheme].load()
+
+        try:
+            backend = self._entry_points[parsed.scheme].load()
+        except KeyError:
+            raise BackendNotFoundError(
+                "The requested backend `%s` could not be found in the "
+                "registered entry points"
+            )
 
         return backend(
             username=parsed.username, password=parsed.password,
             hostname=parsed.hostname, port=parsed.port,
             path=parsed.path, options=options
         )
+
+
+class BackendNotFoundError(Exception):
+    pass
 
 backends_registry = BackendRegistry()
