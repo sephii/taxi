@@ -685,9 +685,6 @@ class UpdateCommand(BaseCommand):
     def run(self):
         self.view.updating_projects_database()
 
-        aliases_before_update = alias_database.aliases
-        # TODO
-        local_aliases = []
         projects = []
 
         for backend_name, backend_uri in self.settings.get_backends():
@@ -703,21 +700,24 @@ class UpdateCommand(BaseCommand):
 
         # Put the shared aliases in the config file
         shared_aliases = {}
+        backends_to_clear = set()
         for project in projects:
             if project.is_active():
                 for alias, activity_id in project.aliases.iteritems():
                     mapping = Mapping(mapping=(project.id, activity_id),
                                       backend=project.backend)
-                    self.settings.add_shared_alias(alias, mapping)
                     shared_aliases[alias] = mapping
+                    backends_to_clear.add(project.backend)
+
+        for backend in backends_to_clear:
+            self.settings.clear_shared_aliases(backend)
+
+        for alias, mapping in shared_aliases.items():
+            self.settings.add_shared_alias(alias, mapping)
 
         aliases_after_update = self.settings.get_aliases()
-        import pdb; pdb.set_trace()
 
         self.settings.write_config()
 
-        self.view.projects_database_update_success(aliases_before_update,
-                                                   aliases_after_update,
-                                                   local_aliases,
-                                                   shared_aliases,
+        self.view.projects_database_update_success(aliases_after_update,
                                                    self.projects_db)

@@ -202,13 +202,13 @@ class ProjectsDb:
             if project.id == id and project.backend == backend:
                 return project
 
-    def mapping_to_project(self, mapping_tuple):
-        project = self.get(mapping_tuple[0])
+    def mapping_to_project(self, mapping):
+        project = self.get(mapping.mapping[0], mapping.backend)
 
         if not project:
             return (None, None)
 
-        activity = project.get_activity(mapping_tuple[1])
+        activity = project.get_activity(mapping.mapping[1])
 
         if not activity:
             return (project, None)

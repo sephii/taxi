@@ -91,6 +91,10 @@ class Settings(dict):
 
         self.config.set(section, alias, '%s/%s' % mapping.mapping)
 
+    def clear_shared_aliases(self, backend):
+        self.config.remove_section(get_alias_section_name(backend, True))
+        self.config.add_section(get_alias_section_name(backend, True))
+
     def get_aliases(self):
         backends = self.get_backends()
         aliases = defaultdict(dict)

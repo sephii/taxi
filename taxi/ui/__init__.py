@@ -324,9 +324,8 @@ class BaseUi(object):
     def updating_projects_database(self):
         self.msg(u"Updating database, this may take some time...")
 
-    def projects_database_update_success(self, aliases_before_update,
-                                         aliases_after_update, local_aliases,
-                                         shared_aliases, projects_db):
+    def projects_database_update_success(self, aliases_after_update,
+                                         projects_db):
         """
         Display the results of the projects/aliases database update. We need
         the projects db to extract the name of the projects / activities.
@@ -353,19 +352,16 @@ class BaseUi(object):
 
         self.msg(u"Projects database updated successfully.")
 
-        deleted_aliases = (set(aliases_before_update.keys()) -
+        deleted_aliases = (set(alias_database.keys()) -
                            set(aliases_after_update.keys()))
         added_aliases = (set(aliases_after_update.keys()) -
-                         set(aliases_before_update.keys()))
+                         set(alias_database.keys()))
 
         modified_aliases = set()
         for alias, mapping in aliases_after_update.iteritems():
-            if (alias in aliases_before_update
-                    and aliases_before_update[alias] != mapping):
+            if (alias in alias_database
+                    and alias_database[alias] != mapping):
                 modified_aliases.add(alias)
-
-        overlapping_aliases = (set(local_aliases.keys()) &
-                               set(shared_aliases.keys()))
 
         if added_aliases:
             self.msg(u"\nThe following shared aliases have been added:\n")
@@ -379,23 +375,3 @@ class BaseUi(object):
         if modified_aliases:
             self.msg(u"\nThe following shared aliases have been updated:\n")
             show_aliases(modified_aliases)
-
-        if overlapping_aliases:
-            self.msg(u"\nWarning: the following aliases are overlapping:\n")
-            for alias in overlapping_aliases:
-                local_mapping = local_aliases[alias]
-                shared_mapping = shared_aliases[alias]
-                (local_project, local_activity) = (
-                    projects_db.mapping_to_project(local_mapping)
-                )
-                (shared_project, shared_activity) = (
-                    projects_db.mapping_to_project(shared_mapping)
-                )
-
-                self.msg("%s\n\t(local)  %s / %s\n\t(shared) %s / %s" % (
-                    alias,
-                    local_project.name if local_project else "?",
-                    local_activity.name if local_activity else "?",
-                    shared_project.name if shared_project else "?",
-                    shared_activity.name if shared_activity else "?",
-                ))
