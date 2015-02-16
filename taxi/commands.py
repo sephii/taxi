@@ -220,7 +220,7 @@ class AliasCommand(BaseCommand):
     MODE_LIST_ALIASES = 2
 
     def validate(self):
-        if len(self.arguments) > 3:
+        if len(self.arguments) not in [0, 1, 3]:
             raise UsageError()
 
     def setup(self):
@@ -240,7 +240,7 @@ class AliasCommand(BaseCommand):
             self.mode = self.MODE_LIST_ALIASES
 
     def run(self):
-        # 2 arguments, add a new alias
+        # 3 arguments, add a new alias
         if self.mode == self.MODE_ADD_ALIAS:
             self._add_alias(self.alias, self.mapping)
         # 1 argument, display the alias or the project id/activity id tuple
