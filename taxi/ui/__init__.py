@@ -310,8 +310,9 @@ class BaseUi(object):
 
     def search_results(self, projects):
         for project in projects:
-            self.msg(u'%s %4s %s' % (
-                project.get_short_status(), project.id, project.name
+            self.msg(u'%s %s %4s %s' % (
+                project.get_short_status(), project.backend, project.id,
+                project.name
             ))
 
     def suggest_aliases(self, not_found_alias, aliases):

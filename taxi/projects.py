@@ -194,12 +194,13 @@ class ProjectsDb:
 
         return found_list
 
-    def get(self, id, backend):
+    def get(self, id, backend=None):
         # TODO optimize?
         projects = self.get_projects()
 
         for project in projects:
-            if project.id == id and project.backend == backend:
+            if (project.id == id and (backend is None
+                    or project.backend == backend)):
                 return project
 
     def mapping_to_project(self, mapping):
