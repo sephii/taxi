@@ -39,10 +39,13 @@ class Settings(dict):
                 "The specified configuration file `%s` doesn't exist" % file
             )
 
-    def get(self, key, section='default'):
+    def get(self, key, section='default', default_value=None):
         try:
             return self.config.get(section, key)
         except ConfigParser.NoOptionError:
+            if default_value is not None:
+                return default_value
+
             if key in self.DEFAULTS:
                 return self.DEFAULTS[key]
 
@@ -113,6 +116,45 @@ class Settings(dict):
 
     def get_backends(self):
         return self.config.items('backends')
+
+    def convert_to_4(self):
+        """
+        Convert a pre-4.0 configuration file to a 4.0 configuration file.
+        """
+        import urlparse
+
+        if not self.config.has_section('backends'):
+            self.config.add_section('backends')
+
+        site = urlparse.urlparse(self.get('site', default_value=''))
+        backend_uri = 'zebra://{username}:{password}@{hostname}'.format(
+            username=self.get('username', default_value=''),
+            password=self.get('password', default_value=''),
+            hostname=site.hostname
+        )
+        self.config.set('backends', 'default', backend_uri)
+
+        self.config.remove_option('default', 'username')
+        self.config.remove_option('default', 'password')
+        self.config.remove_option('default', 'site')
+
+        if not self.config.has_section('default_aliases'):
+            self.config.add_section('default_aliases')
+
+        if not self.config.has_section('default_shared_aliases'):
+            self.config.add_section('default_shared_aliases')
+
+        if self.config.has_section('wrmap'):
+            for alias, mapping in self.config.items('wrmap'):
+                self.config.set('default_aliases', alias, mapping)
+
+            self.config.remove_section('wrmap')
+
+        if self.config.has_section('shared_wrmap'):
+            for alias, mapping in self.config.items('shared_wrmap'):
+                self.config.set('default_shared_aliases', alias, mapping)
+
+            self.config.remove_section('shared_wrmap')
 
 
 def get_alias_section_name(backend_name, shared_section=False):

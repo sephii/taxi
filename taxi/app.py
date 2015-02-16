@@ -44,8 +44,8 @@ Available commands:
 
         opt = OptionParser(usage=usage, version='%prog ' + __version__)
         opt.add_option('-c', '--config', dest='config',
-                       help='use CONFIG file instead of ~/.tksrc',
-                       default='~/.tksrc')
+                       help='use CONFIG file instead of ~/.taxirc',
+                       default='~/.taxirc')
         opt.add_option('-v', '--verbose', dest='verbose', action='store_true',
                        help='make taxi verbose', default=False)
         opt.add_option('-f', '--file', dest='file', help='parse FILE instead'
@@ -191,14 +191,38 @@ Available commands:
         """
         Create main configuration file if it doesn't exist.
         """
-        if not os.path.isfile(filename):
+        import textwrap
+
+        if not os.path.exists(filename):
+            old_default_config_file = os.path.join(os.path.dirname(filename),
+                                                   '.tksrc')
+            if os.path.exists(old_default_config_file):
+                upgrade = raw_input("\n".join(textwrap.wrap(
+                    "It looks like you recently updated Taxi. Some "
+                    "configuration changes are required. You can either let "
+                    "me upgrade your configuration file or do it "
+                    "manually.")) + "\n\nProceed with automatic configuration "
+                    "file upgrade? [Y/n]: "
+                )
+
+                if not upgrade or upgrade.lower() == 'y':
+                    settings = Settings(old_default_config_file)
+                    settings.convert_to_4()
+                    with open(filename, 'w') as config_file:
+                        settings.config.write(config_file)
+                    os.remove(old_default_config_file)
+                    return
+                else:
+                    print("Aborting.")
+                    sys.exit(0)
+
             response = raw_input(
                 "The configuration file %s does not exist yet.\nDo you want to"
                 " create it now? [Y/n]: " % filename
             )
 
             if not response or response.lower() == 'y':
-                src_config = resource_filename('taxi', 'doc/tksrc.sample')
+                src_config = resource_filename('taxi', 'etc/taxirc.sample')
                 shutil.copy(src_config, filename)
             else:
                 print("Aborting.")

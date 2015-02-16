@@ -49,7 +49,7 @@ setup(
     include_package_data=False,
     cmdclass = {'test': PyTest},
     package_data={
-        'taxi': ['doc/*']
+        'taxi': ['etc/*']
     },
     entry_points={
         'taxi.backends': 'dummy = taxi.backends.dummy:DummyBackend'
