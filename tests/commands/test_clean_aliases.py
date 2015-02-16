@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 from freezegun import freeze_time
 
 from taxi.projects import Activity, Project, ProjectsDb
@@ -47,4 +49,4 @@ class CleanAliasesCommandTestCase(CommandTestCase):
                          config_options=config)
 
         settings = Settings(self.config_file)
-        self.assertEqual(settings.get_aliases().keys(), ['alias_active'])
+        self.assertEqual(list(settings.get_aliases().keys()), ['alias_active'])

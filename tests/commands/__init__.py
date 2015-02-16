@@ -1,5 +1,9 @@
+from __future__ import unicode_literals
+
+import codecs
+import io
 import os
-from StringIO import StringIO
+import six
 import tempfile
 from unittest import TestCase
 
@@ -9,7 +13,7 @@ from taxi.utils.file import expand_filename
 
 class CommandTestCase(TestCase):
     def setUp(self):
-        self.stdout = StringIO()
+        self.stdout = io.TextIOWrapper(io.BytesIO())
 
         _, self.config_file = tempfile.mkstemp()
         _, self.entries_file = tempfile.mkstemp()
@@ -50,18 +54,18 @@ class CommandTestCase(TestCase):
 
     def write_config(self, config):
         with open(self.config_file, 'w') as f:
-            for (section, params) in config.iteritems():
+            for (section, params) in six.iteritems(config):
                 f.write("[%s]\n" % section)
 
-                for (param, value) in params.iteritems():
+                for (param, value) in six.iteritems(params):
                     f.write("%s = %s\n" % (param, value))
 
     def write_entries(self, contents):
-        with open(expand_filename(self.entries_file), 'a') as f:
+        with codecs.open(expand_filename(self.entries_file), 'a', 'utf-8') as f:
             f.write(contents)
 
     def read_entries(self):
-        with open(expand_filename(self.entries_file), 'r') as f:
+        with codecs.open(expand_filename(self.entries_file), 'r', 'utf-8') as f:
             contents = f.read()
 
         return contents
@@ -93,14 +97,16 @@ class CommandTestCase(TestCase):
             config_options = self.default_config
         else:
             config_options = dict(
-                self.default_config.items() + config_options.items()
+                list(self.default_config.items()) +
+                list(config_options.items())
             )
         self.write_config(config_options)
 
-        self.stdout = StringIO()
+        self.stdout = io.TextIOWrapper(io.BytesIO())
         options['stdout'] = self.stdout
 
         app = Taxi()
         app.run_command(command_name, options=options, args=args)
+        self.stdout.seek(0)
 
-        return self.stdout.getvalue()
+        return self.stdout.read()

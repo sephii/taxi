@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
 from collections import defaultdict
-import ConfigParser
 import os
 import difflib
+
+from six.moves import configparser
 
 from .alias import Mapping
 from .projects import Project
@@ -27,7 +30,7 @@ class Settings(dict):
     }
 
     def __init__(self, file):
-        self.config = ConfigParser.RawConfigParser()
+        self.config = configparser.RawConfigParser()
         self.filepath = os.path.expanduser(file)
         self._backends_registry = {}
 
@@ -42,7 +45,7 @@ class Settings(dict):
     def get(self, key, section='default', default_value=None):
         try:
             return self.config.get(section, key)
-        except ConfigParser.NoOptionError:
+        except configparser.NoOptionError:
             if default_value is not None:
                 return default_value
 

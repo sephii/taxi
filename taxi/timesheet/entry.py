@@ -1,5 +1,9 @@
+from __future__ import unicode_literals
+
 import collections
 import datetime
+
+import six
 
 from .parser import DateLine, EntryLine, TextLine, TimesheetParser
 
@@ -277,6 +281,7 @@ class EntriesList(list):
             self.entries_collection.delete_date(self.date)
 
 
+@six.python_2_unicode_compatible
 class TimesheetEntry(object):
     def __init__(self, alias, duration, description):
         self.line = None
@@ -289,7 +294,7 @@ class TimesheetEntry(object):
         self.description = description
         self.duration = duration
 
-    def __unicode__(self):
+    def __str__(self):
         if self.is_ignored():
             project_name = u'%s (ignored)' % self.alias
         else:

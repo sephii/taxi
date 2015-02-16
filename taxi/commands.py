@@ -1,7 +1,11 @@
 # -*- coding: utf-8 -*-
-from ConfigParser import NoOptionError
+from __future__ import unicode_literals
+
 import calendar
 import datetime
+
+import six
+from six.moves.configparser import NoOptionError
 
 from .backends import PushEntryFailed
 from .backends.registry import backends_registry
@@ -109,7 +113,7 @@ class BaseTimesheetCommand(BaseCommand):
 
         files = OrderedSet()
         file_date = datetime.date.today()
-        for i in xrange(0, nb_previous_files + 1):
+        for i in six.moves.xrange(0, nb_previous_files + 1):
             files.add(file.expand_filename(filename, file_date))
 
             if smallest_unit == 'm':
@@ -146,7 +150,7 @@ class AddCommand(BaseCommand):
 
         if len(projects) == 0:
             self.view.msg(
-                u"No active project matches your search string '%s'" %
+                "No active project matches your search string '%s'" %
                 ''.join(search)
             )
             return
@@ -302,9 +306,9 @@ class AutofillCommand(BaseTimesheetCommand):
             t.prefill(auto_fill_days, last_date)
             t.file.write(t.entries)
 
-            self.view.msg(u"Your entries file has been filled.")
+            self.view.msg("Your entries file has been filled.")
         else:
-            self.view.err(u"The parameter `auto_fill_days` must be set to "
+            self.view.err("The parameter `auto_fill_days` must be set to "
                           "use this command.")
 
 
@@ -334,7 +338,7 @@ class CleanAliasesCommand(BaseCommand):
     def run(self):
         inactive_aliases = []
 
-        for (alias, mapping) in alias_database.iteritems():
+        for (alias, mapping) in six.iteritems(alias_database):
             # Ignore local aliases
             if mapping is None:
                 continue
@@ -347,7 +351,7 @@ class CleanAliasesCommand(BaseCommand):
                 inactive_aliases.append(((alias, mapping), project))
 
         if not inactive_aliases:
-            self.view.msg(u"No inactive aliases found.")
+            self.view.msg("No inactive aliases found.")
             return
 
         if not self.options.get('force_yes'):
@@ -358,7 +362,7 @@ class CleanAliasesCommand(BaseCommand):
                 [item[0] for item in inactive_aliases]
             )
             self.settings.write_config()
-            self.view.msg(u"%d inactive aliases have been successfully"
+            self.view.msg("%d inactive aliases have been successfully"
                           " cleaned." % len(inactive_aliases))
 
 
@@ -418,7 +422,7 @@ class CommitCommand(BaseTimesheetCommand):
                 self.options.get('date', None)
             )
             local_entries_list = []
-            for (date, entries) in local_entries.iteritems():
+            for (date, entries) in six.iteritems(local_entries):
                 local_entries_list.extend(entries)
 
             for entry in local_entries_list + pushed_entries:
@@ -442,7 +446,7 @@ class CommitCommand(BaseTimesheetCommand):
             self.options.get('date', None)
         )
         ignored_entries_list = []
-        for (date, entries) in ignored_entries.iteritems():
+        for (date, entries) in six.iteritems(ignored_entries):
             ignored_entries_list.extend(entries)
 
         self.view.pushed_entries_summary(all_pushed_entries,
@@ -518,7 +522,7 @@ class HelpCommand(BaseCommand):
             if self.command in self.commands_mapping:
                 self.view.command_usage(self.commands_mapping[self.command])
             else:
-                self.view.err(u"Command %s doesn't exist." % self.command)
+                self.view.err("Command %s doesn't exist." % self.command)
 
 
 class SearchCommand(BaseCommand):
@@ -570,7 +574,7 @@ class ShowCommand(BaseCommand):
 
         if project is None:
             self.view.err(
-                u"Could not find project `%s`" % (self.project_id)
+                "Could not find project `%s`" % (self.project_id)
             )
         else:
             self.view.project_with_activities(project)
@@ -668,7 +672,7 @@ class StopCommand(BaseTimesheetCommand):
         except ParseError as e:
             self.view.err(e)
         except NoActivityInProgressError:
-            self.view.err(u"You don't have any activity in progress for today")
+            self.view.err("You don't have any activity in progress for today")
         else:
             current_timesheet.file.write(current_timesheet.entries)
 
@@ -702,7 +706,7 @@ class UpdateCommand(BaseCommand):
         backends_to_clear = set()
         for project in projects:
             if project.is_active():
-                for alias, activity_id in project.aliases.iteritems():
+                for alias, activity_id in six.iteritems(project.aliases):
                     mapping = Mapping(mapping=(project.id, activity_id),
                                       backend=project.backend)
                     shared_aliases[alias] = mapping

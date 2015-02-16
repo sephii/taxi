@@ -1,12 +1,17 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
 import copy
 import datetime
 import json
 import re
 
+import six
+
 from .exceptions import TaxiException
 
 
+@six.python_2_unicode_compatible
 class Project:
     STATUS_NOT_STARTED = 0
     STATUS_ACTIVE = 1
@@ -41,7 +46,7 @@ class Project:
         self.end_date = None
         self.backend = None
 
-    def __unicode__(self):
+    def __str__(self):
         if self.status in self.STATUSES:
             status = self.STATUSES[self.status]
         else:
@@ -55,7 +60,7 @@ class Project:
         if end_date is None:
             end_date = 'Unknown'
 
-        return u"""Id: %s
+        return """Id: %s
 Name: %s
 Status: %s
 Start date: %s
@@ -147,11 +152,19 @@ class ProjectsDb:
             return projects_cache
 
         with open(self.path, 'r') as projects_db:
-            if projects_db.read():
+            # Pre-4.0 used a pickle-based format for the projects db, so trying
+            # to read it as a non-binary file can lead to a UnicodeDecodeError
+            # on Python 3
+            try:
+                projects_db_contents = projects_db.read()
+            except UnicodeDecodeError:
+                raise OutdatedProjectsDbException()
+
+            if projects_db_contents:
                 projects_db.seek(0)
                 try:
                     lpdb = json.load(projects_db, cls=LocalProjectsDbDecoder)
-                # Pre-3.3 used a pickle-based format for the projects db
+                # Pre-4.0 used a pickle-based format for the projects db
                 except ValueError:
                     raise OutdatedProjectsDbException()
 
@@ -199,8 +212,8 @@ class ProjectsDb:
         projects = self.get_projects()
 
         for project in projects:
-            if (project.id == id and (backend is None
-                    or project.backend == backend)):
+            if (project.id == id and
+                    (backend is None or project.backend == backend)):
                 return project
 
     def mapping_to_project(self, mapping):
@@ -281,4 +294,5 @@ class OutdatedProjectsDbException(TaxiException):
             " it"
         )
 
-        super(OutdatedProjectsDbException, self).__init__(*args, **kwargs)
+        super(OutdatedProjectsDbException, self).__init__(self.message,
+                                                          *args, **kwargs)
