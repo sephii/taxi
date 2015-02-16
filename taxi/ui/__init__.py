@@ -3,9 +3,10 @@ import inspect
 import re
 import sys
 
-from taxi.utils import date as date_utils, terminal
-from taxi.exceptions import CancelException
-from taxi.projects import Project
+from ..alias import alias_database, Mapping
+from ..utils import date as date_utils, terminal
+from ..exceptions import CancelException
+from ..projects import Project
 
 import colorama
 
@@ -53,20 +54,24 @@ class BaseUi(object):
             else:
                 self.msg(u"%4s %s" % (key, project.id, project.name))
 
-    def project_with_activities(self, project, mappings={},
-                                numbered_activities=False):
+    def project_with_activities(self, project, numbered_activities=False):
         self.msg(unicode(project))
         self.msg(u"\nActivities:")
+        mappings = alias_database.get_reversed_aliases()
+
         for (key, activity) in enumerate(project.activities):
+            mapping = Mapping(mapping=(project.id, activity.id),
+                              backend=project.backend)
+
             if numbered_activities:
                 activity_number = '(%d) ' % (key)
             else:
                 activity_number = ''
 
-            if (project.id, activity.id) in mappings:
+            if mapping in mappings:
                 self.msg(u"%s%4s %s (mapped to %s)" % (activity_number,
                          activity.id, activity.name,
-                         mappings[(project.id, activity.id)]))
+                         mappings[mapping]))
             else:
                 self.msg(u'%s%4s %s' % (activity_number, activity.id,
                                         activity.name))
@@ -108,7 +113,7 @@ class BaseUi(object):
             raise CancelException()
 
     def overwrite_alias(self, alias, mapping, retry=True):
-        mapping_name = Project.tuple_to_str(mapping)
+        mapping_name = Project.tuple_to_str(mapping.mapping)
 
         if retry:
             choices = 'y/n/R(etry)'
@@ -222,17 +227,15 @@ class BaseUi(object):
                  "To ignore this error, re-run taxi with the option "
                  "`--ignore-date-error`" % ', '.join(dates))
 
-    def get_entry_status(self, entry, alias_mappings):
+    def get_entry_status(self, entry):
         if entry.is_ignored():
             status = 'ignored'
-        elif entry.alias not in alias_mappings:
+        elif entry.alias not in alias_database:
             status = 'not mapped'
-        elif alias_mappings.is_local(entry.alias):
+        elif alias_database.is_local(entry.alias):
             status = 'local'
-        elif entry.alias in alias_mappings:
-            status = '/'.join([
-                str(part) for part in alias_mappings[entry.alias]
-            ])
+        elif entry.alias in alias_database:
+            status = '%s/%s' % alias_database[entry.alias].mapping
         else:
             status = ''
 
@@ -244,7 +247,7 @@ class BaseUi(object):
         return u'%-30s %-5.2f %s' % (project_name, entry.hours,
                                      entry.description)
 
-    def show_status(self, entries_dict, alias_mappings, settings):
+    def show_status(self, entries_dict, settings):
         self.msg(u'Staging changes :\n')
         entries_list = entries_dict.items()
         entries_list = sorted(entries_list)
@@ -260,17 +263,17 @@ class BaseUi(object):
             self.msg(u'# %s #' % date_utils.unicode_strftime(
                 date, '%A %d %B').capitalize())
             for entry in entries:
-                self.msg(self.get_entry_status(entry, alias_mappings))
+                self.msg(self.get_entry_status(entry))
 
                 if (not entry.is_ignored() and entry.alias not in
-                        alias_mappings):
+                        alias_database):
                     close_matches = settings.get_close_matches(entry.alias)
                     if close_matches:
                         self.msg(u'\tDid you mean one of the following: %s?' %
                                  ', '.join(close_matches))
 
-                if (entry.alias not in alias_mappings
-                        or not alias_mappings.is_local(entry.alias)):
+                if (entry.alias not in alias_database
+                        or not alias_database.is_local(entry.alias)):
                     subtotal_hours += entry.hours or 0
 
             self.msg(u'%-29s %5.2f\n' % ('', subtotal_hours))
@@ -279,14 +282,14 @@ class BaseUi(object):
         self.msg(u'%-29s %5.2f' % ('Total', total_hours))
         self.msg(u'\nUse `taxi ci` to commit staging changes to the server')
 
-    def pushed_entry(self, entry, error, alias_mappings):
+    def pushed_entry(self, entry, error):
         if error:
             self.msg(u"%s - Failed, reason: %s" % (
-                self.get_entry_status(entry, alias_mappings),
+                self.get_entry_status(entry),
                 error
             ), colorama.Style.BRIGHT + colorama.Fore.RED)
         else:
-            self.msg(self.get_entry_status(entry, alias_mappings))
+            self.msg(self.get_entry_status(entry))
 
     def pushed_entries_summary(self, pushed_entries, failed_entries,
                                ignored_entries):
@@ -307,8 +310,9 @@ class BaseUi(object):
 
     def search_results(self, projects):
         for project in projects:
-            self.msg(u'%s %4s %s' % (
-                project.get_short_status(), project.id, project.name
+            self.msg(u'%s %s %4s %s' % (
+                project.get_short_status(), project.backend, project.id,
+                project.name
             ))
 
     def suggest_aliases(self, not_found_alias, aliases):
@@ -325,9 +329,8 @@ class BaseUi(object):
     def updating_projects_database(self):
         self.msg(u"Updating database, this may take some time...")
 
-    def projects_database_update_success(self, aliases_before_update,
-                                         aliases_after_update, local_aliases,
-                                         shared_aliases, projects_db):
+    def projects_database_update_success(self, aliases_after_update,
+                                         projects_db):
         """
         Display the results of the projects/aliases database update. We need
         the projects db to extract the name of the projects / activities.
@@ -354,19 +357,16 @@ class BaseUi(object):
 
         self.msg(u"Projects database updated successfully.")
 
-        deleted_aliases = (set(aliases_before_update.keys()) -
+        deleted_aliases = (set(alias_database.keys()) -
                            set(aliases_after_update.keys()))
         added_aliases = (set(aliases_after_update.keys()) -
-                         set(aliases_before_update.keys()))
+                         set(alias_database.keys()))
 
         modified_aliases = set()
         for alias, mapping in aliases_after_update.iteritems():
-            if (alias in aliases_before_update
-                    and aliases_before_update[alias] != mapping):
+            if (alias in alias_database
+                    and alias_database[alias] != mapping):
                 modified_aliases.add(alias)
-
-        overlapping_aliases = (set(local_aliases.keys()) &
-                               set(shared_aliases.keys()))
 
         if added_aliases:
             self.msg(u"\nThe following shared aliases have been added:\n")
@@ -380,23 +380,3 @@ class BaseUi(object):
         if modified_aliases:
             self.msg(u"\nThe following shared aliases have been updated:\n")
             show_aliases(modified_aliases)
-
-        if overlapping_aliases:
-            self.msg(u"\nWarning: the following aliases are overlapping:\n")
-            for alias in overlapping_aliases:
-                local_mapping = local_aliases[alias]
-                shared_mapping = shared_aliases[alias]
-                (local_project, local_activity) = (
-                    projects_db.mapping_to_project(local_mapping)
-                )
-                (shared_project, shared_activity) = (
-                    projects_db.mapping_to_project(shared_mapping)
-                )
-
-                self.msg("%s\n\t(local)  %s / %s\n\t(shared) %s / %s" % (
-                    alias,
-                    local_project.name if local_project else "?",
-                    local_activity.name if local_activity else "?",
-                    shared_project.name if shared_project else "?",
-                    shared_activity.name if shared_activity else "?",
-                ))

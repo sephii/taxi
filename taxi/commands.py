@@ -3,17 +3,19 @@ from ConfigParser import NoOptionError
 import calendar
 import datetime
 
-from taxi import remote
-from taxi.exceptions import CancelException, UsageError
-from taxi.projects import Project
-from taxi.timesheet import (
+from .backends import PushEntryFailed
+from .backends.registry import backends_registry
+from .exceptions import CancelException, UsageError
+from .projects import Project
+from .timesheet import (
     NoActivityInProgressError, Timesheet, TimesheetCollection, TimesheetFile
 )
-from taxi.timesheet.entry import TimesheetEntry, EntriesCollection
-from taxi.timesheet.parser import ParseError
-from taxi.settings import Settings
-from taxi.utils import file
-from taxi.utils.structures import OrderedSet
+from .timesheet.entry import TimesheetEntry, EntriesCollection
+from .timesheet.parser import ParseError
+from .settings import Settings
+from .utils import file
+from .utils.structures import OrderedSet
+from .alias import alias_database, Mapping
 
 
 class BaseCommand(object):
@@ -48,8 +50,6 @@ class BaseTimesheetCommand(BaseCommand):
             int(self.settings.get('nb_previous_files'))
         )
 
-        self.alias_mappings = self.settings.get_aliases()
-
         for file_path in timesheet_files:
             timesheet_file = TimesheetFile(file_path)
             try:
@@ -62,7 +62,6 @@ class BaseTimesheetCommand(BaseCommand):
                     timesheet_contents,
                     self.settings.get('date_format')
                 ),
-                self.alias_mappings,
                 timesheet_file
             )
 
@@ -160,9 +159,7 @@ class AddCommand(BaseCommand):
             return
 
         project = projects[number]
-        mappings = self.settings.get_reversed_aliases()
-        self.view.project_with_activities(project, mappings,
-                                          numbered_activities=True)
+        self.view.project_with_activities(project, numbered_activities=True)
 
         try:
             number = self.view.select_activity(project.activities)
@@ -176,8 +173,8 @@ class AddCommand(BaseCommand):
             except CancelException:
                 return
 
-            if self.settings.activity_exists(alias):
-                mapping = self.settings.get_aliases()[alias]
+            if alias in alias_database:
+                mapping = alias_database[alias]
                 overwrite = self.view.overwrite_alias(alias, mapping)
 
                 if not overwrite:
@@ -191,7 +188,9 @@ class AddCommand(BaseCommand):
                 retry = False
 
         activity = project.activities[number]
-        self.settings.add_alias(alias, project.id, activity.id)
+        mapping = Mapping(mapping=(project.id, activity.id),
+                          backend=project.backend)
+        self.settings.add_alias(alias, mapping)
         self.settings.write_config()
 
         self.view.alias_added(alias, (project.id, activity.id))
@@ -202,7 +201,7 @@ class AliasCommand(BaseCommand):
     Usage: alias [alias]
            alias [project_id]
            alias [project_id/activity_id]
-           alias [alias] [project_id/activity_id]
+           alias [alias] [project_id/activity_id] [backend]
 
     - The first form will display the mappings whose aliases start with the
       search string you entered
@@ -221,13 +220,17 @@ class AliasCommand(BaseCommand):
     MODE_LIST_ALIASES = 2
 
     def validate(self):
-        if len(self.arguments) > 2:
+        if len(self.arguments) not in [0, 1, 3]:
             raise UsageError()
 
     def setup(self):
-        if len(self.arguments) == 2:
+        if len(self.arguments) == 3:
             self.alias = self.arguments[0]
-            self.mapping = self.arguments[1]
+            mapping = Project.str_to_tuple(self.arguments[1])
+            if mapping is None:
+                raise UsageError("The mapping must be in the format xxxx/yyyy")
+
+            self.mapping = Mapping(mapping=mapping, backend=self.arguments[2])
             self.mode = self.MODE_ADD_ALIAS
         elif len(self.arguments) == 1:
             self.alias = self.arguments[0]
@@ -237,7 +240,7 @@ class AliasCommand(BaseCommand):
             self.mode = self.MODE_LIST_ALIASES
 
     def run(self):
-        # 2 arguments, add a new alias
+        # 3 arguments, add a new alias
         if self.mode == self.MODE_ADD_ALIAS:
             self._add_alias(self.alias, self.mapping)
         # 1 argument, display the alias or the project id/activity id tuple
@@ -245,38 +248,38 @@ class AliasCommand(BaseCommand):
             mapping = Project.str_to_tuple(self.alias)
 
             if mapping is not None:
-                for m in self.settings.search_aliases(mapping):
-                    self.view.mapping_detail(m, self.projects_db.get(m[1][0]))
+                for alias, m in alias_database.filter_from_mapping(mapping).items():
+                    self.view.mapping_detail(
+                        (alias, m.mapping if m is not None else None),
+                        self.projects_db.get(m.mapping[0], m.backend)
+                        if m is not None else None
+                    )
             else:
                 self.mode = self.MODE_LIST_ALIASES
 
         # No argument, display the mappings
         if self.mode == self.MODE_LIST_ALIASES:
-            for m in self.settings.search_mappings(self.alias):
+            for alias, m in alias_database.filter_from_alias(self.alias).items():
                 self.view.alias_detail(
-                    m,
-                    self.projects_db.get(m[1][0]) if m[1] is not None else None
+                    (alias, m.mapping if m is not None else None),
+                    self.projects_db.get(m.mapping[0], m.backend)
+                    if m is not None else None
                 )
 
     def _add_alias(self, alias_name, mapping):
-        project_activity = Project.str_to_tuple(mapping)
-
-        if project_activity is None:
-            raise UsageError("The mapping must be in the format xxxx/yyyy")
-
-        if self.settings.activity_exists(alias_name):
-            existing_mapping = self.settings.get_aliases()[alias_name]
-            confirm = self.view.overwrite_alias(alias_name, existing_mapping,
-                                                False)
+        if alias_name in alias_database:
+            existing_mapping = alias_database[alias_name]
+            confirm = self.view.overwrite_alias(
+                alias_name, existing_mapping, False
+            )
 
             if not confirm:
                 return
 
-        self.settings.add_alias(alias_name, project_activity[0],
-                                project_activity[1])
+        self.settings.add_alias(alias_name, mapping)
         self.settings.write_config()
 
-        self.view.alias_added(alias_name, project_activity)
+        self.view.alias_added(alias_name, mapping.mapping)
 
 
 class AutofillCommand(BaseTimesheetCommand):
@@ -329,19 +332,18 @@ class CleanAliasesCommand(BaseCommand):
 
     """
     def run(self):
-        aliases = self.settings.get_aliases()
         inactive_aliases = []
 
-        for (alias, mapping) in aliases.iteritems():
+        for (alias, mapping) in alias_database.iteritems():
             # Ignore local aliases
             if mapping is None:
                 continue
 
-            project = self.projects_db.get(mapping[0])
+            project = self.projects_db.get(mapping.mapping[0], mapping.backend)
 
             if (project is None or not project.is_active() or
-                    (mapping[1] is not None
-                     and project.get_activity(mapping[1]) is None)):
+                    (mapping.mapping[1] is not None
+                     and project.get_activity(mapping.mapping[1]) is None)):
                 inactive_aliases.append(((alias, mapping), project))
 
         if not inactive_aliases:
@@ -353,7 +355,7 @@ class CleanAliasesCommand(BaseCommand):
 
         if self.options.get('force_yes') or confirm:
             self.settings.remove_aliases(
-                [item[0][0] for item in inactive_aliases]
+                [item[0] for item in inactive_aliases]
             )
             self.settings.write_config()
             self.view.msg(u"%d inactive aliases have been successfully"
@@ -384,22 +386,33 @@ class CommitCommand(BaseTimesheetCommand):
                 return
 
         self.view.pushing_entries()
-        r = remote.ZebraRemote(self.settings.get('site'),
-                               self.settings.get('username'),
-                               self.settings.get('password'))
-
         all_pushed_entries = []
         all_failed_entries = []
 
         for timesheet in timesheet_collection.timesheets:
+            pushed_entries = []
+            failed_entries = []
+
             entries_to_push = timesheet.get_entries(
                 self.options.get('date', None), exclude_ignored=True,
                 exclude_local=True, exclude_unmapped=True, regroup=True
             )
 
-            (pushed_entries, failed_entries) = r.send_entries(
-                entries_to_push, self.alias_mappings, self._entry_pushed
-            )
+            for (date, entries) in entries_to_push.items():
+                for entry in entries:
+                    error = None
+                    backend_name = alias_database[entry.alias].backend
+                    backend = backends_registry[backend_name]
+
+                    try:
+                        backend.push_entry(date, entry)
+                    except PushEntryFailed as e:
+                        failed_entries.append(entry)
+                        error = e.message
+                    else:
+                        pushed_entries.append(entry)
+                    finally:
+                        self.view.pushed_entry(entry, error)
 
             local_entries = timesheet.get_local_entries(
                 self.options.get('date', None)
@@ -435,9 +448,6 @@ class CommitCommand(BaseTimesheetCommand):
         self.view.pushed_entries_summary(all_pushed_entries,
                                          all_failed_entries,
                                          ignored_entries_list)
-
-    def _entry_pushed(self, entry, error):
-        self.view.pushed_entry(entry, error, self.alias_mappings)
 
 
 class EditCommand(BaseTimesheetCommand):
@@ -481,7 +491,7 @@ class EditCommand(BaseTimesheetCommand):
         else:
             self.view.show_status(
                 timesheet_collection.get_entries(regroup=True),
-                self.alias_mappings, self.settings
+                self.settings
             )
 
 
@@ -532,7 +542,7 @@ class SearchCommand(BaseCommand):
 
 class ShowCommand(BaseCommand):
     """
-    Usage: show project_id
+    Usage: show project_id [backend]
 
     Shows the details of the given project_id (you can find it with the search
     command).
@@ -549,21 +559,21 @@ class ShowCommand(BaseCommand):
 
     def setup(self):
         self.project_id = int(self.arguments[0])
+        self.backend = self.arguments[1] if len(self.arguments) > 1 else None
 
     def run(self):
         try:
-            project = self.projects_db.get(self.project_id)
+            project = self.projects_db.get(self.project_id, self.backend)
         except IOError:
             raise Exception("Error: the projects database file doesn't exist. "
                             "Please run `taxi update` to create it")
 
         if project is None:
             self.view.err(
-                u"The project `%s` doesn't exist" % (self.project_id)
+                u"Could not find project `%s`" % (self.project_id)
             )
         else:
-            mappings = self.settings.get_reversed_aliases()
-            self.view.project_with_activities(project, mappings)
+            self.view.project_with_activities(project)
 
 
 class StartCommand(BaseTimesheetCommand):
@@ -628,7 +638,6 @@ class StatusCommand(BaseTimesheetCommand):
         else:
             self.view.show_status(
                 timesheet_collection.get_entries(self.date, regroup=True),
-                self.alias_mappings,
                 self.settings
             )
 
@@ -672,36 +681,42 @@ class UpdateCommand(BaseCommand):
     aliases.
 
     """
-    def setup(self):
-        self.site = self.settings.get('site')
-        self.username = self.settings.get('username')
-        self.password = self.settings.get('password')
-
     def run(self):
         self.view.updating_projects_database()
 
-        aliases_before_update = self.settings.get_aliases()
-        local_aliases = self.settings.get_aliases(include_shared=False)
+        projects = []
 
-        r = remote.ZebraRemote(self.site, self.username, self.password)
-        projects = r.get_projects()
+        for backend_name, backend_uri in self.settings.get_backends():
+            backend = backends_registry[backend_name]
+            backend_projects = backend.get_projects()
+
+            for project in backend_projects:
+                project.backend = backend_name
+
+            projects += backend_projects
+
         self.projects_db.update(projects)
 
         # Put the shared aliases in the config file
         shared_aliases = {}
+        backends_to_clear = set()
         for project in projects:
             if project.is_active():
                 for alias, activity_id in project.aliases.iteritems():
-                    self.settings.add_shared_alias(alias, project.id,
-                                                   activity_id)
-                    shared_aliases[alias] = (project.id, activity_id)
+                    mapping = Mapping(mapping=(project.id, activity_id),
+                                      backend=project.backend)
+                    shared_aliases[alias] = mapping
+                    backends_to_clear.add(project.backend)
+
+        for backend in backends_to_clear:
+            self.settings.clear_shared_aliases(backend)
+
+        for alias, mapping in shared_aliases.items():
+            self.settings.add_shared_alias(alias, mapping)
 
         aliases_after_update = self.settings.get_aliases()
 
         self.settings.write_config()
 
-        self.view.projects_database_update_success(aliases_before_update,
-                                                   aliases_after_update,
-                                                   local_aliases,
-                                                   shared_aliases,
+        self.view.projects_database_update_success(aliases_after_update,
                                                    self.projects_db)

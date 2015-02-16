@@ -9,12 +9,14 @@ from pkg_resources import resource_filename
 import sys
 import shutil
 
-from taxi import __version__, commands
-from taxi.exceptions import TaxiException, UsageError
-from taxi.projects import ProjectsDb
-from taxi.settings import Settings
-from taxi.utils.file import expand_filename
-from taxi.ui.tty import TtyUi
+from . import __version__, commands
+from .alias import alias_database
+from .backends.registry import backends_registry
+from .exceptions import TaxiException, UsageError
+from .projects import ProjectsDb
+from .settings import Settings
+from .utils.file import expand_filename
+from .ui.tty import TtyUi
 
 
 class AppContainer(object):
@@ -26,7 +28,7 @@ class Taxi(object):
         usage = """Usage: %prog [options] command
 
 Available commands:
-  add    \t\tsearches, prompts for project, activity and alias, adds to .tksrc
+  add    \t\tsearches, prompts for project, activity and alias, adds to config
   alias  \t\tshows your mappings and allows you to create new ones
   autofill \t\tautofills the current timesheet with all the days of the month
   clean-aliases\t\tremoves aliases that point to inactive projects
@@ -42,8 +44,8 @@ Available commands:
 
         opt = OptionParser(usage=usage, version='%prog ' + __version__)
         opt.add_option('-c', '--config', dest='config',
-                       help='use CONFIG file instead of ~/.tksrc',
-                       default='~/.tksrc')
+                       help='use CONFIG file instead of ~/.taxirc',
+                       default='~/.taxirc')
         opt.add_option('-v', '--verbose', dest='verbose', action='store_true',
                        help='make taxi verbose', default=False)
         opt.add_option('-f', '--file', dest='file', help='parse FILE instead'
@@ -147,6 +149,9 @@ Available commands:
             )
 
         projects_db = ProjectsDb(options['projects_db'])
+        self.populate_aliases(settings.get_aliases(),
+                              settings.get_local_aliases())
+        self.populate_backends(settings.get_backends())
 
         view = TtyUi(
             options.get('stdout', sys.stdout),
@@ -186,18 +191,51 @@ Available commands:
         """
         Create main configuration file if it doesn't exist.
         """
-        if not os.path.isfile(filename):
+        import textwrap
+
+        if not os.path.exists(filename):
+            old_default_config_file = os.path.join(os.path.dirname(filename),
+                                                   '.tksrc')
+            if os.path.exists(old_default_config_file):
+                upgrade = raw_input("\n".join(textwrap.wrap(
+                    "It looks like you recently updated Taxi. Some "
+                    "configuration changes are required. You can either let "
+                    "me upgrade your configuration file or do it "
+                    "manually.")) + "\n\nProceed with automatic configuration "
+                    "file upgrade? [Y/n]: "
+                )
+
+                if not upgrade or upgrade.lower() == 'y':
+                    settings = Settings(old_default_config_file)
+                    settings.convert_to_4()
+                    with open(filename, 'w') as config_file:
+                        settings.config.write(config_file)
+                    os.remove(old_default_config_file)
+                    return
+                else:
+                    print("Aborting.")
+                    sys.exit(0)
+
             response = raw_input(
                 "The configuration file %s does not exist yet.\nDo you want to"
                 " create it now? [Y/n]: " % filename
             )
 
             if not response or response.lower() == 'y':
-                src_config = resource_filename('taxi', 'doc/tksrc.sample')
+                src_config = resource_filename('taxi', 'etc/taxirc.sample')
                 shutil.copy(src_config, filename)
             else:
                 print("Aborting.")
                 sys.exit(1)
+
+    def populate_aliases(self, aliases, local_aliases):
+        alias_database.update(aliases)
+
+        for alias in local_aliases:
+            alias_database.local_aliases.add(alias)
+
+    def populate_backends(self, backends):
+        backends_registry.populate(dict(backends))
 
 
 def term_unicode(string):

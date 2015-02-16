@@ -3,14 +3,14 @@ from collections import defaultdict
 import datetime
 import os
 
+from ..alias import alias_database
 from ..utils import date as date_utils
 from .entry import AggregatedTimesheetEntry, EntriesCollection, TimesheetEntry
 
 
 class Timesheet(object):
-    def __init__(self, entries=None, mappings=None, file=None):
+    def __init__(self, entries=None, file=None):
         self.entries = entries if entries is not None else EntriesCollection()
-        self.mappings = mappings if mappings is not None else AliasMappings()
         self.file = file
 
     def get_filtered_entries(self, date=None, filter_callback=None,
@@ -91,29 +91,23 @@ class Timesheet(object):
         def entry_filter(entry):
             return (not (exclude_ignored and entry.is_ignored())
                     and not (exclude_local
-                             and self.is_alias_local(entry.alias))
+                             and alias_database.is_local(entry.alias))
                     and (not exclude_unmapped
-                         or self.is_alias_mapped(entry.alias)))
+                         or entry.alias in alias_database))
 
         return self.get_filtered_entries(date, entry_filter, regroup)
 
     def get_ignored_entries(self, date=None):
         def entry_filter(entry):
-            return (entry.is_ignored() or self.is_alias_local(entry.alias)
-                    or not self.is_alias_mapped(entry.alias))
+            return (entry.is_ignored() or alias_database.is_local(entry.alias)
+                    or entry.alias not in alias_database)
 
         return self.get_filtered_entries(date, entry_filter)
 
     def get_local_entries(self, date=None):
         return self.get_filtered_entries(
-            date, lambda e: self.is_alias_local(e.alias)
+            date, lambda e: alias_database.is_local(e.alias)
         )
-
-    def is_alias_local(self, alias):
-        return self.is_alias_mapped(alias) and self.mappings[alias] is None
-
-    def is_alias_mapped(self, alias):
-        return alias in self.mappings
 
     def get_non_current_workday_entries(self):
         non_workday_entries = defaultdict(list)
@@ -281,11 +275,6 @@ class TimesheetFile(object):
         with codecs.open(self.file_path, 'w', 'utf-8') as timesheet_file:
             for line in entries.to_lines():
                 timesheet_file.write(u'%s\n' % line)
-
-
-class AliasMappings(dict):
-    def is_local(self, alias):
-        return self[alias] is None
 
 
 class NoActivityInProgressError(Exception):

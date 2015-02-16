@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
+from collections import defaultdict
 import ConfigParser
 import os
 import difflib
 
-from .timesheet import AliasMappings
+from .alias import Mapping
+from .projects import Project
 
 
-class Settings:
+class Settings(dict):
     TAXI_PATH = os.path.expanduser('~/.taxi')
     AUTO_ADD_OPTIONS = {
         'NO': 'no',
@@ -20,12 +22,14 @@ class Settings:
         'date_format': '%d/%m/%Y',
         'auto_add': 'auto',
         'nb_previous_files': '1',
-        'use_colors': '1'
+        'use_colors': '1',
+        'local_aliases': '',
     }
 
     def __init__(self, file):
         self.config = ConfigParser.RawConfigParser()
         self.filepath = os.path.expanduser(file)
+        self._backends_registry = {}
 
         try:
             with open(self.filepath, 'r') as fp:
@@ -35,10 +39,13 @@ class Settings:
                 "The specified configuration file `%s` doesn't exist" % file
             )
 
-    def get(self, key, section='default'):
+    def get(self, key, section='default', default_value=None):
         try:
             return self.config.get(section, key)
         except ConfigParser.NoOptionError:
+            if default_value is not None:
+                return default_value
+
             if key in self.DEFAULTS:
                 return self.DEFAULTS[key]
 
@@ -52,100 +59,109 @@ class Settings:
 
         return [int(e.strip()) for e in auto_fill_days.split(',')]
 
-    def get_aliases(self, include_shared=True, include_local=True):
-        aliases = AliasMappings()
-        config_aliases = self.config.items('wrmap')
-        shared_config_aliases = (self.config.items('shared_wrmap')
-                                 if self.config.has_section('shared_wrmap')
-                                 else {})
-        aliases_sections = [config_aliases]
-
-        if include_shared:
-            aliases_sections.insert(0, shared_config_aliases)
-
-        for aliases_group in aliases_sections:
-            for (alias, mapping) in aliases_group:
-                try:
-                    (project_id, activity_id) = mapping.split('/', 1)
-                    aliases[alias] = (int(project_id), int(activity_id))
-                except ValueError:
-                    raise ValueError(
-                        "The alias '%s' is mapped to an incorrect activity"
-                        " (%s). The format must be project_id/activity_id" %
-                        (alias, mapping)
-                    )
-
-        if include_local:
-            try:
-                local_aliases = self.config.get('default', 'local_aliases')
-            except ConfigParser.NoOptionError:
-                local_aliases = ''
-
-            if local_aliases:
-                for alias in local_aliases.split(','):
-                    aliases[alias.strip()] = None
-
-        return aliases
-
-    def get_reversed_aliases(self, include_shared=True):
-        aliases = self.get_aliases(include_shared)
-
-        return dict((v, k) for k, v in aliases.iteritems())
-
-    def search_aliases(self, mapping):
-        aliases = []
-
-        for (user_alias, mapped_alias) in self.get_aliases().iteritems():
-            if (mapped_alias is None or mapped_alias[0] != mapping[0]
-                    or (mapping[1] is not None
-                        and mapped_alias[1] != mapping[1])):
-                continue
-
-            aliases.append((user_alias, mapped_alias))
-
-        aliases = sorted(aliases, key=lambda alias: alias[1])
-
-        return aliases
-
-    def search_mappings(self, search_alias):
-        aliases = []
-
-        for (user_alias, mapped_alias) in self.get_aliases().iteritems():
-            if search_alias is None or user_alias.startswith(search_alias):
-                aliases.append((user_alias, mapped_alias))
-
-        aliases = sorted(aliases, key=lambda alias: alias[1])
-
-        return aliases
+    def get_local_aliases(self):
+        return [alias.strip()
+                for alias in self.get('local_aliases').split(',')
+                if alias.strip()]
 
     def get_close_matches(self, project_name):
         return difflib.get_close_matches(project_name,
                                          self.get_aliases().keys(), cutoff=0.2)
 
-    def add_alias(self, alias, projectid, activityid):
-        self.config.set('wrmap', alias, '%s/%s' % (projectid, activityid))
+    def add_alias(self, alias, mapping):
+        alias_section = get_alias_section_name(mapping.backend, False)
+
+        if not self.config.has_section(alias_section):
+            self.config.add_section(alias_section)
+
+        self.config.set(alias_section, alias,
+                        Project.tuple_to_str(mapping.mapping))
 
     def remove_aliases(self, aliases):
-        # Look in mapping sections in this order, once the mapping has been
-        # found in a section, don't go further
-        search_in_sections = ['wrmap', 'shared_wrmap']
-
-        for alias in aliases:
-            for section in search_in_sections:
-                if self.config.has_option(section, alias):
-                    self.config.remove_option(section, alias)
+        for alias, mapping in aliases:
+            for shared_section in [False, True]:
+                backend_section = get_alias_section_name(mapping.backend,
+                                                         shared_section)
+                if self.config.has_option(backend_section, alias):
+                    self.config.remove_option(backend_section, alias)
                     break
 
     def write_config(self):
         with open(self.filepath, 'w') as file:
             self.config.write(file)
 
-    def activity_exists(self, activity_name):
-        return self.config.has_option('wrmap', activity_name)
+    def add_shared_alias(self, alias, mapping):
+        section = get_alias_section_name(mapping.backend, True)
+        if not self.config.has_section(section):
+            self.config.add_section(section)
 
-    def add_shared_alias(self, alias, project_id, activity_id):
-        if not self.config.has_section('shared_wrmap'):
-            self.config.add_section('shared_wrmap')
+        self.config.set(section, alias, '%s/%s' % mapping.mapping)
 
-        self.config.set('shared_wrmap', alias,
-                        '%s/%s' % (project_id, activity_id))
+    def clear_shared_aliases(self, backend):
+        self.config.remove_section(get_alias_section_name(backend, True))
+        self.config.add_section(get_alias_section_name(backend, True))
+
+    def get_aliases(self):
+        backends = self.get_backends()
+        aliases = defaultdict(dict)
+
+        for (backend, uri) in backends:
+            for shared_section in [False, True]:
+                backend_aliases_section = get_alias_section_name(
+                    backend, shared_section
+                )
+
+                if self.config.has_section(backend_aliases_section):
+                    for (alias, mapping) in self.config.items(backend_aliases_section):
+                        mapping = Project.str_to_tuple(mapping)
+                        mapping_obj = Mapping(mapping, backend)
+                        aliases[alias] = mapping_obj
+
+        return aliases
+
+    def get_backends(self):
+        return self.config.items('backends')
+
+    def convert_to_4(self):
+        """
+        Convert a pre-4.0 configuration file to a 4.0 configuration file.
+        """
+        import urlparse
+
+        if not self.config.has_section('backends'):
+            self.config.add_section('backends')
+
+        site = urlparse.urlparse(self.get('site', default_value=''))
+        backend_uri = 'zebra://{username}:{password}@{hostname}'.format(
+            username=self.get('username', default_value=''),
+            password=self.get('password', default_value=''),
+            hostname=site.hostname
+        )
+        self.config.set('backends', 'default', backend_uri)
+
+        self.config.remove_option('default', 'username')
+        self.config.remove_option('default', 'password')
+        self.config.remove_option('default', 'site')
+
+        if not self.config.has_section('default_aliases'):
+            self.config.add_section('default_aliases')
+
+        if not self.config.has_section('default_shared_aliases'):
+            self.config.add_section('default_shared_aliases')
+
+        if self.config.has_section('wrmap'):
+            for alias, mapping in self.config.items('wrmap'):
+                self.config.set('default_aliases', alias, mapping)
+
+            self.config.remove_section('wrmap')
+
+        if self.config.has_section('shared_wrmap'):
+            for alias, mapping in self.config.items('shared_wrmap'):
+                self.config.set('default_shared_aliases', alias, mapping)
+
+            self.config.remove_section('shared_wrmap')
+
+
+def get_alias_section_name(backend_name, shared_section=False):
+    return '%s_%s' % (backend_name,
+                      'aliases' if not shared_section else 'shared_aliases')

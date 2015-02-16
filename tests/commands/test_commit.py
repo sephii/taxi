@@ -11,7 +11,7 @@ class CommitCommandTestCase(CommandTestCase):
     @freeze_time('2014-01-21')
     def test_fix_entries_start_time(self):
         config = self.default_config.copy()
-        config['wrmap']['fail'] = '456/789'
+        config['dummy_aliases']['fail'] = '456/789'
 
         self.write_entries("""21/01/2014
 fail     0745-0830  Repair coffee machine
@@ -30,7 +30,7 @@ fail   1300-1400 Printer is down again
     @freeze_time('2014-01-21')
     def test_fix_ignored_entries_start_time(self):
         config = self.default_config.copy()
-        config['wrmap']['fail'] = '456/789'
+        config['dummy_aliases']['fail'] = '456/789'
 
         self.write_entries("""21/01/2014
 alias_1     0745-0830  Repair coffee machine
@@ -247,7 +247,7 @@ _pingpong 0800-0900 Play ping-pong
     @freeze_time('2014-01-21')
     def test_fix_entries_start_time(self):
         config = self.default_config.copy()
-        config['wrmap']['fail'] = '456/789'
+        config['dummy_aliases']['fail'] = '456/789'
 
         self.write_entries("""21/01/2014
 fail     -0830  Repair coffee machine

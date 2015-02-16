@@ -7,8 +7,7 @@ from setuptools.command.test import test as TestCommand
 
 
 tests_require = [
-    'freezegun==0.2.2',
-    'mock==1.0.1',
+    'freezegun==0.2.8',
     'pytest==2.6.4',
 ]
 
@@ -50,6 +49,9 @@ setup(
     include_package_data=False,
     cmdclass = {'test': PyTest},
     package_data={
-        'taxi': ['doc/*']
+        'taxi': ['etc/*']
+    },
+    entry_points={
+        'taxi.backends': 'dummy = taxi.backends.dummy:DummyBackend'
     }
 )

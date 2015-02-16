@@ -4,7 +4,7 @@ import datetime
 import json
 import re
 
-from taxi.exceptions import TaxiException
+from .exceptions import TaxiException
 
 
 class Project:
@@ -39,6 +39,7 @@ class Project:
         self.aliases = {}
         self.start_date = None
         self.end_date = None
+        self.backend = None
 
     def __unicode__(self):
         if self.status in self.STATUSES:
@@ -170,6 +171,8 @@ class ProjectsDb:
         with open(self.path, 'w') as output:
             json.dump(lpdb.get_dump_object(), output)
 
+        self._projects_cache = None
+
     def search(self, search, active_only=False):
         projects = self.get_projects()
         found_list = []
@@ -191,26 +194,22 @@ class ProjectsDb:
 
         return found_list
 
-    def get(self, id):
-        projects_hash = getattr(self, '_projects_hash', None)
-        if projects_hash is None:
-            projects = self.get_projects()
-            projects_hash = {}
+    def get(self, id, backend=None):
+        # TODO optimize?
+        projects = self.get_projects()
 
-            for project in projects:
-                projects_hash[project.id] = project
+        for project in projects:
+            if (project.id == id and (backend is None
+                    or project.backend == backend)):
+                return project
 
-            setattr(self, '_projects_hash', projects_hash)
-
-        return projects_hash[id] if id in projects_hash else None
-
-    def mapping_to_project(self, mapping_tuple):
-        project = self.get(mapping_tuple[0])
+    def mapping_to_project(self, mapping):
+        project = self.get(mapping.mapping[0], mapping.backend)
 
         if not project:
             return (None, None)
 
-        activity = project.get_activity(mapping_tuple[1])
+        activity = project.get_activity(mapping.mapping[1])
 
         if not activity:
             return (project, None)
