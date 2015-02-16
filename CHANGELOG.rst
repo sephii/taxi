@@ -2,6 +2,14 @@
 Changelog
 #########
 
+4.0.0 (unreleased)
+==================
+
+Added
+-----
+
+* Add support for multiple backends (#40).
+
 3.2.1 (2015-01-16)
 ==================
 
