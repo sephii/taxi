@@ -188,7 +188,9 @@ class AddCommand(BaseCommand):
                 retry = False
 
         activity = project.activities[number]
-        self.settings.add_alias(alias, project.id, activity.id)
+        mapping = Mapping(mapping=(project.id, activity.id),
+                          backend=project.backend)
+        self.settings.add_alias(alias, mapping)
         self.settings.write_config()
 
         self.view.alias_added(alias, (project.id, activity.id))

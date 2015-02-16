@@ -28,7 +28,7 @@ class Taxi(object):
         usage = """Usage: %prog [options] command
 
 Available commands:
-  add    \t\tsearches, prompts for project, activity and alias, adds to .tksrc
+  add    \t\tsearches, prompts for project, activity and alias, adds to config
   alias  \t\tshows your mappings and allows you to create new ones
   autofill \t\tautofills the current timesheet with all the days of the month
   clean-aliases\t\tremoves aliases that point to inactive projects

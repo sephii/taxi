@@ -69,8 +69,13 @@ class Settings(dict):
                                          self.get_aliases().keys(), cutoff=0.2)
 
     def add_alias(self, alias, mapping):
-        self.config.set('%s_aliases' % mapping.backend, alias,
-                        '%s/%s' % mapping.mapping)
+        alias_section = get_alias_section_name(mapping.backend, False)
+
+        if not self.config.has_section(alias_section):
+            self.config.add_section(alias_section)
+
+        self.config.set(alias_section, alias,
+                        Project.tuple_to_str(mapping.mapping))
 
     def remove_aliases(self, aliases):
         for alias, mapping in aliases:
