@@ -54,5 +54,11 @@ setup(
     },
     entry_points={
         'taxi.backends': 'dummy = taxi.backends.dummy:DummyBackend'
-    }
+    },
+    classifiers=[
+        'Environment :: Console',
+        'Development Status :: 5 - Production/Stable',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.4',
+    ]
 )
