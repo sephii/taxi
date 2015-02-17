@@ -1,5 +1,8 @@
+from __future__ import unicode_literals
+
 import collections
 import itertools
+import six
 
 
 Mapping = collections.namedtuple('Mapping', ['mapping', 'backend'])
@@ -64,12 +67,12 @@ class AliasDatabase(object):
 
     def items(self):
         return itertools.chain(
-            self.local_aliases_to_dict().iteritems(),
-            self.aliases.iteritems()
+            six.iteritems(self.local_aliases_to_dict()),
+            six.iteritems(self.aliases)
         )
 
     def keys(self):
-        return self.aliases.keys() + list(self.local_aliases)
+        return list(self.aliases.keys()) + list(self.local_aliases)
 
     def update(self, other):
         self.aliases.update(other)
@@ -100,7 +103,7 @@ class AliasDatabase(object):
         aliases are not included in this list for the obvious reason that
         they're all mapped to a `None` mapping.
         """
-        return dict((v, k) for k, v in self.aliases.iteritems())
+        return dict((v, k) for k, v in six.iteritems(self.aliases))
 
     def filter_from_mapping(self, mapping):
         """
@@ -109,20 +112,22 @@ class AliasDatabase(object):
         that only match the first item of `mapping` (useful to show all
         mappings for a given project).
         """
-        def mapping_filter((key, item)):
+        def mapping_filter(key_item):
+            key, item = key_item
+
             return (
                 item.mapping == mapping
                 or (mapping[1] is None and item.mapping[0] == mapping[0])
             )
 
         if not mapping:
-            items = self.iteritems()
+            items = six.iteritems(self)
         else:
-            items = itertools.ifilter(mapping_filter, self.iteritems())
+            items = six.moves.filter(mapping_filter, six.iteritems(self))
 
         aliases = collections.OrderedDict(
             sorted(items, key=lambda alias: alias[1].mapping
-                   if alias[1] is not None else '')
+                   if alias[1] is not None else (0, 0))
         )
 
         return aliases
@@ -131,17 +136,18 @@ class AliasDatabase(object):
         """
         Return aliases that start with the given `alias`.
         """
-        def alias_filter((key, item)):
+        def alias_filter(key_item):
+            key, item = key_item
             return key.startswith(alias)
 
         if not alias:
-            items = self.iteritems()
+            items = six.iteritems(self)
         else:
-            items = itertools.ifilter(alias_filter, self.iteritems())
+            items = six.moves.filter(alias_filter, six.iteritems(self))
 
         aliases = collections.OrderedDict(
             sorted(items, key=lambda alias: alias[1].mapping
-                   if alias[1] is not None else '')
+                   if alias[1] is not None else (0, 0))
         )
 
         return aliases

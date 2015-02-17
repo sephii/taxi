@@ -12,7 +12,8 @@ tests_require = [
 ]
 
 install_requires = [
-    'colorama==0.3.1'
+    'colorama==0.3.1',
+    'six==1.9.0',
 ]
 
 

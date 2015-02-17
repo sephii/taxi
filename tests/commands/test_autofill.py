@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 from freezegun import freeze_time
 
 from . import CommandTestCase

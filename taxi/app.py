@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
-import ConfigParser
+from __future__ import unicode_literals
+
 import datetime
 import inspect
+import io
 import locale
 from optparse import OptionParser
 import os
 from pkg_resources import resource_filename
+import six
+from six.moves import configparser
 import sys
 import shutil
 
@@ -62,7 +66,7 @@ Available commands:
         opt.add_option('-y', '--force-yes', dest='force_yes',
                        help='assume "yes"', action='store_true', default=False)
         (options, args) = opt.parse_args()
-        args = [term_unicode(arg) for arg in args]
+        args = [six.text_type(arg) for arg in args]
 
         if len(args) == 0:
             args = ['help']
@@ -73,8 +77,8 @@ Available commands:
         except UsageError as ue:
             opt.print_help()
 
-            if ue.message:
-                print("\nError: %s" % ue.message)
+            if str(ue):
+                print("\nError: %s" % ue)
 
     def run_command(self, command, options={}, args=[]):
         actions = {
@@ -113,7 +117,7 @@ Available commands:
             options['forced_file'] = False
             try:
                 options['file'] = settings.get('file')
-            except ConfigParser.NoOptionError:
+            except configparser.NoOptionError:
                 raise Exception("Error: no file to parse. You must either "
                                 "define one in your config file with the "
                                 "'file' setting, or use the -f option")
@@ -236,10 +240,6 @@ Available commands:
 
     def populate_backends(self, backends):
         backends_registry.populate(dict(backends))
-
-
-def term_unicode(string):
-    return unicode(string, sys.stdin.encoding)
 
 
 def main():

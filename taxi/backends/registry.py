@@ -1,5 +1,7 @@
+from __future__ import unicode_literals
+
 import pkg_resources
-import urlparse
+from six.moves.urllib import parse
 
 
 class BackendRegistry(object):
@@ -71,8 +73,8 @@ class BackendRegistry(object):
         The entry point that is used to create the backend object is determined
         by the protocol part of the given URI.
         """
-        parsed = urlparse.urlparse(backend_uri)
-        options = dict(urlparse.parse_qsl(parsed.query))
+        parsed = parse.urlparse(backend_uri)
+        options = dict(parse.parse_qsl(parsed.query))
 
         try:
             backend = self._entry_points[parsed.scheme].load()

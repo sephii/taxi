@@ -1,5 +1,6 @@
-import pickle
+from __future__ import unicode_literals
 
+import pickle
 import pytest
 
 from taxi import projects
@@ -9,7 +10,10 @@ def test_legacy_projects_db(tmpdir):
     projects_db_file = tmpdir.join('projects_db')
 
     local_projects_db = projects.LocalProjectsDb()
-    pickle.dump(local_projects_db, projects_db_file)
+    foo = pickle.dumps(local_projects_db)
+
+    with projects_db_file.open(mode='wb') as f:
+        f.write(foo)
 
     p = projects.ProjectsDb(projects_db_file.strpath)
     with pytest.raises(projects.OutdatedProjectsDbException):

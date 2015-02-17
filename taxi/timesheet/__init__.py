@@ -1,7 +1,11 @@
+from __future__ import unicode_literals
+
 import codecs
 from collections import defaultdict
 import datetime
 import os
+
+import six
 
 from ..alias import alias_database
 from ..utils import date as date_utils
@@ -22,7 +26,7 @@ class Timesheet(object):
 
         filtered_entries = defaultdict(list)
 
-        for (entries_date, entries) in self.entries.iteritems():
+        for (entries_date, entries) in six.iteritems(self.entries):
             if (date is not None
                     and (entries_date < date[0] or entries_date > date[1])):
                 continue
@@ -115,7 +119,7 @@ class Timesheet(object):
         today = datetime.date.today()
         yesterday = date_utils.get_previous_working_day(today)
 
-        for (date, date_entries) in self.entries.iteritems():
+        for (date, date_entries) in six.iteritems(self.entries):
             if date not in (today, yesterday) or date.strftime('%w') in [6, 0]:
                 for entry in date_entries:
                     if not entry.is_ignored():
@@ -274,7 +278,7 @@ class TimesheetFile(object):
 
         with codecs.open(self.file_path, 'w', 'utf-8') as timesheet_file:
             for line in entries.to_lines():
-                timesheet_file.write(u'%s\n' % line)
+                timesheet_file.write('%s\n' % line)
 
 
 class NoActivityInProgressError(Exception):
