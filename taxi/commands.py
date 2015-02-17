@@ -403,12 +403,10 @@ class CommitCommand(BaseTimesheetCommand):
             )
 
             local_entries = timesheet.get_local_entries(
-                self.options.get('date', None)
+                self.options.get('date', None), not_today
             )
             local_entries_list = []
             for (date, entries) in local_entries.iteritems():
-                if not_today and date == datetime.date.today():
-                    continue
                 local_entries_list.extend(entries)
 
             for entry in local_entries_list + pushed_entries:
