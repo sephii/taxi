@@ -81,7 +81,7 @@ class BackendRegistry(object):
         except KeyError:
             raise BackendNotFoundError(
                 "The requested backend `%s` could not be found in the "
-                "registered entry points"
+                "registered entry points" % parsed.scheme
             )
 
         return backend(
