@@ -9,6 +9,7 @@ Added
 -----
 
 * Add support for multiple backends (#40).
+* Add support for Python 3 (#71).
 
 3.2.1 (2015-01-16)
 ==================

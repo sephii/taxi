@@ -19,8 +19,7 @@ Installation
 ============
 
 The main prerequesite for Taxi to work is to have python installed, you don't
-need anything else. Taxi has been tested on Python 2.6.6 and I don't know if it
-works on other versions, so feedback is welcome.
+need anything else. Taxi works and is tested on Python 2.7 and 3.4.
 
 The easiest way to install taxi is by using ``pip``. This will fetch the latest
 stable version and install it on your system (this can also be used to upgrade
