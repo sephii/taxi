@@ -12,7 +12,6 @@ class CleanAliasesCommandTestCase(CommandTestCase):
     @freeze_time('2014-01-21')
     def test_project_status(self):
         config = self.default_config.copy()
-        options = self.default_options.copy()
 
         config['dummy_aliases'] = {
             'alias_not_started': '0/0',
@@ -21,9 +20,7 @@ class CleanAliasesCommandTestCase(CommandTestCase):
             'alias_cancelled': '3/0',
         }
 
-        options['force_yes'] = True
-
-        projects_db = ProjectsDb(options['projects_db'])
+        projects_db = ProjectsDb(self.taxi_dir)
 
         project_not_started = Project(0, 'not started project',
                                       Project.STATUS_NOT_STARTED)
@@ -45,7 +42,7 @@ class CleanAliasesCommandTestCase(CommandTestCase):
             project_cancelled
         ])
 
-        self.run_command('clean-aliases', options=options,
+        self.run_command('clean-aliases', args=['--yes'],
                          config_options=config)
 
         settings = Settings(self.config_file)

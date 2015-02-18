@@ -18,12 +18,9 @@ class EditCommandTestCase(CommandTestCase):
         Edit with specified date should not autofill it.
         """
         config = self.default_config.copy()
-        options = self.default_options.copy()
-
         config['default']['auto_fill_days'] = '0,1,2,3,4,5,6'
-        options['file'] = self.entries_file
 
-        self.run_command('edit', options=options)
+        self.run_command('edit', args=['--file=%s' % self.entries_file])
 
         with open(self.entries_file, 'r') as f:
             self.assertEqual(f.read(), '')

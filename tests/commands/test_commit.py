@@ -12,9 +12,6 @@ from . import CommandTestCase
 class CommitCommandTestCase(CommandTestCase):
     @freeze_time('2014-01-21')
     def test_fix_entries_start_time(self):
-        config = self.default_config.copy()
-        config['dummy_aliases']['fail'] = '456/789'
-
         self.write_entries("""21/01/2014
 fail     0745-0830  Repair coffee machine
 alias_1 -0900 Play ping-pong
@@ -22,7 +19,7 @@ alias_1 -0915 Check coffee machine uptime
 fail    -1145 Make printer work
 fail   1300-1400 Printer is down again
 """)
-        self.run_command('commit', options=self.default_options)
+        self.run_command('commit')
 
         with open(self.entries_file, 'r') as entries:
             lines = entries.readlines()
@@ -31,16 +28,13 @@ fail   1300-1400 Printer is down again
 
     @freeze_time('2014-01-21')
     def test_fix_ignored_entries_start_time(self):
-        config = self.default_config.copy()
-        config['dummy_aliases']['fail'] = '456/789'
-
         self.write_entries("""21/01/2014
 alias_1     0745-0830  Repair coffee machine
 alias_1 -0900 Play ping-pong
 ignored_alias -0915 Check coffee machine uptime
 ignored_alias -1000 Check coffee machine uptime
 """)
-        self.run_command('commit', options=self.default_options)
+        self.run_command('commit')
 
         with open(self.entries_file, 'r') as entries:
             lines = entries.readlines()
@@ -56,20 +50,16 @@ ignored_alias -1000 Check coffee machine uptime
 
     @freeze_time('2014-01-21')
     def test_commit_date(self):
-        options = self.default_options.copy()
-        options['date'] = '21.01.2014'
-
         self.write_entries("""21/01/2014
 alias_1 2 foobar
 
 20/01/2014
 alias_1 1 previous day entry
 """)
-        stdout = self.run_command('commit', options=options)
+        stdout = self.run_command('commit', args=['--date=21.01.2014'])
         self.assertNotIn('previous day entry', stdout)
 
-        options = self.default_options.copy()
-        stdout = self.run_command('commit', options=options)
+        stdout = self.run_command('commit')
         self.assertIn('previous day entry', stdout)
 
     @freeze_time('2014-01-20')
@@ -77,16 +67,16 @@ alias_1 1 previous day entry
         self.write_entries("""19/01/2014
 alias_1 2 foobar
 """)
-        stdout = self.run_command('commit', options=self.default_options)
-        self.assertIn('--ignore-date-error', stdout)
+        stdout = self.run_command('commit')
+        self.assertIn('Are you sure', stdout)
 
     @freeze_time('2014-01-21')
     def test_ignore_date_error_previous_day(self):
         self.write_entries("""17/01/2014
 alias_1 2 foobar
 """)
-        stdout = self.run_command('commit', options=self.default_options)
-        self.assertIn('--ignore-date-error', stdout)
+        stdout = self.run_command('commit')
+        self.assertIn('Are you sure', stdout)
 
     @freeze_time('2014-01-21')
     def test_commit_previous_file_previous_month(self):
@@ -108,11 +98,8 @@ alias_1 2 january
     alias_1 4 february
     """)
 
-            options = self.default_options.copy()
-            options['ignore_date_error'] = True
-
             stdout = self.run_command('commit', config_options=config,
-                                      options=options)
+                                      args=['--yes'])
         shutil.rmtree(tmp_entries_dir)
 
         self.assertIn('january', stdout)
@@ -143,11 +130,8 @@ alias_1 2 december
 alias_1 4 january
 """)
 
-            options = self.default_options.copy()
-            options['ignore_date_error'] = True
-
             stdout = self.run_command('commit', config_options=config,
-                                      options=options)
+                                      args=['--yes'])
         shutil.rmtree(tmp_entries_dir)
 
         self.assertNotIn('november', stdout)
@@ -180,11 +164,8 @@ alias_1 2 january
 alias_1 4 march
 """)
 
-            options = self.default_options.copy()
-            options['ignore_date_error'] = True
-
             stdout = self.run_command('commit', config_options=config,
-                                      options=options)
+                                      args=['--yes'])
         shutil.rmtree(tmp_entries_dir)
 
         self.assertIn('january', stdout)
@@ -222,11 +203,8 @@ alias_1 1 january 2014
 alias_1 1 february 2014
 """)
 
-            options = self.default_options.copy()
-            options['ignore_date_error'] = True
-
             stdout = self.run_command('commit', config_options=config,
-                                      options=options)
+                                      args=['--yes'])
         shutil.rmtree(tmp_entries_dir)
 
         self.assertIn('january 2013', stdout)
@@ -243,18 +221,18 @@ alias_1 1 february 2014
 _pingpong 0800-0900 Play ping-pong
 """)
 
-        stdout = self.run_command('commit', options=self.default_options)
+        stdout = self.run_command('commit')
         self.assertIn("Total pushed                   0.00", stdout)
 
     @freeze_time('2014-01-21')
-    def test_fix_entries_start_time(self):
+    def test_fix_entries_start_time_without_previous(self):
         config = self.default_config.copy()
         config['dummy_aliases']['fail'] = '456/789'
 
         self.write_entries("""21/01/2014
 fail     -0830  Repair coffee machine
 """)
-        self.run_command('commit', options=self.default_options)
+        self.run_command('commit')
 
         with open(self.entries_file, 'r') as entries:
             lines = entries.readlines()

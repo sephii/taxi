@@ -19,8 +19,7 @@ class AliasCommandTestCase(CommandTestCase):
         }
 
     def run_alias_command(self, args, config_options):
-        return self.run_command('alias', args, self.default_options,
-                                config_options)
+        return self.run_command('alias', args, config_options)
 
     def test_alias_list(self):
         output = self.run_alias_command([], self.config)

@@ -2,12 +2,19 @@ from __future__ import unicode_literals
 
 import datetime
 
+import click
+
 from ..timesheet import NoActivityInProgressError
 from ..timesheet.parser import ParseError
-from .base import BaseTimesheetCommand
+from .base import cli, get_timesheet_collection_for_context
 
 
-class StopCommand(BaseTimesheetCommand):
+@cli.command()
+@click.argument('description', nargs=-1)
+@click.option('-f', '--file', 'f', type=click.Path(dir_okay=False),
+              help="Path to the entries file to use.")
+@click.pass_context
+def stop(ctx, description, f):
     """
     Usage: stop [description]
 
@@ -15,24 +22,19 @@ class StopCommand(BaseTimesheetCommand):
     to what you've done.
 
     """
-    def setup(self):
-        if len(self.arguments) == 0:
-            self.description = None
-        else:
-            self.description = ' '.join(self.arguments)
-
-    def run(self):
-        try:
-            timesheet_collection = self.get_timesheet_collection()
-            current_timesheet = timesheet_collection.timesheets[0]
-            current_timesheet.continue_entry(
-                datetime.date.today(),
-                datetime.datetime.now().time(),
-                self.description
-            )
-        except ParseError as e:
-            self.view.err(e)
-        except NoActivityInProgressError:
-            self.view.err("You don't have any activity in progress for today")
-        else:
-            current_timesheet.file.write(current_timesheet.entries)
+    description = ' '.join(description)
+    try:
+        timesheet_collection = get_timesheet_collection_for_context(ctx, f)
+        current_timesheet = timesheet_collection.timesheets[0]
+        current_timesheet.continue_entry(
+            datetime.date.today(),
+            datetime.datetime.now().time(),
+            description
+        )
+    except ParseError as e:
+        ctx.obj['view'].err(e)
+    except NoActivityInProgressError:
+        ctx.obj['view'].err("You don't have any activity in progress for "
+                            "today")
+    else:
+        current_timesheet.file.write(current_timesheet.entries)

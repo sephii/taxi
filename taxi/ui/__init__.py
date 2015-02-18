@@ -5,6 +5,8 @@ import inspect
 import re
 import six
 
+import click
+from click.termui import confirm
 import colorama
 
 from ..alias import alias_database, Mapping
@@ -14,26 +16,8 @@ from ..projects import Project
 
 
 class BaseUi(object):
-    def __init__(self, stdout, use_colors=True):
-        self.stdout = stdout
-        self.use_colors = use_colors
-
-        if self.use_colors:
-            colorama.init()
-
     def msg(self, message, color=None):
-        if self.use_colors and color is not None:
-            message = "%s%s" % (color, message)
-
-        self.stdout.write(message)
-
-        if self.use_colors and color is not None:
-            self.stdout.write((
-                colorama.Back.RESET + colorama.Fore.RESET +
-                colorama.Style.RESET_ALL
-            ))
-
-        self.stdout.write("\n")
+        click.echo(message)
 
     def err(self, message):
         self.msg("Error: %s" % message, colorama.Fore.RED)
@@ -180,10 +164,18 @@ class BaseUi(object):
         for (mapping, project) in aliases:
             self.alias_detail(mapping, project)
 
-        confirm = terminal.select_string(
-            "\nDo you want to clean them [y/N]? ", r'^[yn]$', re.I, 'n')
+        return confirm("Do you want to clean them?")
 
-        return confirm == 'y'
+    def confirm_commit_entries(self, entries_dict):
+        self.msg("The following entries will be included in your commit:\n")
+
+        for date, entries in six.iteritems(entries_dict):
+            self.msg(date_utils.unicode_strftime(date, '%A %d %B'))
+
+            for entry in entries:
+                self.msg(six.text_type(entry))
+
+        return confirm("\nAre you sure you want to continue?")
 
     def display_entries_list(self, entries, msg, details=True):
         total = 0
@@ -210,14 +202,6 @@ class BaseUi(object):
     def failed_entries_list(self, failed_entries):
         self.display_entries_list(failed_entries, 'Total failed')
 
-    def non_working_dates_commit_error(self, dates):
-        dates = [date_utils.unicode_strftime(d, '%A %d %B') for d in dates]
-
-        self.err("You're trying to commit for a day that's "
-                 " on a week-end or that's not yesterday nor today (%s).\n"
-                 "To ignore this error, re-run taxi with the option "
-                 "`--ignore-date-error`" % ', '.join(dates))
-
     def get_entry_status(self, entry):
         if entry.is_ignored():
             status = 'ignored'
@@ -238,7 +222,7 @@ class BaseUi(object):
         return '%-30s %-5.2f %s' % (project_name, entry.hours,
                                     entry.description)
 
-    def show_status(self, entries_dict, settings):
+    def show_status(self, entries_dict, close_matches_func):
         self.msg('Staging changes :\n')
         entries_list = entries_dict.items()
         entries_list = sorted(entries_list)
@@ -258,7 +242,7 @@ class BaseUi(object):
 
                 if (not entry.is_ignored() and entry.alias not in
                         alias_database):
-                    close_matches = settings.get_close_matches(entry.alias)
+                    close_matches = close_matches_func(entry.alias)
                     if close_matches:
                         self.msg('\tDid you mean one of the following: %s?' %
                                  ', '.join(close_matches))

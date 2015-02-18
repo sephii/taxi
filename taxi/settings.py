@@ -9,6 +9,7 @@ from six.moves import configparser
 
 from .alias import Mapping
 from .projects import Project
+from .utils.file import expand_filename
 
 
 class Settings(dict):
@@ -27,6 +28,7 @@ class Settings(dict):
         'nb_previous_files': '1',
         'use_colors': '1',
         'local_aliases': '',
+        'file': '~/zebra/%Y/%m/%d.tks'
     }
 
     def __init__(self, file):
@@ -163,6 +165,9 @@ class Settings(dict):
                 self.config.set('default_shared_aliases', alias, mapping)
 
             self.config.remove_section('shared_wrmap')
+
+    def get_entries_file_path(self):
+        return expand_filename(self.get('file'))
 
 
 def get_alias_section_name(backend_name, shared_section=False):

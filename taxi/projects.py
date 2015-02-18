@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 import copy
 import datetime
 import json
+import os
 import re
 
 import six
@@ -145,13 +146,14 @@ class Activity:
 class ProjectsDb:
     def __init__(self, path):
         self.path = path
+        self.projects_database_file = os.path.join(self.path, 'projects.db')
 
     def get_projects(self):
         projects_cache = getattr(self, '_projects_cache', None)
         if projects_cache is not None:
             return projects_cache
 
-        with open(self.path, 'r') as projects_db:
+        with open(self.projects_database_file, 'r') as projects_db:
             # Pre-4.0 used a pickle-based format for the projects db, so trying
             # to read it as a non-binary file can lead to a UnicodeDecodeError
             # on Python 3
@@ -181,7 +183,7 @@ class ProjectsDb:
     def update(self, projects):
         lpdb = LocalProjectsDb(projects)
 
-        with open(self.path, 'w') as output:
+        with open(self.projects_database_file, 'w') as output:
             json.dump(lpdb.get_dump_object(), output)
 
         self._projects_cache = None

@@ -12,6 +12,7 @@ tests_require = [
 ]
 
 install_requires = [
+    'click==3.3',
     'colorama==0.3.1',
     'six==1.9.0',
 ]
@@ -42,7 +43,6 @@ setup(
     description='Taxi is a Zebra frontend',
     author='Sylvain Fankhauser',
     author_email='sylvain.fankhauser@liip.ch',
-    scripts=['bin/taxi'],
     url='https://github.com/sephii/taxi',
     install_requires=install_requires,
     license='wtfpl',
@@ -53,7 +53,8 @@ setup(
         'taxi': ['etc/*']
     },
     entry_points={
-        'taxi.backends': 'dummy = taxi.backends.dummy:DummyBackend'
+        'taxi.backends': 'dummy = taxi.backends.dummy:DummyBackend',
+        'console_scripts': 'taxi = taxi.commands.base:cli'
     },
     classifiers=[
         'Environment :: Console',

@@ -10,6 +10,15 @@ Added
 
 * Add support for multiple backends (#40).
 * Add support for Python 3 (#71).
+* Add support for command matching by prefix (eg. ``taxi e`` for ``taxi
+  edit``).
+
+Changed
+-------
+
+* Rename ``--ignore-date-error`` to ``--yes`` and make it interactive if it is
+  not set.
+* Use `click <http://click.pocoo.org>`_.
 
 3.2.1 (2015-01-16)
 ==================

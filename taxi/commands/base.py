@@ -1,149 +1,147 @@
 from __future__ import unicode_literals
 
-import datetime
+import os
+from pkg_resources import resource_filename
+import shutil
+import sys
 
+import click
+from click.termui import confirm
 import six
 
-from ..exceptions import UsageError
+from .types import ExpandedPath
+from ..alias import alias_database
+from ..backends.registry import backends_registry
+from ..projects import ProjectsDb
 from ..settings import Settings
-from ..timesheet import (
-    Timesheet, TimesheetCollection, TimesheetFile
-)
-from ..timesheet.entry import EntriesCollection
-from ..utils import file as file_utils
-from ..utils.structures import OrderedSet
+from ..timesheet.utils import get_timesheet_collection
+from ..ui.tty import TtyUi
 
 
-class BaseCommand(object):
-    def __init__(self, app_container):
-        self.options = app_container.options
-        self.arguments = app_container.arguments
-        self.view = app_container.view
-        self.projects_db = app_container.projects_db
-        self.settings = app_container.settings
+def get_timesheet_collection_for_context(ctx, entries_file=None):
+    if not entries_file:
+        entries_file = ctx.obj['settings'].get('file')
 
-    def setup(self):
-        pass
-
-    def validate(self):
-        pass
-
-    def run(self):
-        pass
+    return get_timesheet_collection(
+        entries_file,
+        int(ctx.obj['settings'].get('nb_previous_files')),
+        ctx.obj['settings'].get('date_format'),
+        ctx.obj['settings'].get('auto_add')
+    )
 
 
-class BaseTimesheetCommand(BaseCommand):
-    def get_timesheet_collection(self, skip_cache=False):
-        timesheet_collection = getattr(self, '_current_timesheet_collection',
-                                       None)
-        if timesheet_collection is not None and not skip_cache:
-            return timesheet_collection
+def populate_aliases(aliases, local_aliases):
+    alias_database.update(aliases)
 
-        timesheet_collection = TimesheetCollection()
+    for alias in local_aliases:
+        alias_database.local_aliases.add(alias)
 
-        timesheet_files = self.get_files(
-            self.options['unparsed_file'],
-            int(self.settings.get('nb_previous_files'))
-        )
 
-        for file_path in timesheet_files:
-            timesheet_file = TimesheetFile(file_path)
-            try:
-                timesheet_contents = timesheet_file.read()
-            except IOError:
-                timesheet_contents = ''
+def populate_backends(backends):
+    backends_registry.populate(dict(backends))
 
-            t = Timesheet(
-                EntriesCollection(
-                    timesheet_contents,
-                    self.settings.get('date_format')
-                ),
-                timesheet_file
+
+def create_config_file(filename):
+    """
+    Create main configuration file if it doesn't exist.
+    """
+    import textwrap
+
+    if not os.path.exists(filename):
+        old_default_config_file = os.path.join(os.path.dirname(filename),
+                                               '.tksrc')
+        if os.path.exists(old_default_config_file):
+            upgrade = confirm("\n".join(textwrap.wrap(
+                "It looks like you recently updated Taxi. Some "
+                "configuration changes are required. You can either let "
+                "me upgrade your configuration file or do it "
+                "manually.")) + "\n\nProceed with automatic configuration "
+                "file upgrade?", default=True
             )
 
-            # Force new entries direction if necessary
-            if (self.settings.get('auto_add') in [
-                    Settings.AUTO_ADD_OPTIONS['TOP'],
-                    Settings.AUTO_ADD_OPTIONS['BOTTOM']]):
-                t.entries.add_date_to_bottom = (
-                    self.settings.get('auto_add') ==
-                    Settings.AUTO_ADD_OPTIONS['BOTTOM']
-                )
-
-            timesheet_collection.timesheets.append(t)
-
-        # Fix `add_date_to_bottom` attribute of timesheet entries based on
-        # previous timesheets. When a new timesheet is started it won't have
-        # any direction defined, so we take the one from the previous
-        # timesheet, if any
-        previous_timesheet = None
-        for timesheet in reversed(timesheet_collection.timesheets):
-            if (timesheet.entries.add_date_to_bottom is None
-                    and previous_timesheet
-                    and previous_timesheet.entries.add_date_to_bottom
-                    is not None):
-                timesheet.entries.add_date_to_bottom = (
-                    previous_timesheet.entries.add_date_to_bottom
-                )
-            previous_timesheet = timesheet
-
-        setattr(self, '_current_timesheet_collection', timesheet_collection)
-
-        return timesheet_collection
-
-    def get_files(self, filename, nb_previous_files):
-        date_units = ['m', 'Y']
-        smallest_unit = None
-
-        for date in date_units:
-            if '%%%s' % date in filename:
-                smallest_unit = date
-                break
-
-        if smallest_unit is None:
-            return OrderedSet([filename])
-
-        files = OrderedSet()
-        file_date = datetime.date.today()
-        for i in six.moves.xrange(0, nb_previous_files + 1):
-            files.add(file_utils.expand_filename(filename, file_date))
-
-            if smallest_unit == 'm':
-                if file_date.month == 1:
-                    file_date = file_date.replace(day=1,
-                                                  month=12,
-                                                  year=file_date.year - 1)
-                else:
-                    file_date = file_date.replace(day=1,
-                                                  month=file_date.month - 1)
-
-            elif smallest_unit == 'Y':
-                file_date = file_date.replace(day=1, year=file_date.year - 1)
-
-        return files
-
-
-class HelpCommand(BaseCommand):
-    """
-    YO DAWG you asked for help for the help command. Try to search Google in
-    Google instead.
-
-    """
-    def __init__(self, application_container):
-        super(HelpCommand, self).__init__(application_container)
-        self.commands_mapping = application_container.commands_mapping
-
-    def setup(self):
-        if len(self.arguments) == 0:
-            raise UsageError()
-        else:
-            self.command = self.arguments[0]
-
-    def run(self):
-        if self.command == 'help':
-            self.view.command_usage(self)
-        else:
-            if self.command in self.commands_mapping:
-                self.view.command_usage(self.commands_mapping[self.command])
+            if upgrade:
+                settings = Settings(old_default_config_file)
+                settings.convert_to_4()
+                with open(filename, 'w') as config_file:
+                    settings.config.write(config_file)
+                os.remove(old_default_config_file)
+                return
             else:
-                self.view.err("Command %s doesn't exist." % self.command)
+                print("Ok then.")
+                sys.exit(0)
+
+        response = confirm(
+            "The configuration file %s does not exist yet.\nDo you want to"
+            " create it now?" % filename, default=True
+        )
+
+        if response:
+            src_config = resource_filename('taxi', 'etc/taxirc.sample')
+            shutil.copy(src_config, filename)
+        else:
+            print("Ok then.")
+            sys.exit(1)
+
+
+class AliasedCommand(click.Command):
+    """
+    Command that supports a kwarg ``aliases``.
+    """
+    def __init__(self, *args, **kwargs):
+        self.aliases = set(kwargs.pop('aliases', []))
+        super(AliasedCommand, self).__init__(*args, **kwargs)
+
+
+class AliasedGroup(click.Group):
+    """
+    Command group that supports both custom aliases and prefix-matching. The
+    commands are checked in this order:
+
+        * Exact command name
+        * Command aliases
+        * Command prefix
+    """
+    def get_command(self, ctx, cmd_name):
+        rv = super(AliasedGroup, self).get_command(ctx, cmd_name)
+        # Exact command exists, go with this
+        if rv is not None:
+            return rv
+
+        # Check in aliases
+        for name, command in six.iteritems(self.commands):
+            if (isinstance(command, AliasedCommand)
+                    and cmd_name in command.aliases):
+                return super(AliasedGroup, self).get_command(ctx, name)
+
+        # Check in prefixes
+        matches = [x for x in self.list_commands(ctx)
+                   if x.startswith(cmd_name)]
+        if not matches:
+            return None
+        elif len(matches) == 1:
+            return click.Group.get_command(self, ctx, matches[0])
+        ctx.fail('Too many matches: %s' % ', '.join(sorted(matches)))
+
+        return None
+
+
+@click.group(cls=AliasedGroup)
+@click.option('--config', '-c', default='~/.taxirc',
+              type=ExpandedPath(dir_okay=False))
+@click.option('--taxi-dir', default='~/.taxi',
+              type=ExpandedPath(file_okay=False))
+@click.pass_context
+def cli(ctx, config, taxi_dir):
+    create_config_file(config)
+    settings = Settings(config)
+
+    if not os.path.exists(settings.TAXI_PATH):
+        os.mkdir(settings.TAXI_PATH)
+
+    populate_aliases(settings.get_aliases(), settings.get_local_aliases())
+    populate_backends(settings.get_backends())
+
+    ctx.obj = {}
+    ctx.obj['settings'] = settings
+    ctx.obj['view'] = TtyUi()
+    ctx.obj['projects_db'] = ProjectsDb(os.path.expanduser(taxi_dir))

@@ -122,7 +122,8 @@ class Timesheet(object):
         for (date, date_entries) in six.iteritems(self.entries):
             if date not in (today, yesterday) or date.strftime('%w') in [6, 0]:
                 for entry in date_entries:
-                    if not entry.is_ignored():
+                    if (not entry.is_ignored()
+                            and entry.alias in alias_database):
                         non_workday_entries[date].append(entry)
 
         return non_workday_entries
