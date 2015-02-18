@@ -13,8 +13,7 @@ class Timesheet(object):
         self.mappings = mappings if mappings is not None else AliasMappings()
         self.file = file
 
-    def get_filtered_entries(self, date=None, filter_callback=None,
-                             regroup=False):
+    def get_filtered_entries(self, date=None, filter_callback=None, regroup=False):
         # Date can either be a single date (only 1 day) or a tuple for a
         # date range
         if date is not None and not isinstance(date, tuple):
@@ -37,7 +36,7 @@ class Timesheet(object):
 
                 for entry in entries:
                     if (filter_callback is not None
-                            and not filter_callback(entry)):
+                            and not filter_callback(entry, entries_date)):
                         continue
 
                     # Common case: the entry is not yet referenced in the
@@ -78,35 +77,35 @@ class Timesheet(object):
                     entries_for_date = entries
                 else:
                     entries_for_date = [
-                        entry for entry in entries if filter_callback(entry)
+                        entry for entry in entries if filter_callback(entry, entries_date)
                     ]
 
             filtered_entries[entries_date].extend(entries_for_date)
 
         return filtered_entries
 
-    def get_entries(self, date=None, exclude_ignored=False,
-                    exclude_local=False, exclude_unmapped=False,
-                    regroup=False):
-        def entry_filter(entry):
-            return (not (exclude_ignored and entry.is_ignored())
-                    and not (exclude_local
-                             and self.is_alias_local(entry.alias))
-                    and (not exclude_unmapped
-                         or self.is_alias_mapped(entry.alias)))
+    def get_entries(self, date=None, exclude_ignored=False, exclude_local=False,
+                    exclude_unmapped=False, exclude_today=False, regroup=False):
+        def entry_filter(entry, date):
+            return (
+                not (exclude_ignored and entry.is_ignored())
+                and not (exclude_local and self.is_alias_local(entry.alias))
+                and (not exclude_unmapped or self.is_alias_mapped(entry.alias))
+                and not (exclude_today and date == datetime.date.today())
+            )
 
         return self.get_filtered_entries(date, entry_filter, regroup)
 
     def get_ignored_entries(self, date=None):
-        def entry_filter(entry):
+        def entry_filter(entry, date):
             return (entry.is_ignored() or self.is_alias_local(entry.alias)
                     or not self.is_alias_mapped(entry.alias))
 
         return self.get_filtered_entries(date, entry_filter)
 
-    def get_local_entries(self, date=None):
+    def get_local_entries(self, date=None, skip_today=False):
         return self.get_filtered_entries(
-            date, lambda e: self.is_alias_local(e.alias)
+            date, lambda e, d: self.is_alias_local(e.alias) and (not skip_today or d != datetime.date.today())
         )
 
     def is_alias_local(self, alias):

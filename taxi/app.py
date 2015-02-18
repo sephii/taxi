@@ -57,6 +57,11 @@ Available commands:
             " or on another day than the current day or the day before",
             action='store_true', default=False
         )
+        opt.add_option(
+            '--not-today', dest='not_today', help="allow to commit all entries"
+            " except the one of today",
+            action='store_true', default=False
+        )
         opt.add_option('-y', '--force-yes', dest='force_yes',
                        help='assume "yes"', action='store_true', default=False)
         (options, args) = opt.parse_args()
