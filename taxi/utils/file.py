@@ -1,21 +1,11 @@
 from __future__ import unicode_literals
 
-import codecs
 import datetime
 import os
 import shlex
 import subprocess
 
 from taxi.exceptions import TaxiException
-
-
-def create_file(filepath):
-    if not os.path.exists(os.path.dirname(filepath)):
-        os.makedirs(os.path.dirname(filepath))
-
-    if not os.path.exists(filepath):
-        myfile = codecs.open(filepath, 'w', 'utf-8')
-        myfile.close()
 
 
 def spawn_editor(filepath, editor=None):

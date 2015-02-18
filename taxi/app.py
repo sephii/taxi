@@ -3,7 +3,6 @@ from __future__ import unicode_literals
 
 import datetime
 import inspect
-import io
 import locale
 from optparse import OptionParser
 import os
@@ -82,24 +81,22 @@ Available commands:
 
     def run_command(self, command, options={}, args=[]):
         actions = {
-            'add': commands.AddCommand,
-            'alias': commands.AliasCommand,
-            'autofill': commands.AutofillCommand,
-            'clean-aliases': commands.CleanAliasesCommand,
-            'ci': commands.CommitCommand,
-            'commit': commands.CommitCommand,
-            'edit': commands.EditCommand,
-            'help': commands.HelpCommand,
-            'kitty': commands.KittyCommand,
-            'ohai': commands.KittyCommand,
-            'search': commands.SearchCommand,
-            'show': commands.ShowCommand,
-            'start': commands.StartCommand,
-            'stat': commands.StatusCommand,
-            'status': commands.StatusCommand,
-            'stop': commands.StopCommand,
-            'up': commands.UpdateCommand,
-            'update': commands.UpdateCommand,
+            'add': commands.add.AddCommand,
+            'alias': commands.alias.AliasCommand,
+            'autofill': commands.autofill.AutofillCommand,
+            'clean-aliases': commands.clean_aliases.CleanAliasesCommand,
+            'ci': commands.commit.CommitCommand,
+            'commit': commands.commit.CommitCommand,
+            'edit': commands.edit.EditCommand,
+            'help': commands.base.HelpCommand,
+            'search': commands.search.SearchCommand,
+            'show': commands.show.ShowCommand,
+            'start': commands.start.StartCommand,
+            'stat': commands.status.StatusCommand,
+            'status': commands.status.StatusCommand,
+            'stop': commands.stop.StopCommand,
+            'up': commands.update.UpdateCommand,
+            'update': commands.update.UpdateCommand,
         }
 
         options = options.copy()
