@@ -87,7 +87,6 @@ class Timesheet(object):
     def get_entries(self, date=None, exclude_ignored=False, exclude_local=False,
                     exclude_unmapped=False, exclude_today=False, regroup=False):
         def entry_filter(entry, date):
-            print entry, date
             return (
                 not (exclude_ignored and entry.is_ignored())
                 and not (exclude_local and self.is_alias_local(entry.alias))
