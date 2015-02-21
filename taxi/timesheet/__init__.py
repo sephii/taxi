@@ -103,8 +103,7 @@ class Timesheet(object):
 
     def get_ignored_entries(self, date=None):
         def entry_filter(entry):
-            return (entry.is_ignored() or alias_database.is_local(entry.alias)
-                    or entry.alias not in alias_database)
+            return self.is_entry_ignored(entry)
 
         return self.get_filtered_entries(date, entry_filter)
 
@@ -122,10 +121,14 @@ class Timesheet(object):
         for (date, date_entries) in six.iteritems(self.entries):
             if date not in (today, yesterday) or date.strftime('%w') in [6, 0]:
                 for entry in date_entries:
-                    if not entry.is_ignored():
+                    if not self.is_entry_ignored(entry):
                         non_workday_entries[date].append(entry)
 
         return non_workday_entries
+
+    def is_entry_ignored(self, entry):
+        return (entry.is_ignored() or alias_database.is_local(entry.alias)
+                or entry.alias not in alias_database)
 
     def continue_entry(self, date, end_time, description=None):
         try:
