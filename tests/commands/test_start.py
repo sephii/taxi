@@ -7,12 +7,9 @@ from . import CommandTestCase
 
 class StartCommandTestCase(CommandTestCase):
     def compare_entries_with_expected(self, entries, expected):
-        options = self.default_options
-        options['ignore_date_error'] = True
-
         self.write_entries(entries)
 
-        self.run_command('start', ['alias_1'], options)
+        self.run_command('start', ['alias_1'])
 
         with open(self.entries_file, 'r') as f:
             self.assertEqual(f.read(), expected)

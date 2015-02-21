@@ -1,10 +1,14 @@
 from __future__ import unicode_literals
 
-from ..exceptions import UsageError
-from .base import BaseCommand
+import click
+
+from .base import cli
 
 
-class SearchCommand(BaseCommand):
+@cli.command(short_help="Search a project by its name.")
+@click.argument('search', nargs=-1)
+@click.pass_context
+def search(ctx, search):
     """
     Usage: search search_string
 
@@ -13,11 +17,6 @@ class SearchCommand(BaseCommand):
     [C]ancelled.
 
     """
-    def validate(self):
-        if len(self.arguments) < 1:
-            raise UsageError()
-
-    def run(self):
-        projects = self.projects_db.search(self.arguments)
-        projects = sorted(projects, key=lambda project: project.name.lower())
-        self.view.search_results(projects)
+    projects = ctx.obj['projects_db'].search(search)
+    projects = sorted(projects, key=lambda project: project.name.lower())
+    ctx.obj['view'].search_results(projects)

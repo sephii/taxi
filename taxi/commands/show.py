@@ -1,10 +1,15 @@
 from __future__ import unicode_literals
 
-from ..exceptions import UsageError
-from .base import BaseCommand
+import click
+
+from .base import cli
 
 
-class ShowCommand(BaseCommand):
+@cli.command(short_help="Show the details and activities of a project.")
+@click.argument('project_id', type=int)
+@click.argument('backend', required=False)
+@click.pass_context
+def show(ctx, project_id, backend):
     """
     Usage: show project_id [backend]
 
@@ -12,29 +17,15 @@ class ShowCommand(BaseCommand):
     command).
 
     """
-    def validate(self):
-        if len(self.arguments) < 1:
-            raise UsageError()
+    try:
+        project = ctx.obj['projects_db'].get(project_id, backend)
+    except IOError:
+        raise Exception("Error: the projects database file doesn't exist. "
+                        "Please run `taxi update` to create it")
 
-        try:
-            int(self.arguments[0])
-        except ValueError:
-            raise UsageError("The project id must be a number")
-
-    def setup(self):
-        self.project_id = int(self.arguments[0])
-        self.backend = self.arguments[1] if len(self.arguments) > 1 else None
-
-    def run(self):
-        try:
-            project = self.projects_db.get(self.project_id, self.backend)
-        except IOError:
-            raise Exception("Error: the projects database file doesn't exist. "
-                            "Please run `taxi update` to create it")
-
-        if project is None:
-            self.view.err(
-                "Could not find project `%s`" % (self.project_id)
-            )
-        else:
-            self.view.project_with_activities(project)
+    if project is None:
+        ctx.obj['view'].err(
+            "Could not find project `%s`" % (project_id)
+        )
+    else:
+        ctx.obj['view'].project_with_activities(project)
