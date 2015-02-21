@@ -3,12 +3,11 @@ from __future__ import unicode_literals
 import click
 
 from ..timesheet.parser import ParseError
-from .base import cli, get_timesheet_collection_for_context, AliasedCommand
+from .base import cli, get_timesheet_collection_for_context
 from .types import DateRange
 
 
-@cli.command(cls=AliasedCommand, aliases=['stat'],
-             short_help="Show a summary of your entries.")
+@cli.command(short_help="Show a summary of your entries.")
 @click.option('-d', '--date', type=DateRange(),
               help="Only show entries of the given date.")
 @click.option('-f', '--file', 'f', type=click.Path(dir_okay=False),
