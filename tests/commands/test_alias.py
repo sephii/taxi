@@ -12,7 +12,7 @@ class AliasCommandTestCase(CommandTestCase):
         super(AliasCommandTestCase, self).setUp()
 
         self.config = self.default_config.copy()
-        self.config['dummy_aliases'] = {
+        self.config['test_aliases'] = {
             'alias_1': '123/456',
             'alias_2': '123/457',
             'foo': '777/777'
@@ -66,7 +66,7 @@ class AliasCommandTestCase(CommandTestCase):
         self.assertEquals(len(lines), 0)
 
     def test_alias_add(self):
-        self.run_alias_command(['bar', '123/458', 'dummy'], self.config)
+        self.run_alias_command(['bar', '123/458', 'test'], self.config)
 
         with open(self.config_file, 'r') as f:
             config_lines = f.readlines()

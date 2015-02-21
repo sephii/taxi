@@ -62,7 +62,7 @@ def commit(ctx, f, force_yes, date):
                     backend.push_entry(entries_date, entry)
                 except PushEntryFailed as e:
                     failed_entries.append(entry)
-                    error = e.message
+                    error = six.text_type(e)
                 else:
                     pushed_entries.append(entry)
                 finally:
@@ -76,7 +76,7 @@ def commit(ctx, f, force_yes, date):
         for entry in local_entries_list + pushed_entries:
             entry.commented = True
 
-        for (entry, _) in failed_entries:
+        for entry in failed_entries:
             entry.fix_start_time()
 
         # Also fix start time for ignored entries. Since they won't get

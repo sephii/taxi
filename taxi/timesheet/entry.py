@@ -394,6 +394,7 @@ class TimesheetEntry(object):
             )
 
 
+@six.python_2_unicode_compatible
 class AggregatedTimesheetEntry(object):
     def __init__(self):
         super(AggregatedTimesheetEntry, self).__setattr__('entries', [])
@@ -410,6 +411,15 @@ class AggregatedTimesheetEntry(object):
     def __setattr__(self, name, value):
         for entry in self.entries:
             setattr(entry, name, value)
+
+    def __str__(self):
+        if self.is_ignored():
+            project_name = u'%s (ignored)' % self.alias
+        else:
+            project_name = self.alias
+
+        return u'%-30s %-5.2f %s' % (project_name, self.hours,
+                                     self.description)
 
     @property
     def hours(self):

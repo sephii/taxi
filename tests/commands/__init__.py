@@ -11,6 +11,22 @@ from click.testing import CliRunner
 
 from taxi.utils.file import expand_filename
 from taxi.commands.base import cli
+from taxi.backends.registry import backends_registry
+from taxi.backends import BaseBackend, PushEntryFailed
+
+
+class TestBackendEntryPoint(object):
+    """
+    Dedicated backend for tests. Entries with the alias `fail` will fail when
+    trying to push them.
+    """
+    class TestBackend(BaseBackend):
+        def push_entry(self, date, entry):
+            if entry.alias == 'fail':
+                raise PushEntryFailed
+
+    def load(self):
+        return self.TestBackend
 
 
 class CommandTestCase(TestCase):
@@ -18,7 +34,17 @@ class CommandTestCase(TestCase):
         _, self.config_file = tempfile.mkstemp()
         _, self.entries_file = tempfile.mkstemp()
         self.taxi_dir = tempfile.mkdtemp()
+        # Keep the original entry points to restore them in tearDown
+        self.backends_original_entry_points = backends_registry._entry_points
 
+        # Hot swap the entry points from the backends registry with our own
+        # test backend. This avoids having to register the test backend in the
+        # setup.py file
+        backends_registry._entry_points = {
+            'test': TestBackendEntryPoint()
+        }
+
+        # Create an empty projects.db file
         with open(os.path.join(self.taxi_dir, 'projects.db'), 'w') as f:
             f.close()
 
@@ -33,14 +59,16 @@ class CommandTestCase(TestCase):
                 'use_colors': '0'
             },
             'backends': {
-                'dummy': 'dummy://foo:bar@localhost/test?foo=bar',
+                'test': 'test:///',
             },
-            'dummy_aliases': {
-                'alias_1': '123/456'
+            'test_aliases': {
+                'alias_1': '123/456',
+                'fail': '456/789'
             },
         }
 
     def tearDown(self):
+        backends_registry._entry_points = self.backends_original_entry_points
         entries_file = expand_filename(self.entries_file)
 
         os.remove(self.config_file)

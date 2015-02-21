@@ -226,9 +226,6 @@ _pingpong 0800-0900 Play ping-pong
 
     @freeze_time('2014-01-21')
     def test_fix_entries_start_time_without_previous(self):
-        config = self.default_config.copy()
-        config['dummy_aliases']['fail'] = '456/789'
-
         self.write_entries("""21/01/2014
 fail     -0830  Repair coffee machine
 """)
@@ -238,3 +235,13 @@ fail     -0830  Repair coffee machine
             lines = entries.readlines()
 
         self.assertEqual(lines[1], 'fail     -0830  Repair coffee machine\n')
+
+    @freeze_time('2014-01-21')
+    def test_failed_aggregated_entries_status(self):
+        self.write_entries("""21/01/2014
+fail     1  Repair coffee machine
+fail     2  Repair coffee machine
+""")
+        stdout = self.run_command('commit')
+
+        self.assertNotIn('AggregatedTimesheetEntry', stdout)
