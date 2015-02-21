@@ -97,12 +97,13 @@ class EntryLine(TextLine):
                     else max(1, formatting['width'][1] - len(duration)))
 
         text = ('{commented}{alias}{padding1}{duration}{padding2}'
-                '{description}'.format(commented=commented_prefix,
-                                       alias=alias,
-                                       padding1=formatting['spacer'][0] * padding1,
-                                       duration=duration,
-                                       description=self.description,
-                                       padding2=formatting['spacer'][1] * padding2))
+                '{description}'.format(
+                    commented=commented_prefix,
+                    alias=alias,
+                    padding1=formatting['spacer'][0] * padding1,
+                    duration=duration,
+                    description=self.description,
+                    padding2=formatting['spacer'][1] * padding2))
 
         return text
 
@@ -221,7 +222,8 @@ class TimesheetParser(object):
         width of the two first components of the line (alias and duration),
         'time_format' containing the format of the time as a string usable by
         strftime and 'spacer' containing a 2-items tuple representing the space
-        format used for the two first components (either a space or a tabulation)
+        format used for the two first components (either a space or a
+        tabulation)
         """
         components = re.match(cls.formatting_match_re, line)
         split_line = cls.split_line(line)
