@@ -18,7 +18,8 @@ Changed
 
 * Rename ``--ignore-date-error`` to ``--yes`` and make it interactive if it is
   not set.
-* Use `click <http://click.pocoo.org>`_.
+* Use `click <http://click.pocoo.org>`_. This should fix encoding and editor
+  issues reported in #67.
 * Don't display date error for unmapped or local entries.
 
 3.2.1 (2015-01-16)
