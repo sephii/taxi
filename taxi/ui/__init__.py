@@ -6,7 +6,6 @@ import re
 import six
 
 import click
-from click.termui import confirm
 import colorama
 
 from ..alias import alias_database, Mapping
@@ -164,7 +163,7 @@ class BaseUi(object):
         for (mapping, project) in aliases:
             self.alias_detail(mapping, project)
 
-        return confirm("Do you want to clean them?")
+        return click.confirm("Do you want to clean them?")
 
     def confirm_commit_entries(self, entries_dict):
         self.msg("The following entries will be included in your commit:\n")
@@ -175,7 +174,7 @@ class BaseUi(object):
             for entry in entries:
                 self.msg(six.text_type(entry))
 
-        return confirm("\nAre you sure you want to continue?")
+        return click.confirm("\nAre you sure you want to continue?")
 
     def display_entries_list(self, entries, msg, details=True):
         total = 0

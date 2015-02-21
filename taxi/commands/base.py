@@ -5,7 +5,6 @@ from pkg_resources import resource_string
 import sys
 
 import click
-from click.termui import confirm
 import six
 
 from .types import ExpandedPath, Hostname
@@ -50,7 +49,7 @@ def create_config_file(filename):
         old_default_config_file = os.path.join(os.path.dirname(filename),
                                                '.tksrc')
         if os.path.exists(old_default_config_file):
-            upgrade = confirm("\n".join(textwrap.wrap(
+            upgrade = click.confirm("\n".join(textwrap.wrap(
                 "It looks like you recently updated Taxi. Some "
                 "configuration changes are required. You can either let "
                 "me upgrade your configuration file or do it "
@@ -69,7 +68,7 @@ def create_config_file(filename):
                 print("Ok then.")
                 sys.exit(0)
 
-        response = confirm(
+        response = click.confirm(
             "The configuration file %s does not exist yet.\nDo you want to"
             " create it now?" % filename, default=True
         )
