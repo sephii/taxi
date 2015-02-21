@@ -31,3 +31,13 @@ class DateRange(click.ParamType):
                 return datetime.datetime.strptime(value, date_format).date()
         except ValueError:
             self.fail("Invalid date format (must be dd.mm.yyyy)", param, ctx)
+
+
+class Hostname(click.ParamType):
+    name = 'hostname'
+
+    def convert(self, value, param, ctx):
+        if '://' in value:
+            value = value[value.find('://') + 3:]
+
+        return value

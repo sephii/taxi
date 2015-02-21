@@ -45,15 +45,13 @@ auto_add = auto
 
 [backends]
 # You'll need taxi-zebra to be able to use this
-my_backend = zebra://username:password@example.com
+default = {backend}://{username}:{password}@{hostname}
 internal = dummy:///
 
 # This section contains your project name <-> id mapping. The format is:
 # project_name = project_id/activity_id
-[my_backend_aliases]
+[default_aliases]
 internal = 7/16
-meeting = 7/11
-presales = 7/8
 
 [internal_aliases]
 _pingpong = 0/0

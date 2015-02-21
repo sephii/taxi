@@ -12,6 +12,7 @@ Added
 * Add support for Python 3 (#71).
 * Add support for command matching by prefix (eg. ``taxi e`` for ``taxi
   edit``).
+* Add configuration file creation wizard.
 
 Changed
 -------

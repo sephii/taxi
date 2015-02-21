@@ -1,15 +1,14 @@
 from __future__ import unicode_literals
 
 import os
-from pkg_resources import resource_filename
-import shutil
+from pkg_resources import resource_string
 import sys
 
 import click
 from click.termui import confirm
 import six
 
-from .types import ExpandedPath
+from .types import ExpandedPath, Hostname
 from ..alias import alias_database
 from ..backends.registry import backends_registry
 from ..projects import ProjectsDb
@@ -76,8 +75,25 @@ def create_config_file(filename):
         )
 
         if response:
-            src_config = resource_filename('taxi', 'etc/taxirc.sample')
-            shutil.copy(src_config, filename)
+            config = resource_string('taxi',
+                                     'etc/taxirc.sample').decode('utf-8')
+            available_backends = backends_registry._entry_points.keys()
+            context = {}
+            context['backend'] = click.prompt(
+                "Enter the backend you want to use (choices are %s)" %
+                ', '.join(available_backends),
+                type=click.Choice(available_backends)
+            )
+            context['username'] = click.prompt("Enter your username")
+            context['password'] = click.prompt("Enter your password",
+                                               hide_input=True)
+            context['hostname'] = click.prompt(
+                "Enter the hostname of the backend (eg. "
+                "timesheets.example.com)", type=Hostname()
+            )
+            templated_config = config.format(**context)
+            with open(filename, 'w') as f:
+                f.write(templated_config)
         else:
             print("Ok then.")
             sys.exit(1)
