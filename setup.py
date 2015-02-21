@@ -13,7 +13,6 @@ tests_require = [
 
 install_requires = [
     'click==3.3',
-    'colorama==0.3.1',
     'six==1.9.0',
 ]
 

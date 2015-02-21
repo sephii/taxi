@@ -6,7 +6,6 @@ import re
 import six
 
 import click
-import colorama
 
 from ..alias import alias_database, Mapping
 from ..utils import date as date_utils, terminal
@@ -19,7 +18,10 @@ class BaseUi(object):
         click.echo(message)
 
     def err(self, message):
-        self.msg("Error: %s" % message, colorama.Fore.RED)
+        self.msg(click.style(
+            click.wrap_text("Error: %s" % message, preserve_paragraphs=True),
+            fg='red')
+        )
 
     def projects_list(self, projects, numbered=False):
         for (key, project) in enumerate(projects):
@@ -258,10 +260,10 @@ class BaseUi(object):
 
     def pushed_entry(self, entry, error):
         if error:
-            self.msg("%s - Failed, reason: %s" % (
+            self.msg(click.style("%s - Failed, reason: %s" % (
                 self.get_entry_status(entry),
                 error
-            ), colorama.Style.BRIGHT + colorama.Fore.RED)
+            ), fg='red', bold=True))
         else:
             self.msg(self.get_entry_status(entry))
 
@@ -270,13 +272,13 @@ class BaseUi(object):
         self.pushed_entries_total(pushed_entries)
 
         if ignored_entries:
-            self.msg("\nIgnored entries\n",
-                     colorama.Style.BRIGHT + colorama.Fore.YELLOW)
+            self.msg(click.style("\nIgnored entries\n",
+                     fg='yellow', bold=True))
             self.ignored_entries_list(ignored_entries)
 
         if failed_entries:
-            self.msg("\nFailed entries\n",
-                     colorama.Style.BRIGHT + colorama.Fore.RED)
+            self.msg(click.style("\nFailed entries\n",
+                     fg='red', bold=True))
             self.failed_entries_list(failed_entries)
 
     def pushing_entries(self):
