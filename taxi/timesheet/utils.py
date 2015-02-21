@@ -4,11 +4,12 @@ import datetime
 
 import six
 
+from . import Timesheet, TimesheetCollection, TimesheetFile
+from .entry import EntriesCollection
+from .parser import ParseError
 from ..settings import Settings
 from ..utils import file as file_utils
 from ..utils.structures import OrderedSet
-from . import Timesheet, TimesheetCollection, TimesheetFile
-from .entry import EntriesCollection
 
 
 def get_timesheet_collection(unparsed_file, nb_previous_files, date_format,
@@ -24,13 +25,17 @@ def get_timesheet_collection(unparsed_file, nb_previous_files, date_format,
         except IOError:
             timesheet_contents = ''
 
-        t = Timesheet(
-            EntriesCollection(
-                timesheet_contents,
-                date_format
-            ),
-            timesheet_file
-        )
+        try:
+            t = Timesheet(
+                EntriesCollection(
+                    timesheet_contents,
+                    date_format
+                ),
+                timesheet_file
+            )
+        except ParseError as e:
+            e.file = file_path
+            raise
 
         # Force new entries direction if necessary
         if (auto_add in [Settings.AUTO_ADD_OPTIONS['TOP'],

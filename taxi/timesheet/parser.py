@@ -186,7 +186,8 @@ class TimesheetParser(object):
                         yield DateLine(date, line)
             except ParseError as e:
                 e.line_number = lineno
-                raise e
+                e.line = line
+                raise
 
     @classmethod
     def parse_entry_line(cls, line):
@@ -312,13 +313,28 @@ class TimesheetParser(object):
 
 @six.python_2_unicode_compatible
 class ParseError(TaxiException):
-    def __init__(self, message, line_number=None):
+    def __init__(self, message, line=None, line_number=None):
+        self.line = line
         self.message = message
         self.line_number = line_number
+        self.file = None
 
     def __str__(self):
-        if self.line_number is not None:
-            return "Parse error at line %s: %s" % (self.line_number,
-                                                   self.message)
+        if self.line_number is not None and self.file:
+            msg = "Parse error in {file} at line {line}: {msg}.".format(
+                file=self.file,
+                line=self.line_number,
+                msg=self.message
+            )
+        elif self.line_number is not None:
+            msg = "Parse error at line {line}: {msg}.".format(
+                line=self.line_number,
+                msg=self.message
+            )
         else:
-            return self.message
+            msg = self.message
+
+        if self.line:
+            msg += " The line causing the error was:\n\n%s" % self.line
+
+        return msg
