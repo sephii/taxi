@@ -23,15 +23,14 @@ def edit(ctx, file_to_edit, previous_file):
     to edit. A value of 1 will edit the previous file, 2 will edit the
     second-previous file, etc.
 
-    If the --file option is used, it will take precedence on the PREVIOUS_FILE
-    argument.
-
     """
     timesheet_collection = None
-    forced_file = bool(file_to_edit) or previous_file != 0
+    autofill = not bool(file_to_edit) and previous_file == 0
+    if not file_to_edit:
+        file_to_edit = ctx.obj['settings'].get('file')
 
     # If the file was not specified and if it's the current file, autofill it
-    if not forced_file:
+    if autofill:
         try:
             timesheet_collection = get_timesheet_collection_for_context(ctx)
         except ParseError:
@@ -48,14 +47,16 @@ def edit(ctx, file_to_edit, previous_file):
                 t.file.write(t.entries)
 
     # Get the path to the file we should open in the editor
-    if not file_to_edit:
-        timesheet_files = get_files(ctx.obj['settings'].get('file'),
-                                    previous_file)
-        file_to_edit = list(timesheet_files)[previous_file]
+    timesheet_files = get_files(file_to_edit, previous_file)
+    if previous_file >= len(timesheet_files):
+        ctx.fail("Couldn't find the requested previous file for `%s`." %
+                 file_to_edit)
+
+    expanded_file_to_edit = list(timesheet_files)[previous_file]
 
     editor = ctx.obj['settings'].get('editor', default_value='')
     edit_kwargs = {
-        'filename': file_to_edit,
+        'filename': expanded_file_to_edit,
         'extension': '.tks'
     }
     if editor:
@@ -67,7 +68,7 @@ def edit(ctx, file_to_edit, previous_file):
         # Show the status only for the given file if it was specified with the
         # --file option, or for the files specified in the settings otherwise
         timesheet_collection = get_timesheet_collection_for_context(
-            ctx, file_to_edit if forced_file else None
+            ctx, file_to_edit
         )
     except ParseError as e:
         ctx.obj['view'].err(e)

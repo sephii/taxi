@@ -84,7 +84,7 @@ alias_1 2 hello world
             self.assertEqual('20/02/2014\n', lines[0])
             self.assertEqual('21/02/2014\n', lines[3])
 
-    def test_previous_file_argument(self):
+    def test_previous_file_doesnt_autofill(self):
         config = self.default_config.copy()
         tmp_entries_dir = tempfile.mkdtemp()
         os.remove(self.entries_file)
@@ -106,7 +106,8 @@ alias_1 2 hello world
 """)
             self.run_command('edit', args=['1'], config_options=config)
 
+        with freeze_time('2014-01-21'):
             with open(expand_filename(self.entries_file), 'r') as f:
                 lines = f.readlines()
 
-            self.assertNotIn('20/20/2014\n', lines)
+            self.assertNotIn('21/02/2014\n', lines)
