@@ -18,6 +18,7 @@ Added
   (#63).
 * Add support for ``yesterday`` and ``today`` values for date options.
 * Add support for partial ranges for date options.
+* Add argument to ``edit`` command to set which file should be edited (#49).
 
 Changed
 -------
