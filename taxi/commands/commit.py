@@ -1,5 +1,7 @@
 from __future__ import unicode_literals
 
+import datetime
+
 import click
 import six
 
@@ -19,8 +21,10 @@ from .types import DateRange
               help="Don't ask confirmation.")
 @click.option('-d', '--date', type=DateRange(),
               help="Only process entries of the given date.")
+@click.option('--not-today', is_flag=True,
+              help="Ignore today's entries")
 @click.pass_context
-def commit(ctx, f, force_yes, date):
+def commit(ctx, f, force_yes, date, not_today):
     """
     Usage: commit
 
@@ -28,6 +32,13 @@ def commit(ctx, f, force_yes, date):
 
     """
     timesheet_collection = get_timesheet_collection_for_context(ctx, f)
+    if not_today:
+        yesterday = datetime.date.today() - datetime.timedelta(days=1)
+
+        if not date:
+            date = (None, yesterday)
+        else:
+            date = (date[0], yesterday)
 
     if not date and not force_yes:
         non_workday_entries = (

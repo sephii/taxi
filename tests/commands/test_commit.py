@@ -245,3 +245,31 @@ fail     2  Repair coffee machine
         stdout = self.run_command('commit')
 
         self.assertNotIn('AggregatedTimesheetEntry', stdout)
+
+    @freeze_time('2014-01-21')
+    def test_not_today_option(self):
+        self.write_entries("""20/01/2014
+alias_1 2 Play ping-pong
+
+21/01/2014
+alias_1     1  Repair coffee machine
+alias_1     2  Repair coffee machine
+""")
+        stdout = self.run_command('commit', args=['--not-today'])
+
+        self.assertNotIn('coffee', stdout)
+
+    @freeze_time('2014-01-21')
+    def test_not_today_option_with_date(self):
+        self.write_entries("""20/01/2014
+alias_1 2 Play ping-pong
+
+21/01/2014
+alias_1     1  Repair coffee machine
+alias_1     2  Repair coffee machine
+""")
+        stdout = self.run_command('commit', args=[
+            '--not-today', '--date=19.01.2014-21.01.2014']
+        )
+
+        self.assertNotIn('coffee', stdout)
