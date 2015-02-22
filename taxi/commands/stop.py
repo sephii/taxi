@@ -9,7 +9,7 @@ from ..timesheet.parser import ParseError
 from .base import cli, get_timesheet_collection_for_context
 
 
-@cli.command()
+@cli.command(short_help="Record time spent on an activity.")
 @click.argument('description', nargs=-1)
 @click.option('-f', '--file', 'f', type=click.Path(dir_okay=False),
               help="Path to the entries file to use.")
