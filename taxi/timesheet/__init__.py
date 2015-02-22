@@ -27,8 +27,9 @@ class Timesheet(object):
         filtered_entries = defaultdict(list)
 
         for (entries_date, entries) in six.iteritems(self.entries):
-            if (date is not None
-                    and (entries_date < date[0] or entries_date > date[1])):
+            if (date is not None and (
+                    (date[0] is not None and entries_date < date[0])
+                    or (date[1] is not None and entries_date > date[1]))):
                 continue
 
             entries_for_date = []

@@ -22,16 +22,19 @@ from .types import DateRange
 @click.option('-d', '--date', type=DateRange(),
               help="Only process entries of the given date.")
 @click.option('--not-today', is_flag=True,
-              help="Ignore today's entries")
+              help="Ignore today's entries (same as --date=-yesterday)")
 @click.pass_context
 def commit(ctx, f, force_yes, date, not_today):
     """
     Usage: commit
 
-    Commits your work to the server.
+    Commits your work to the server. The [date] option can be used either as a
+    single date (eg. 20.01.2014), as a range (eg. 20.01.2014-22.01.2014), or as
+    a range with one of the dates omitted (eg. -22.01.2014).
 
     """
     timesheet_collection = get_timesheet_collection_for_context(ctx, f)
+
     if not_today:
         yesterday = datetime.date.today() - datetime.timedelta(days=1)
 

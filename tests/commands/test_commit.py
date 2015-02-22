@@ -273,3 +273,16 @@ alias_1     2  Repair coffee machine
         )
 
         self.assertNotIn('coffee', stdout)
+
+    @freeze_time('2014-01-21')
+    def test_relative_date(self):
+        self.write_entries("""20/01/2014
+alias_1 2 Play ping-pong
+
+21/01/2014
+alias_1     1  Repair coffee machine
+alias_1     2  Repair coffee machine
+""")
+        stdout = self.run_command('commit', args=['--date=yesterday'])
+
+        self.assertNotIn('coffee', stdout)
