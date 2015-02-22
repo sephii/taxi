@@ -13,7 +13,11 @@ Added
 * Add support for command matching by prefix (eg. ``taxi e`` for ``taxi
   edit``).
 * Add configuration file creation wizard.
-* Add file and line information in parsing error message (#69, #75).
+* Add file and line information in parsing error messages (#69, #75).
+* Add ``--not-today`` option to the ``commit`` command. Thanks @jeanmonod
+  (#63).
+* Add support for ``yesterday`` and ``today`` values for date options.
+* Add support for partial ranges for date options.
 
 Changed
 -------
