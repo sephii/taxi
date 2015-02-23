@@ -75,5 +75,4 @@ def edit(ctx, file_to_edit, previous_file):
     else:
         ctx.obj['view'].show_status(
             timesheet_collection.get_entries(regroup=True),
-            ctx.obj['settings'].get_close_matches
         )

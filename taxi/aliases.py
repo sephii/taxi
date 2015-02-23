@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 import collections
+import difflib
 import itertools
 import six
 
@@ -104,6 +105,13 @@ class AliasesDatabase(object):
         they're all mapped to a `None` mapping.
         """
         return dict((v, k) for k, v in six.iteritems(self.aliases))
+
+    def get_close_matches(self, alias):
+        """
+        Return the aliases that look like the given alias.
+        """
+        return difflib.get_close_matches(alias,
+                                         self.keys(), cutoff=0.2)
 
     def filter_from_mapping(self, mapping):
         """

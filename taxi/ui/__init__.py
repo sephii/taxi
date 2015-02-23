@@ -223,7 +223,7 @@ class BaseUi(object):
         return '%-30s %-5.2f %s' % (project_name, entry.hours,
                                     entry.description)
 
-    def show_status(self, entries_dict, close_matches_func):
+    def show_status(self, entries_dict):
         self.msg('Staging changes :\n')
         entries_list = entries_dict.items()
         entries_list = sorted(entries_list)
@@ -243,7 +243,9 @@ class BaseUi(object):
 
                 if (not entry.is_ignored() and entry.alias not in
                         aliases_database):
-                    close_matches = close_matches_func(entry.alias)
+                    close_matches = aliases_database.get_close_matches(
+                        entry.alias
+                    )
                     if close_matches:
                         self.msg('\tDid you mean one of the following: %s?' %
                                  ', '.join(close_matches))

@@ -3,7 +3,6 @@ from __future__ import unicode_literals
 
 from collections import defaultdict
 import os
-import difflib
 
 from six.moves import configparser
 
@@ -68,10 +67,6 @@ class Settings(dict):
         return [alias.strip()
                 for alias in self.get('local_aliases').split(',')
                 if alias.strip()]
-
-    def get_close_matches(self, project_name):
-        return difflib.get_close_matches(project_name,
-                                         self.get_aliases().keys(), cutoff=0.2)
 
     def add_alias(self, alias, mapping):
         alias_section = get_alias_section_name(mapping.backend, False)

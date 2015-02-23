@@ -27,5 +27,4 @@ def status(ctx, date, f):
     else:
         ctx.obj['view'].show_status(
             timesheet_collection.get_entries(date, regroup=True),
-            ctx.obj['settings'].get_close_matches
         )
