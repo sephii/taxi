@@ -94,7 +94,8 @@ class CommandTestCase(TestCase):
 
         return contents
 
-    def run_command(self, command_name, args=None, config_options=None):
+    def run_command(self, command_name, args=None, config_options=None,
+                    input=None):
         """
         Run the given taxi command with the given arguments and options. Before
         running the command, the configuration file is written with the given
@@ -125,6 +126,6 @@ class CommandTestCase(TestCase):
         args.insert(0, '--config=%s' % self.config_file)
 
         runner = CliRunner()
-        result = runner.invoke(cli, args)
+        result = runner.invoke(cli, args, input=input)
 
         return result.output

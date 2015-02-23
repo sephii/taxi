@@ -2,10 +2,12 @@ from __future__ import unicode_literals
 
 import re
 
+from six.moves import input
+
 
 def select_number(max, description, min=0):
     while True:
-        char = raw_input('\n%s' % description)
+        char = input('\n%s' % description)
         try:
             number = int(char)
             if min <= number <= max:
@@ -18,7 +20,7 @@ def select_number(max, description, min=0):
 
 def select_string(description, format=None, regexp_flags=0, default=None):
     while True:
-        char = raw_input(description)
+        char = input(description)
         if char == '' and default is not None:
             return default
 
