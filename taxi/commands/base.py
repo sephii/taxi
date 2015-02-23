@@ -29,6 +29,7 @@ def get_timesheet_collection_for_context(ctx, entries_file=None):
 
 
 def populate_aliases(aliases, local_aliases):
+    alias_database.reset()
     alias_database.update(aliases)
 
     for alias in local_aliases:
