@@ -131,12 +131,12 @@ class Settings(dict):
         """
         Convert a pre-4.0 configuration file to a 4.0 configuration file.
         """
-        import urlparse
+        from six.moves.urllib import parse
 
         if not self.config.has_section('backends'):
             self.config.add_section('backends')
 
-        site = urlparse.urlparse(self.get('site', default_value=''))
+        site = parse.urlparse(self.get('site', default_value=''))
         backend_uri = 'zebra://{username}:{password}@{hostname}'.format(
             username=self.get('username', default_value=''),
             password=self.get('password', default_value=''),
