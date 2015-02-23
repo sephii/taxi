@@ -7,7 +7,7 @@ import difflib
 
 from six.moves import configparser
 
-from .alias import Mapping
+from .aliases import Mapping
 from .projects import Project
 from .utils.file import expand_filename
 

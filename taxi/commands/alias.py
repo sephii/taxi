@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 
 import click
 
-from ..alias import alias_database, Mapping
+from ..aliases import aliases_database, Mapping
 from ..projects import Project
 from .base import cli
 
@@ -48,8 +48,8 @@ def add_mapping(ctx, alias, mapping, backend):
 
     mapping = Mapping(mapping=mapping, backend=backend)
 
-    if alias in alias_database:
-        existing_mapping = alias_database[alias]
+    if alias in aliases_database:
+        existing_mapping = aliases_database[alias]
         confirm = ctx.obj['view'].view.overwrite_alias(
             alias, existing_mapping, False
         )
@@ -67,7 +67,7 @@ def show_mapping(ctx, mapping_str):
     mapping = Project.str_to_tuple(mapping_str)
 
     if mapping is not None:
-        for alias, m in alias_database.filter_from_mapping(mapping).items():
+        for alias, m in aliases_database.filter_from_mapping(mapping).items():
             ctx.obj['view'].mapping_detail(
                 (alias, m.mapping if m is not None else None),
                 ctx.obj['projects_db'].get(m.mapping[0], m.backend)
@@ -78,7 +78,7 @@ def show_mapping(ctx, mapping_str):
 
 
 def show_alias(ctx, alias):
-    for alias, m in alias_database.filter_from_alias(alias).items():
+    for alias, m in aliases_database.filter_from_alias(alias).items():
         ctx.obj['view'].alias_detail(
             (alias, m.mapping if m is not None else None),
             ctx.obj['projects_db'].get(m.mapping[0], m.backend)

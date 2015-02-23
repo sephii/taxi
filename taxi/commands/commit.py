@@ -5,7 +5,7 @@ import datetime
 import click
 import six
 
-from ..alias import alias_database
+from ..aliases import aliases_database
 from ..backends import PushEntryFailed
 from ..backends.registry import backends_registry
 from .base import cli, get_timesheet_collection_for_context, AliasedCommand
@@ -69,7 +69,7 @@ def commit(ctx, f, force_yes, date, not_today):
         for (entries_date, entries) in entries_to_push.items():
             for entry in entries:
                 error = None
-                backend_name = alias_database[entry.alias].backend
+                backend_name = aliases_database[entry.alias].backend
                 backend = backends_registry[backend_name]
 
                 try:

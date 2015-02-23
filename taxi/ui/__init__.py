@@ -7,7 +7,7 @@ import six
 
 import click
 
-from ..alias import alias_database, Mapping
+from ..aliases import aliases_database, Mapping
 from ..utils import date as date_utils, terminal
 from ..exceptions import CancelException
 from ..projects import Project
@@ -33,7 +33,7 @@ class BaseUi(object):
     def project_with_activities(self, project, numbered_activities=False):
         self.msg(six.text_type(project))
         self.msg("\nActivities:")
-        mappings = alias_database.get_reversed_aliases()
+        mappings = aliases_database.get_reversed_aliases()
 
         for (key, activity) in enumerate(project.activities):
             mapping = Mapping(mapping=(project.id, activity.id),
@@ -206,12 +206,12 @@ class BaseUi(object):
     def get_entry_status(self, entry):
         if entry.is_ignored():
             status = 'ignored'
-        elif entry.alias not in alias_database:
+        elif entry.alias not in aliases_database:
             status = 'not mapped'
-        elif alias_database.is_local(entry.alias):
+        elif aliases_database.is_local(entry.alias):
             status = 'local'
-        elif entry.alias in alias_database:
-            status = '%s/%s' % alias_database[entry.alias].mapping
+        elif entry.alias in aliases_database:
+            status = '%s/%s' % aliases_database[entry.alias].mapping
         else:
             status = ''
 
@@ -242,14 +242,14 @@ class BaseUi(object):
                 self.msg(self.get_entry_status(entry))
 
                 if (not entry.is_ignored() and entry.alias not in
-                        alias_database):
+                        aliases_database):
                     close_matches = close_matches_func(entry.alias)
                     if close_matches:
                         self.msg('\tDid you mean one of the following: %s?' %
                                  ', '.join(close_matches))
 
-                if (entry.alias not in alias_database
-                        or not alias_database.is_local(entry.alias)):
+                if (entry.alias not in aliases_database
+                        or not aliases_database.is_local(entry.alias)):
                     subtotal_hours += entry.hours or 0
 
             self.msg('%-29s %5.2f\n' % ('', subtotal_hours))
@@ -333,15 +333,15 @@ class BaseUi(object):
 
         self.msg("Projects database updated successfully.")
 
-        deleted_aliases = (set(alias_database.keys()) -
+        deleted_aliases = (set(aliases_database.keys()) -
                            set(aliases_after_update.keys()))
         added_aliases = (set(aliases_after_update.keys()) -
-                         set(alias_database.keys()))
+                         set(aliases_database.keys()))
 
         modified_aliases = set()
         for alias, mapping in six.iteritems(aliases_after_update):
-            if (alias in alias_database
-                    and alias_database[alias] != mapping):
+            if (alias in aliases_database
+                    and aliases_database[alias] != mapping):
                 modified_aliases.add(alias)
 
         if added_aliases:

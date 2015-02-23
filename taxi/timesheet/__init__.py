@@ -7,7 +7,7 @@ import os
 
 import six
 
-from ..alias import alias_database
+from ..aliases import aliases_database
 from ..utils import date as date_utils
 from .entry import AggregatedTimesheetEntry, EntriesCollection, TimesheetEntry
 
@@ -96,9 +96,9 @@ class Timesheet(object):
         def entry_filter(entry):
             return (not (exclude_ignored and entry.is_ignored())
                     and not (exclude_local
-                             and alias_database.is_local(entry.alias))
+                             and aliases_database.is_local(entry.alias))
                     and (not exclude_unmapped
-                         or entry.alias in alias_database))
+                         or entry.alias in aliases_database))
 
         return self.get_filtered_entries(date, entry_filter, regroup)
 
@@ -110,7 +110,7 @@ class Timesheet(object):
 
     def get_local_entries(self, date=None):
         return self.get_filtered_entries(
-            date, lambda e: alias_database.is_local(e.alias)
+            date, lambda e: aliases_database.is_local(e.alias)
         )
 
     def get_non_current_workday_entries(self):
@@ -128,8 +128,8 @@ class Timesheet(object):
         return non_workday_entries
 
     def is_entry_ignored(self, entry):
-        return (entry.is_ignored() or alias_database.is_local(entry.alias)
-                or entry.alias not in alias_database)
+        return (entry.is_ignored() or aliases_database.is_local(entry.alias)
+                or entry.alias not in aliases_database)
 
     def continue_entry(self, date, end_time, description=None):
         try:

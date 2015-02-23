@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 import click
 import six
 
-from ..alias import Mapping
+from ..aliases import Mapping
 from ..backends.registry import backends_registry
 from .base import cli
 

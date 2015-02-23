@@ -8,7 +8,7 @@ import click
 import six
 
 from .types import ExpandedPath, Hostname
-from ..alias import alias_database
+from ..aliases import aliases_database
 from ..backends.registry import backends_registry
 from ..projects import ProjectsDb
 from ..settings import Settings
@@ -29,11 +29,11 @@ def get_timesheet_collection_for_context(ctx, entries_file=None):
 
 
 def populate_aliases(aliases, local_aliases):
-    alias_database.reset()
-    alias_database.update(aliases)
+    aliases_database.reset()
+    aliases_database.update(aliases)
 
     for alias in local_aliases:
-        alias_database.local_aliases.add(alias)
+        aliases_database.local_aliases.add(alias)
 
 
 def populate_backends(backends):

@@ -1,15 +1,15 @@
 from __future__ import unicode_literals
 
-from taxi.alias import AliasDatabase, Mapping
+from taxi.aliases import AliasesDatabase, Mapping
 
 
 def test_alias_in():
-    db = AliasDatabase({'foo': Mapping(mapping=(1, 2), backend='test')})
+    db = AliasesDatabase({'foo': Mapping(mapping=(1, 2), backend='test')})
     assert 'foo' in db
 
 
 def test_alias_in_local_alias():
-    db = AliasDatabase({'foo': Mapping(mapping=(1, 2), backend='test')})
+    db = AliasesDatabase({'foo': Mapping(mapping=(1, 2), backend='test')})
     db.local_aliases.add('local_alias')
 
     assert 'foo' in db
@@ -17,19 +17,19 @@ def test_alias_in_local_alias():
 
 
 def test_alias_not_in():
-    db = AliasDatabase({'foo': Mapping(mapping=(1, 2), backend='test')})
+    db = AliasesDatabase({'foo': Mapping(mapping=(1, 2), backend='test')})
     assert 'bar' not in db
 
 
 def test_alias_not_in_local_alias():
-    db = AliasDatabase({'foo': Mapping(mapping=(1, 2), backend='test')})
+    db = AliasesDatabase({'foo': Mapping(mapping=(1, 2), backend='test')})
     db.local_aliases.add('local_alias')
 
     assert 'bar' not in db
 
 
 def test_alias_iter():
-    db = AliasDatabase({
+    db = AliasesDatabase({
         'foo': Mapping(mapping=(1, 2), backend='test'),
         'bar': Mapping(mapping=(1, 3), backend='test'),
     })
@@ -40,14 +40,14 @@ def test_alias_iter():
 
 
 def test_alias_update_item():
-    db = AliasDatabase({'foo': Mapping(mapping=(1, 2), backend='test')})
+    db = AliasesDatabase({'foo': Mapping(mapping=(1, 2), backend='test')})
     db['foo'] = Mapping(mapping=(2, 2), backend='test')
 
     assert db['foo'].mapping == (2, 2)
 
 
 def test_alias_add_item():
-    db = AliasDatabase({'foo': Mapping(mapping=(1, 2), backend='test')})
+    db = AliasesDatabase({'foo': Mapping(mapping=(1, 2), backend='test')})
     db['bar'] = Mapping(mapping=(2, 2), backend='test')
 
     assert db['foo'].mapping == (1, 2)
@@ -55,7 +55,7 @@ def test_alias_add_item():
 
 
 def test_alias_iteritems():
-    db = AliasDatabase({
+    db = AliasesDatabase({
         'foo': Mapping(mapping=(1, 2), backend='test'),
         'bar': Mapping(mapping=(1, 3), backend='test'),
     })
@@ -70,7 +70,7 @@ def test_alias_iteritems():
 
 
 def test_keys():
-    db = AliasDatabase({
+    db = AliasesDatabase({
         'foo': Mapping(mapping=(1, 2), backend='test'),
         'bar': Mapping(mapping=(1, 3), backend='test'),
     })
@@ -79,7 +79,7 @@ def test_keys():
 
 
 def test_update():
-    db = AliasDatabase({
+    db = AliasesDatabase({
         'foo': Mapping(mapping=(1, 2), backend='test'),
         'bar': Mapping(mapping=(1, 3), backend='test'),
     })
@@ -96,14 +96,14 @@ def test_update():
 
 
 def test_reset():
-    db = AliasDatabase({'foo': Mapping(mapping=(1, 2), backend='test')})
+    db = AliasesDatabase({'foo': Mapping(mapping=(1, 2), backend='test')})
     db.reset()
 
     assert 'foo' not in db
 
 
 def test_is_local():
-    db = AliasDatabase({
+    db = AliasesDatabase({
         'foo': Mapping(mapping=(1, 2), backend='test'),
     })
     db.local_aliases.add('local_alias')
@@ -113,7 +113,7 @@ def test_is_local():
 
 
 def test_get_reversed_aliases():
-    db = AliasDatabase({
+    db = AliasesDatabase({
         'foo': Mapping(mapping=(1, 2), backend='test'),
         'bar': Mapping(mapping=(1, 3), backend='test'),
     })
@@ -127,7 +127,7 @@ def test_get_reversed_aliases():
 
 
 def test_filter_from_mapping_partial():
-    db = AliasDatabase({
+    db = AliasesDatabase({
         'foo': Mapping(mapping=(1, 2), backend='test'),
         'bar': Mapping(mapping=(1, 3), backend='test'),
         'baz': Mapping(mapping=(2, 3), backend='test'),
@@ -139,7 +139,7 @@ def test_filter_from_mapping_partial():
 
 
 def test_filter_from_mapping():
-    db = AliasDatabase({
+    db = AliasesDatabase({
         'foo': Mapping(mapping=(1, 2), backend='test'),
         'bar': Mapping(mapping=(1, 3), backend='test'),
         'baz': Mapping(mapping=(2, 3), backend='test'),
@@ -155,7 +155,7 @@ def test_filter_from_mapping_empty_search():
         'bar': Mapping(mapping=(1, 3), backend='test'),
         'baz': Mapping(mapping=(2, 3), backend='test'),
     }
-    db = AliasDatabase(aliases)
+    db = AliasesDatabase(aliases)
 
     assert db.filter_from_mapping('') == aliases
 
@@ -166,7 +166,7 @@ def test_filter_from_alias():
         'foobar': Mapping(mapping=(1, 3), backend='test'),
         'baz': Mapping(mapping=(2, 3), backend='test'),
     }
-    db = AliasDatabase(aliases)
+    db = AliasesDatabase(aliases)
 
     assert db.filter_from_alias('foo') == {
         'foo': Mapping(mapping=(1, 2), backend='test'),

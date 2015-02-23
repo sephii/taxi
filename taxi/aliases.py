@@ -8,7 +8,7 @@ import six
 Mapping = collections.namedtuple('Mapping', ['mapping', 'backend'])
 
 
-class AliasDatabase(object):
+class AliasesDatabase(object):
     """
     Dict-like object containing aliases and their corresponding mappings. It
     contains aliases and "local aliases". Local aliases are not mapped to
@@ -17,10 +17,10 @@ class AliasDatabase(object):
 
     Example usage:
 
-        >>> alias_database = AliasDatabase()
-        >>> alias_database['my_alias'] = Mapping(mapping=(1, 2),
+        >>> aliases_database = AliasDatabase()
+        >>> aliases_database['my_alias'] = Mapping(mapping=(1, 2),
         backend='dummy')
-        >>> 'my_alias' in alias_database
+        >>> 'my_alias' in aliases_database
         True
     """
     def __init__(self, aliases=None):
@@ -152,4 +152,4 @@ class AliasDatabase(object):
 
         return aliases
 
-alias_database = AliasDatabase()
+aliases_database = AliasesDatabase()

@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 
 import click
 
-from ..alias import alias_database, Mapping
+from ..aliases import aliases_database, Mapping
 from ..exceptions import CancelException
 from .base import cli
 
@@ -50,8 +50,8 @@ def add(ctx, search):
         except CancelException:
             return
 
-        if alias in alias_database:
-            mapping = alias_database[alias]
+        if alias in aliases_database:
+            mapping = aliases_database[alias]
             overwrite = ctx.obj['view'].overwrite_alias(alias, mapping)
 
             if not overwrite:
