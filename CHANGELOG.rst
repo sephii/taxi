@@ -28,6 +28,7 @@ Changed
 * Use `click <http://click.pocoo.org>`_. This should fix encoding and editor
   issues reported in #67.
 * Don't display date error for unmapped or local entries.
+* Move ``~/.tksrc`` configuration file to ``~/.taxirc``.
 
 3.2.1 (2015-01-16)
 ==================
