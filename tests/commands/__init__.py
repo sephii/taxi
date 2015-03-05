@@ -12,7 +12,7 @@ from click.testing import CliRunner
 from taxi.utils.file import expand_filename
 from taxi.commands.base import cli
 from taxi.backends.registry import backends_registry
-from taxi.backends import BaseBackend, PushEntryFailed
+from taxi.backends import BaseBackend, PushEntryFailed, PushEntriesFailed
 
 
 class TestBackendEntryPoint(object):
@@ -21,9 +21,27 @@ class TestBackendEntryPoint(object):
     trying to push them.
     """
     class TestBackend(BaseBackend):
+        def __init__(self, *args, **kwargs):
+            super(TestBackendEntryPoint.TestBackend, self).__init__(
+                *args, **kwargs
+            )
+            self.entries = []
+
         def push_entry(self, date, entry):
+            self.entries.append(entry)
+
             if entry.alias == 'fail':
-                raise PushEntryFailed
+                raise PushEntryFailed()
+
+        def post_push_entries(self):
+            failed_entries = {}
+
+            for entry in self.entries:
+                if entry.alias == 'post_push_fail':
+                    failed_entries[entry] = 'foobar'
+
+            if failed_entries:
+                raise PushEntriesFailed(entries=failed_entries)
 
     def load(self):
         return self.TestBackend
@@ -63,7 +81,8 @@ class CommandTestCase(TestCase):
             },
             'test_aliases': {
                 'alias_1': '123/456',
-                'fail': '456/789'
+                'fail': '456/789',
+                'post_push_fail': '456/789',
             },
         }
 

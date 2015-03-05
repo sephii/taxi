@@ -5,14 +5,14 @@ Installation
 ------------
 
 Taxi runs on either Python 2.7 and 3.4. It might run on older versions as well
-but it's only tested against the latest Python 2 and 3 versions. To install
-Taxi run the following::
+but it's only tested against the latest Python 2 and 3 versions. To install it,
+run the following::
 
     pip install taxi
 
 You'll probably want to install a backend as well. The backend is the part that
 allows you to push your timesheet entries to a centralized location. For the
-list of available backends, refer to the <Backends list> section.
+list of available backends, refer to the :ref:`backends_list`.
 
 Getting started
 ---------------
@@ -36,16 +36,15 @@ You can now start writing your timesheets. Taxi uses regular text files to keep
 track of the time you record. The default location of your timesheets is
 ``~/zebra/%Y/%m.tks``, where ``%Y`` and ``%m`` are replaced by the current year
 and current month. You'll find more information about this in the
-<Configuration> section.
+:ref:`config` section.
 
 While you could open your timesheet file directly with your editor, Taxi makes
 your life easier with the ``edit`` command, which will open the current
-timesheet in your favourite editor.
-
-Not only it will determine the correct file to open according to the current
-date, but it will also automatically fill it with date markers. All there is to
-do now is write your entries. For example, let's say I played ping-pong from 9
-to 10:30, and then I worked on Taxi from 10:30 to 12:00::
+timesheet in your favourite editor. Not only it will determine the correct file
+to open according to the current date, but it will also automatically fill it
+with date markers. All there is to do now is write your entries. For example,
+let's say I played ping-pong from 9 to 10:30, and then I worked on Taxi from
+10:30 to 12:00::
 
     23/02/2015
 
@@ -106,7 +105,7 @@ Entry continuation
 ~~~~~~~~~~~~~~~~~~
 
 Having entries that follow each other, eg. 10:00-11:00, then 11:00-13:00, etc is
-a common scenario. That's why you can skip the start time of an entry if the
+a common pattern. That's why you can skip the start time of an entry if the
 previous entry has an end time. The previous example would become (note that
 spaces don't matter, you don't need to align them)::
 
@@ -141,7 +140,7 @@ a string that can have one of the following formats:
 
 Actually the separator can be any special character. You can control the format
 Taxi uses when automatically inserting dates in your entries file with the
-``date_format`` configuration option (TODO ref).
+:ref:`config_date_format` configuration option.
 
 Timesheets also contain comments, which are denoted by the ``#`` character.
 Any line starting with ``#`` will be ignored.
@@ -165,3 +164,82 @@ being ignored. Each part of the range should have the format ``HH:mm``, or
 2 hours, or 1.75 for 1 hour and 45 minutes.
 
 ``description`` can be any text but cannot be left blank.
+
+.. _config:
+
+Configuration options
+---------------------
+
+.. _config_auto_add:
+
+auto_add
+~~~~~~~~
+
+Default: auto
+
+This specifies where the new entries will be inserted when you use `start` and
+`edit` commands. Possible values are `auto` (automatic detection based on your
+current entries), `bottom` (values are added to the end of the file), or `top`
+(values are added to the top of the file) or `no` (no auto add for the edit
+command).
+
+auto_fill_days
+~~~~~~~~~~~~~~
+
+Default: 0,1,2,3,4
+
+When running the `edit` command, Taxi will add all the dates that are not
+present in your entries file until the current date if they match any day
+present in ``auto_fill_days`` (0 is Monday, 6 is Sunday). You must have
+:ref:`config_auto_add` set to something else than `no` for this option to take
+effect.
+
+.. _config_date_format:
+
+date_format
+~~~~~~~~~~~
+
+Default: %d/%m/%Y
+
+This is the format of the dates that'll be automatically inserted in your
+entries file(s), for example when using the `start` and `edit` commands. You
+can use the same date placeholders as for the `file` option.
+
+editor
+~~~~~~
+
+When running the `edit` command, your editor command will be deducted from your
+environment but if you want to use a custom command you can set it here.
+
+.. _config_file:
+
+file
+~~~~
+
+Default: ~/zebra/%Y/%m.tks
+
+The path of your entries file. You're free to use a single file to store all
+your entries but you're strongly encouraged to use date placeholders here. The
+following will expand to ``~/zebra/2011/11.tks`` if you're in November 2011.
+See `the strftime documentation
+<http://docs.python.org/library/datetime.html#strftime-and-strptime-behavior>`_
+for a complete list of available formats.
+
+local_aliases
+~~~~~~~~~~~~~
+
+Defines a list of local aliases that you will be able to use in your timesheets
+but that will never be pushed. These aliases will appear in the timesheet
+summary and will get marked as pushed when running the `commit` command.
+
+nb_previous_files
+~~~~~~~~~~~~~~~~~
+
+Default: 1
+
+Defines the number of previous timesheet files Taxi should try to parse. This
+allows you to make sure you don't forget hours in files from previous months
+when starting a new month.
+
+This option only makes sense if you're using date placeholders in
+:ref:`config_file`.

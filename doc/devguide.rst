@@ -1,50 +1,6 @@
 Developer guide
 ===============
 
-Getting a development environment
----------------------------------
-
-Start by cloning Taxi (you'll probably want to use your fork URL instead of the
-public URL)::
-
-    git clone https://github.com/sephii/taxi
-
-Then create a virtual environment with `mkvirtualenv <http://insertlinkhere>`_::
-
-    mkvirtualenv taxi
-
-Now run the setup script to create the development environment::
-
-    ./setup.py develop
-
-Now every time you'll want to work on taxi, start by running ``workon taxi``
-first, so that you're using the version you checked out instead of the
-system-wide one.
-
-Running tests
--------------
-
-Tests use `tox <http://insertlinkhere>`_, which allows to run tests on multiple
-Python versions. You'll need Python 2.7 and Python 3.4 installed to be able to
-run all the tests, or you can let the continuous integration server do the job
-for you. Anyway, if you want to run the tests locally, simply run::
-
-    tox
-
-This will create virtual environments for each Python version and run the tests
-against it. If you want to limit the tests to a certain Python version, run::
-
-    tox -e py27
-
-This will only run the tests on Python 2.7. When developing it's useful to only
-run certain tests, for this, use the following command::
-
-    tox -- -a tests/commands/test_alias.py::AliasCommandTestCase::test_alias_list
-
-You can also leave out ``::test_alias_list`` to run all tests in the
-``AliasCommandTestCase``, or leave out ``::AliasCommandTestCase`` as well if
-you have multiple test classes and you want to run them all.
-
 Creating a backend
 ------------------
 
@@ -55,6 +11,9 @@ easy to do.
 
 As an example, we'll build a simple backend that sends the timesheets it
 receives by mail. We'll call it ``taxi_mail``.
+
+Registering the backend
+~~~~~~~~~~~~~~~~~~~~~~~
 
 A backend provides functionality but should not contain harcoded configuration
 such as usernames or passwords. Think about other people who will want to use
@@ -123,20 +82,24 @@ get rid of that initial slash. Let's do it::
             super(MailBackend, self).__init__(**kwargs)
             self.path = self.path.lstrip('/')
 
+Pushing entries
+~~~~~~~~~~~~~~~
+
 We now have all the information we need to send mails. For the actual sending,
-we could implement the ``push_entry`` method. However this will fire for
-every entry, which means we would get one mail per entry. Obviously this is not
-what we want, but hopefully Taxi provides signals you can hook on. There's a
-``post_commit`` signal which is fired once after all entries have been
-committed. Let's buffer the entries to put in the mail in the ``push_entry``
-method and send them all in the ``post_commit`` method. The code could look
-like that::
+we could implement the ``push_entry`` method. However this will fire for every
+entry, which means we would get one mail per entry. Obviously this is not what
+we want, but hopefully you can implement the ``post_push_entries`` method,
+which is called once after all entries have been committed. This method also
+gives you a chance to raise an exception for failing entries.
+
+So let's buffer the entries to put in the mail in the ``push_entry`` method and
+send them all in the ``post_push_entries`` method. The code could look like
+that::
 
     from collections import defaultdict
     import smtplib
 
-    from taxi.backends import signals
-    from taxi.dispatcher import receiver
+    from taxi.backends import BaseBackend
 
     class MailBackend(BaseBackend):
         def __init__(self, **kwargs):
@@ -144,11 +107,10 @@ like that::
             self.path = self.path.lstrip('/')
             self.entries = defaultdict(list)
 
-        def push_entry(self, entry, date):
+        def push_entry(self, date, entry):
             self.entries[date].append(entry)
 
-        @receiver(signals.post_commit)
-        def post_commit(self):
+        def post_push_entries(self):
             timesheet = []
 
             for date, entries in self.entries.items():
@@ -157,6 +119,68 @@ like that::
                 for entry in entries:
                     timesheet.append(str(entry))
 
-            smtp = smtplib.SMTP(self.hostname)
-            smtp.login(self.user, self.password)
-            smtp.sendmail('taxi@example.com', self.path, timesheet)
+            smtp = smtplib.SMTP_SSL(self.hostname)
+            smtp.login(self.username, self.password)
+            smtp.sendmail('taxi@example.com', self.path, '\n'.join(timesheet))
+            smtp.quit()
+
+Note that for the sake of brevity, we didn't catch any exception at all in this
+example. It's of course a good idea to do it, so that the user knows why the
+entries couldn't be pushed. If your backends raises an exception, all entries
+will be considered to have failed and will be reported as such. If you want to
+report only certain entries as failed in ``post_push_entries``, raise a
+``PushEntriesFailed`` exception, with a parameter ``entries`` that will be a
+`entry: error` dictionary.
+
+We now have a fully working backend that can be used to push entries!
+
+Backends API
+------------
+
+.. automodule:: taxi.backends
+    :members:
+
+Getting a development environment
+---------------------------------
+
+Start by cloning Taxi (you'll probably want to use your fork URL instead of the
+public URL)::
+
+    git clone https://github.com/sephii/taxi
+
+Then create a virtual environment with `mkvirtualenv
+<http://virtualenvwrapper.readthedocs.org/>`_::
+
+    mkvirtualenv taxi
+
+Now run the setup script to create the development environment::
+
+    ./setup.py develop
+
+Now every time you'll want to work on taxi, start by running ``workon taxi``
+first, so that you're using the version you checked out instead of the
+system-wide one.
+
+Running tests
+-------------
+
+Tests use `tox <http://tox.readthedocs.org/>`_, which allows to run tests on
+multiple Python versions. You'll need Python 2.7 and Python 3.4 installed to be
+able to run all the tests, or you can let the continuous integration server do
+the job for you. Anyway, if you want to run the tests locally, simply run::
+
+    tox
+
+This will create virtual environments for each Python version and run the tests
+against it. If you want to limit the tests to a certain Python version, run::
+
+    tox -e py27
+
+This will only run the tests on Python 2.7. When developing it's useful to only
+run certain tests, for this, use the following command::
+
+    tox -- -a tests/commands/test_alias.py::AliasCommandTestCase::test_alias_list
+
+You can also leave out ``::test_alias_list`` to run all tests in the
+``AliasCommandTestCase``, or leave out ``::AliasCommandTestCase`` as well if
+you have multiple test classes and you want to run them all.
