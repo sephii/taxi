@@ -201,7 +201,9 @@ class BaseUi(object):
         self.display_entries_list(ignored_entries, 'Total ignored')
 
     def failed_entries_list(self, failed_entries):
-        self.display_entries_list(failed_entries, 'Total failed')
+        self.display_entries_list([
+            (entry, entry.push_error) for entry in failed_entries
+        ], 'Total failed')
 
     def get_entry_status(self, entry):
         if entry.is_ignored():
@@ -260,17 +262,19 @@ class BaseUi(object):
         self.msg('%-29s %5.2f' % ('Total', total_hours))
         self.msg('\nUse `taxi ci` to commit staging changes to the server')
 
-    def pushed_entry(self, entry, error):
-        if error:
+    def pushed_entry(self, entry):
+        if entry.push_error is not None:
             self.msg(click.style("%s - Failed, reason: %s" % (
                 self.get_entry_status(entry),
-                error
+                entry.push_error
             ), fg='red', bold=True))
         else:
             self.msg(self.get_entry_status(entry))
 
-    def pushed_entries_summary(self, pushed_entries, failed_entries,
-                               ignored_entries):
+    def pushed_entries_summary(self, entries, ignored_entries):
+        pushed_entries = filter(lambda e: e.push_error is None, entries)
+        failed_entries = filter(lambda e: e.push_error is not None, entries)
+
         self.pushed_entries_total(pushed_entries)
 
         if ignored_entries:

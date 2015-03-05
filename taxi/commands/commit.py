@@ -1,12 +1,14 @@
 from __future__ import unicode_literals
 
+from collections import defaultdict
 import datetime
+import itertools
 
 import click
 import six
 
 from ..aliases import aliases_database
-from ..backends import PushEntryFailed
+from ..backends import PushEntriesFailed
 from ..backends.registry import backends_registry
 from .base import cli, get_timesheet_collection_for_context, AliasedCommand
 from .types import DateRange
@@ -54,44 +56,73 @@ def commit(ctx, f, force_yes, date, not_today):
                 return
 
     ctx.obj['view'].pushing_entries()
-    all_pushed_entries = []
-    all_failed_entries = []
+    backends_entries = defaultdict(list)
 
+    # Push entries
     for timesheet in timesheet_collection.timesheets:
-        pushed_entries = []
-        failed_entries = []
-
-        entries_to_push = timesheet.get_entries(
-            date, exclude_ignored=True,
-            exclude_local=True, exclude_unmapped=True, regroup=True
-        )
+        entries_to_push = get_entries_to_push(timesheet, date)
 
         for (entries_date, entries) in entries_to_push.items():
             for entry in entries:
-                error = None
                 backend_name = aliases_database[entry.alias].backend
                 backend = backends_registry[backend_name]
+                backends_entries[backend].append(entry)
 
                 try:
                     backend.push_entry(entries_date, entry)
-                except PushEntryFailed as e:
-                    failed_entries.append(entry)
-                    error = six.text_type(e)
+                except Exception as e:
+                    entry.push_error = six.text_type(e)
                 else:
-                    pushed_entries.append(entry)
+                    entry.push_error = None
                 finally:
-                    ctx.obj['view'].pushed_entry(entry, error)
+                    ctx.obj['view'].pushed_entry(entry)
 
+    # Call post_push_entries on backends
+    backends_post_push(backends_entries)
+    comment_timesheets_entries(timesheet_collection, date)
+
+    ignored_entries = timesheet_collection.get_ignored_entries(date)
+    ignored_entries_list = []
+    for (entries_date, entries) in six.iteritems(ignored_entries):
+        ignored_entries_list.extend(entries)
+
+    all_entries = itertools.chain(*backends_entries.values())
+    ctx.obj['view'].pushed_entries_summary(list(all_entries),
+                                           ignored_entries_list)
+
+
+def backends_post_push(backends_entries):
+    for backend, entries in six.iteritems(backends_entries):
+        try:
+            backend.post_push_entries()
+        except PushEntriesFailed as e:
+            if e.entries:
+                for entry, error in six.iteritems(e.entries):
+                    entry.push_error = error if error else six.text_type(e)
+            else:
+                for entry in entries:
+                    entry.push_error = six.text_type(e)
+        except Exception as e:
+            for entry in entries:
+                entry.push_error = six.text_type(e)
+
+
+def comment_timesheets_entries(timesheet_collection, date):
+    for timesheet in timesheet_collection.timesheets:
+        # Mark local entries as pushed without pushing them
         local_entries = timesheet.get_local_entries(date)
-        local_entries_list = []
+        pushed_entries = get_entries_to_push(timesheet, date)
+
         for (entries_date, entries) in six.iteritems(local_entries):
-            local_entries_list.extend(entries)
+            for entry in entries:
+                entry.commented = True
 
-        for entry in local_entries_list + pushed_entries:
-            entry.commented = True
+        for (entries_date, entries) in pushed_entries.items():
+            for entry in entries:
+                if entry.push_error is None:
+                    entry.commented = True
 
-        for entry in failed_entries:
-            entry.fix_start_time()
+                entry.fix_start_time()
 
         # Also fix start time for ignored entries. Since they won't get
         # pushed, there's a chance their previous sibling gets commented
@@ -102,14 +133,9 @@ def commit(ctx, f, force_yes, date, not_today):
 
         timesheet.file.write(timesheet.entries)
 
-        all_pushed_entries.extend(pushed_entries)
-        all_failed_entries.extend(failed_entries)
 
-    ignored_entries = timesheet_collection.get_ignored_entries(date)
-    ignored_entries_list = []
-    for (entries_date, entries) in six.iteritems(ignored_entries):
-        ignored_entries_list.extend(entries)
-
-    ctx.obj['view'].pushed_entries_summary(
-        all_pushed_entries, all_failed_entries, ignored_entries_list
+def get_entries_to_push(timesheet, date):
+    return timesheet.get_entries(
+        date, exclude_ignored=True,
+        exclude_local=True, exclude_unmapped=True, regroup=True
     )
