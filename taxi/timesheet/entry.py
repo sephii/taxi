@@ -283,6 +283,11 @@ class EntriesList(list):
 
 @six.python_2_unicode_compatible
 class TimesheetEntry(object):
+    """
+    An entry is the main component of a timesheet, it has an alias, a duration
+    and a description. The date is not part of the entry itself but of the
+    timesheet, which contains a mapping of dates and entries.
+    """
     def __init__(self, alias, duration, description):
         self.line = None
         self.ignored = False
@@ -396,6 +401,11 @@ class TimesheetEntry(object):
 
 @six.python_2_unicode_compatible
 class AggregatedTimesheetEntry(object):
+    """
+    Proxy class to :class:`TimesheetEntry`. An
+    :class:`AggregatedTimesheetEntry` is a list of entries that have the same
+    alias and description. Is is used for grouping entries.
+    """
     def __init__(self):
         super(AggregatedTimesheetEntry, self).__setattr__('entries', [])
 

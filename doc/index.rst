@@ -8,6 +8,7 @@ Contents:
 
    userguide
    devguide
+   api
 
 Taxi is a timesheeting tool that focuses on simplicity to help you write your
 timesheets without wasting time. All you'll do is edit a text file and write

@@ -134,12 +134,6 @@ report only certain entries as failed in ``post_push_entries``, raise a
 
 We now have a fully working backend that can be used to push entries!
 
-Backends API
-------------
-
-.. automodule:: taxi.backends
-    :members:
-
 Getting a development environment
 ---------------------------------
 
