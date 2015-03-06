@@ -272,8 +272,10 @@ class BaseUi(object):
             self.msg(self.get_entry_status(entry))
 
     def pushed_entries_summary(self, entries, ignored_entries):
-        pushed_entries = filter(lambda e: e.push_error is None, entries)
-        failed_entries = filter(lambda e: e.push_error is not None, entries)
+        pushed_entries = list(filter(lambda e: e.push_error is None, entries))
+        failed_entries = list(
+            filter(lambda e: e.push_error is not None, entries)
+        )
 
         self.pushed_entries_total(pushed_entries)
 

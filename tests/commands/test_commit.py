@@ -290,12 +290,18 @@ alias_1     2  Repair coffee machine
     @freeze_time('2014-01-21')
     def test_post_push_fail(self):
         self.write_entries("""21/01/2014
-alias_1 2 Play ping-pong
-
-21/01/2014
 post_push_fail     1  Repair coffee machine
 alias_1     2  Repair coffee machine
 """)
         stdout = self.run_command('commit')
 
         self.assertIn('Failed entries\n\npost_push_fail', stdout)
+
+    @freeze_time('2014-01-21')
+    def test_successful_push_doesnt_show_failed_entries(self):
+        self.write_entries("""21/01/2014
+alias_1 2 Play ping-pong
+""")
+        stdout = self.run_command('commit')
+
+        self.assertNotIn('Failed entries', stdout)
