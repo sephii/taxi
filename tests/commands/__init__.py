@@ -68,9 +68,6 @@ class CommandTestCase(TestCase):
 
         self.default_config = {
             'default': {
-                'site': 'https://zebra.liip.ch',
-                'username': 'john.doe',
-                'password': 'john.doe',
                 'date_format': '%d/%m/%Y',
                 'editor': '/bin/true',
                 'file': self.entries_file,

@@ -39,7 +39,7 @@ setup(
     name='taxi',
     version=__version__,
     packages=find_packages(exclude=('tests', 'tests.*')),
-    description='Taxi is a Zebra frontend',
+    description='Taxi: timesheeting made easy',
     author='Sylvain Fankhauser',
     author_email='sylvain.fankhauser@liip.ch',
     url='https://github.com/sephii/taxi',

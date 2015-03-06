@@ -17,7 +17,7 @@ def edit(ctx, file_to_edit, previous_file):
     """
     Usage: edit
 
-    Opens your zebra file in your favourite editor.
+    Opens your timesheet file in your favourite editor.
 
     The PREVIOUS_FILE argument can be used to specify which nth previous file
     to edit. A value of 1 will edit the previous file, 2 will edit the
