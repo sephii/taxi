@@ -14,6 +14,7 @@ from ..projects import ProjectsDb
 from ..settings import Settings
 from ..timesheet.utils import get_timesheet_collection
 from ..ui.tty import TtyUi
+from .. import __version__
 
 
 def get_timesheet_collection_for_context(ctx, entries_file=None):
@@ -141,11 +142,24 @@ class AliasedGroup(click.Group):
         return None
 
 
+def print_version(ctx, param, value):
+    if not value or ctx.resilient_parsing:
+        return
+
+    click.echo('Taxi %s' % __version__)
+    ctx.exit()
+
+
 @click.group(cls=AliasedGroup)
 @click.option('--config', '-c', default='~/.taxirc',
-              type=ExpandedPath(dir_okay=False))
+              type=ExpandedPath(dir_okay=False),
+              help="Path to the configuration file to use.")
 @click.option('--taxi-dir', default='~/.taxi',
-              type=ExpandedPath(file_okay=False))
+              type=ExpandedPath(file_okay=False), help="Path to the directory "
+              "that will be used for internal files.")
+@click.option('--version', is_flag=True, callback=print_version,
+              expose_value=False, is_eager=True,
+              help="Print version number and exit.")
 @click.pass_context
 def cli(ctx, config, taxi_dir):
     create_config_file(config)
