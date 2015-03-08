@@ -7,7 +7,7 @@ from taxi import projects
 
 
 def test_legacy_projects_db(tmpdir):
-    projects_db_file = tmpdir.join('projects.db')
+    projects_db_file = tmpdir.join(projects.ProjectsDb.PROJECTS_FILE)
 
     local_projects_db = projects.LocalProjectsDb()
     foo = pickle.dumps(local_projects_db)

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+from collections import defaultdict
 import copy
 import datetime
 import json
@@ -144,39 +145,33 @@ class Activity:
 
 
 class ProjectsDb:
+    PROJECTS_FILE = 'projects.json'
+
     def __init__(self, path):
         self.path = path
-        self.projects_database_file = os.path.join(self.path, 'projects.db')
+        self.projects_database_file = os.path.join(self.path,
+                                                   self.PROJECTS_FILE)
+        self._projects_by_id_cache = None
+        self._projects_cache = None
 
     def get_projects(self):
-        projects_cache = getattr(self, '_projects_cache', None)
-        if projects_cache is not None:
-            return projects_cache
+        if self._projects_cache is not None:
+            return self._projects_cache
+
+        if not os.stat(self.projects_database_file).st_size:
+            return []
 
         with open(self.projects_database_file, 'r') as projects_db:
-            # Pre-4.0 used a pickle-based format for the projects db, so trying
-            # to read it as a non-binary file can lead to a UnicodeDecodeError
-            # on Python 3
             try:
-                projects_db_contents = projects_db.read()
-            except UnicodeDecodeError:
+                lpdb = json.load(projects_db, cls=LocalProjectsDbDecoder)
+            # Pre-4.0 used a pickle-based format for the projects db
+            except (UnicodeDecodeError, ValueError):
                 raise OutdatedProjectsDbException()
-
-            if projects_db_contents:
-                projects_db.seek(0)
-                try:
-                    lpdb = json.load(projects_db, cls=LocalProjectsDbDecoder)
-                # Pre-4.0 used a pickle-based format for the projects db
-                except ValueError:
-                    raise OutdatedProjectsDbException()
-
-            else:
-                lpdb = LocalProjectsDb()
 
         if lpdb.VERSION < LocalProjectsDb.VERSION:
             raise OutdatedProjectsDbException()
 
-        setattr(self, '_projects_cache', lpdb.projects)
+        self._projects_cache = lpdb.projects
 
         return lpdb.projects
 
@@ -187,6 +182,7 @@ class ProjectsDb:
             json.dump(lpdb.get_dump_object(), output)
 
         self._projects_cache = None
+        self._projects_by_id_cache = None
 
     def search(self, search, active_only=False):
         projects = self.get_projects()
@@ -210,13 +206,18 @@ class ProjectsDb:
         return found_list
 
     def get(self, id, backend=None):
-        # TODO optimize?
-        projects = self.get_projects()
+        if self._projects_by_id_cache is None:
+            projects = self.get_projects()
+            self._projects_by_id_cache = defaultdict(list)
 
-        for project in projects:
-            if (project.id == id and
-                    (backend is None or project.backend == backend)):
+            for project in projects:
+                self._projects_by_id_cache[project.id].append(project)
+
+        for project in self._projects_by_id_cache.get(id, []):
+            if backend is None or project.backend == backend:
                 return project
+
+        return None
 
     def mapping_to_project(self, mapping):
         project = self.get(mapping.mapping[0], mapping.backend)

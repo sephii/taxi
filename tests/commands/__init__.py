@@ -9,10 +9,11 @@ from unittest import TestCase
 
 from click.testing import CliRunner
 
-from taxi.utils.file import expand_filename
-from taxi.commands.base import cli
-from taxi.backends.registry import backends_registry
 from taxi.backends import BaseBackend, PushEntryFailed, PushEntriesFailed
+from taxi.backends.registry import backends_registry
+from taxi.commands.base import cli
+from taxi.projects import ProjectsDb
+from taxi.utils.file import expand_filename
 
 
 class TestBackendEntryPoint(object):
@@ -62,8 +63,10 @@ class CommandTestCase(TestCase):
             'test': TestBackendEntryPoint()
         }
 
-        # Create an empty projects.db file
-        with open(os.path.join(self.taxi_dir, 'projects.db'), 'w') as f:
+        # Create an empty projects db file
+        projects_db_file = os.path.join(self.taxi_dir,
+                                        ProjectsDb.PROJECTS_FILE)
+        with open(projects_db_file, 'w') as f:
             f.close()
 
         self.default_config = {
