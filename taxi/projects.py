@@ -158,7 +158,12 @@ class ProjectsDb:
         if self._projects_cache is not None:
             return self._projects_cache
 
-        if not os.stat(self.projects_database_file).st_size:
+        try:
+            if not os.stat(self.projects_database_file).st_size:
+                return []
+        # If the db file doesn't exist (eg. ``taxi update`` not run), return an
+        # empty list
+        except OSError:
             return []
 
         with open(self.projects_database_file, 'r') as projects_db:
