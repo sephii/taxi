@@ -7,13 +7,13 @@ from setuptools.command.test import test as TestCommand
 
 
 tests_require = [
-    'freezegun==0.2.2',
-    'mock==1.0.1',
+    'freezegun==0.2.8',
     'pytest==2.6.4',
 ]
 
 install_requires = [
-    'colorama>=0.3.1'
+    'click>=3.3',
+    'six>=1.9.0',
 ]
 
 
@@ -39,10 +39,9 @@ setup(
     name='taxi',
     version=__version__,
     packages=find_packages(exclude=('tests', 'tests.*')),
-    description='Taxi is a Zebra frontend',
+    description='Taxi: timesheeting made easy',
     author='Sylvain Fankhauser',
     author_email='sylvain.fankhauser@liip.ch',
-    scripts=['bin/taxi'],
     url='https://github.com/sephii/taxi',
     install_requires=install_requires,
     license='wtfpl',
@@ -50,6 +49,16 @@ setup(
     include_package_data=False,
     cmdclass = {'test': PyTest},
     package_data={
-        'taxi': ['doc/*']
-    }
+        'taxi': ['etc/*']
+    },
+    entry_points={
+        'taxi.backends': 'dummy = taxi.backends.dummy:DummyBackend',
+        'console_scripts': 'taxi = taxi.commands.base:cli'
+    },
+    classifiers=[
+        'Environment :: Console',
+        'Development Status :: 5 - Production/Stable',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.4',
+    ]
 )

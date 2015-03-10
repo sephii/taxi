@@ -1,5 +1,9 @@
+from __future__ import unicode_literals
+
 import collections
 import datetime
+
+import six
 
 from .parser import DateLine, EntryLine, TextLine, TimesheetParser
 
@@ -277,7 +281,13 @@ class EntriesList(list):
             self.entries_collection.delete_date(self.date)
 
 
+@six.python_2_unicode_compatible
 class TimesheetEntry(object):
+    """
+    An entry is the main component of a timesheet, it has an alias, a duration
+    and a description. The date is not part of the entry itself but of the
+    timesheet, which contains a mapping of dates and entries.
+    """
     def __init__(self, alias, duration, description):
         self.line = None
         self.ignored = False
@@ -289,7 +299,7 @@ class TimesheetEntry(object):
         self.description = description
         self.duration = duration
 
-    def __unicode__(self):
+    def __str__(self):
         if self.is_ignored():
             project_name = u'%s (ignored)' % self.alias
         else:
@@ -389,7 +399,13 @@ class TimesheetEntry(object):
             )
 
 
+@six.python_2_unicode_compatible
 class AggregatedTimesheetEntry(object):
+    """
+    Proxy class to :class:`TimesheetEntry`. An
+    :class:`AggregatedTimesheetEntry` is a list of entries that have the same
+    alias and description. Is is used for grouping entries.
+    """
     def __init__(self):
         super(AggregatedTimesheetEntry, self).__setattr__('entries', [])
 
@@ -405,6 +421,15 @@ class AggregatedTimesheetEntry(object):
     def __setattr__(self, name, value):
         for entry in self.entries:
             setattr(entry, name, value)
+
+    def __str__(self):
+        if self.is_ignored():
+            project_name = u'%s (ignored)' % self.alias
+        else:
+            project_name = self.alias
+
+        return u'%-30s %-5.2f %s' % (project_name, self.hours,
+                                     self.description)
 
     @property
     def hours(self):

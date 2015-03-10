@@ -1,11 +1,19 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
+from collections import defaultdict
+import copy
 import datetime
-import pickle
+import json
+import os
 import re
 
-from taxi.exceptions import TaxiException
+import six
+
+from .exceptions import TaxiException
 
 
+@six.python_2_unicode_compatible
 class Project:
     STATUS_NOT_STARTED = 0
     STATUS_ACTIVE = 1
@@ -38,8 +46,9 @@ class Project:
         self.aliases = {}
         self.start_date = None
         self.end_date = None
+        self.backend = None
 
-    def __unicode__(self):
+    def __str__(self):
         if self.status in self.STATUSES:
             status = self.STATUSES[self.status]
         else:
@@ -53,7 +62,7 @@ class Project:
         if end_date is None:
             end_date = 'Unknown'
 
-        return u"""Id: %s
+        return """Id: %s
 Name: %s
 Status: %s
 Start date: %s
@@ -86,9 +95,9 @@ Description: %s""" % (self.id, self.name, status, start_date, end_date,
     def is_active(self):
         return (self.status == self.STATUS_ACTIVE and
                 (self.start_date is None or
-                    self.start_date <= datetime.datetime.now()) and
+                    self.start_date <= datetime.date.today()) and
                 (self.end_date is None or self.end_date >=
-                    datetime.datetime.now()))
+                    datetime.date.today()))
 
     def get_short_status(self):
         if self.status not in self.SHORT_STATUSES:
@@ -136,42 +145,52 @@ class Activity:
 
 
 class ProjectsDb:
+    PROJECTS_FILE = 'projects.json'
+
     def __init__(self, path):
         self.path = path
+        self.projects_database_file = os.path.join(self.path,
+                                                   self.PROJECTS_FILE)
+        self._projects_by_id_cache = None
+        self._projects_cache = None
 
-    def _get_projects(self):
-        projects_cache = getattr(self, '_projects_cache', None)
-        if projects_cache is not None:
-            return projects_cache
+    def get_projects(self):
+        if self._projects_cache is not None:
+            return self._projects_cache
 
         try:
-            input = open(self.path, 'r')
-
-            try:
-                lpdb = pickle.load(input)
-            except ImportError:
-                raise TaxiException("Your projects db is out of date, please"
-                                    " run `taxi update` to update it")
-
-            if (not isinstance(lpdb, LocalProjectsDb)
-                    or lpdb.VERSION < LocalProjectsDb.VERSION):
-                raise TaxiException("Your projects db is out of date, please"
-                                    " run `taxi update` to update it")
-
-            setattr(self, '_projects_cache', lpdb.projects)
-
-            return lpdb.projects
-        except (IOError, EOFError):
+            if not os.stat(self.projects_database_file).st_size:
+                return []
+        # If the db file doesn't exist (eg. ``taxi update`` not run), return an
+        # empty list
+        except OSError:
             return []
+
+        with open(self.projects_database_file, 'r') as projects_db:
+            try:
+                lpdb = json.load(projects_db, cls=LocalProjectsDbDecoder)
+            # Pre-4.0 used a pickle-based format for the projects db
+            except (UnicodeDecodeError, ValueError):
+                raise OutdatedProjectsDbException()
+
+        if lpdb.VERSION < LocalProjectsDb.VERSION:
+            raise OutdatedProjectsDbException()
+
+        self._projects_cache = lpdb.projects
+
+        return lpdb.projects
 
     def update(self, projects):
         lpdb = LocalProjectsDb(projects)
 
-        output = open(self.path, 'w')
-        pickle.dump(lpdb, output)
+        with open(self.projects_database_file, 'w') as output:
+            json.dump(lpdb.get_dump_object(), output)
+
+        self._projects_cache = None
+        self._projects_by_id_cache = None
 
     def search(self, search, active_only=False):
-        projects = self._get_projects()
+        projects = self.get_projects()
         found_list = []
 
         for project in projects:
@@ -191,26 +210,27 @@ class ProjectsDb:
 
         return found_list
 
-    def get(self, id):
-        projects_hash = getattr(self, '_projects_hash', None)
-        if projects_hash is None:
-            projects = self._get_projects()
-            projects_hash = {}
+    def get(self, id, backend=None):
+        if self._projects_by_id_cache is None:
+            projects = self.get_projects()
+            self._projects_by_id_cache = defaultdict(list)
 
             for project in projects:
-                projects_hash[project.id] = project
+                self._projects_by_id_cache[project.id].append(project)
 
-            setattr(self, '_projects_hash', projects_hash)
+        for project in self._projects_by_id_cache.get(id, []):
+            if backend is None or project.backend == backend:
+                return project
 
-        return projects_hash[id] if id in projects_hash else None
+        return None
 
-    def mapping_to_project(self, mapping_tuple):
-        project = self.get(mapping_tuple[0])
+    def mapping_to_project(self, mapping):
+        project = self.get(mapping.mapping[0], mapping.backend)
 
         if not project:
             return (None, None)
 
-        activity = project.get_activity(mapping_tuple[1])
+        activity = project.get_activity(mapping.mapping[1])
 
         if not activity:
             return (project, None)
@@ -219,8 +239,68 @@ class ProjectsDb:
 
 
 class LocalProjectsDb:
-    projects = []
     VERSION = 2
 
-    def __init__(self, projects):
+    def __init__(self, projects=None):
+        if not projects:
+            projects = []
+
         self.projects = projects
+
+    def get_dump_object(self):
+        return {
+            'VERSION': self.VERSION,
+            'projects': [
+                self.dump_project(project) for project in self.projects
+            ]
+        }
+
+    def dump_project(self, project):
+        project_dict = copy.copy(project.__dict__)
+
+        for date_type in ['start_date', 'end_date']:
+            if project_dict[date_type] is not None:
+                project_dict[date_type] = project_dict[date_type].isoformat()
+
+        project_dict['activities'] = [
+            activity.__dict__ for activity in project_dict['activities']
+        ]
+
+        return project_dict
+
+
+class LocalProjectsDbDecoder(json.JSONDecoder):
+    def decode(self, s):
+        s = super(LocalProjectsDbDecoder, self).decode(s)
+
+        projects = s['projects']
+        projects_copy = []
+        for project in projects:
+            project['activities'] = [
+                Activity(activity['id'], activity['name'], activity['price'])
+                for activity in project['activities']
+            ]
+            for date_type in ['start_date', 'end_date']:
+                if project[date_type] is not None:
+                    project[date_type] = datetime.datetime.strptime(
+                        project[date_type], '%Y-%m-%d').date()
+
+            p_copy = Project(project['id'], project['name'])
+            p_copy.__dict__.update(project)
+            projects_copy.append(p_copy)
+
+        lpdb = LocalProjectsDb(projects_copy)
+        lpdb.VERSION = s['VERSION']
+
+        return lpdb
+
+
+class OutdatedProjectsDbException(TaxiException):
+    def __init__(self, *args, **kwargs):
+        self.message = (
+            "Your projects db is outdated, please run `taxi update` to update"
+            " it"
+        )
+
+        super(OutdatedProjectsDbException, self).__init__(self.message,
+                                                          *args, **kwargs)

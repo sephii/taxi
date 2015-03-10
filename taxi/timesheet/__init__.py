@@ -1,16 +1,20 @@
+from __future__ import unicode_literals
+
 import codecs
 from collections import defaultdict
 import datetime
 import os
 
+import six
+
+from ..aliases import aliases_database
 from ..utils import date as date_utils
 from .entry import AggregatedTimesheetEntry, EntriesCollection, TimesheetEntry
 
 
 class Timesheet(object):
-    def __init__(self, entries=None, mappings=None, file=None):
+    def __init__(self, entries=None, file=None):
         self.entries = entries if entries is not None else EntriesCollection()
-        self.mappings = mappings if mappings is not None else AliasMappings()
         self.file = file
 
     def get_filtered_entries(self, date=None, filter_callback=None,
@@ -22,9 +26,10 @@ class Timesheet(object):
 
         filtered_entries = defaultdict(list)
 
-        for (entries_date, entries) in self.entries.iteritems():
-            if (date is not None
-                    and (entries_date < date[0] or entries_date > date[1])):
+        for (entries_date, entries) in six.iteritems(self.entries):
+            if (date is not None and (
+                    (date[0] is not None and entries_date < date[0])
+                    or (date[1] is not None and entries_date > date[1]))):
                 continue
 
             entries_for_date = []
@@ -91,29 +96,22 @@ class Timesheet(object):
         def entry_filter(entry):
             return (not (exclude_ignored and entry.is_ignored())
                     and not (exclude_local
-                             and self.is_alias_local(entry.alias))
+                             and aliases_database.is_local(entry.alias))
                     and (not exclude_unmapped
-                         or self.is_alias_mapped(entry.alias)))
+                         or entry.alias in aliases_database))
 
         return self.get_filtered_entries(date, entry_filter, regroup)
 
     def get_ignored_entries(self, date=None):
         def entry_filter(entry):
-            return (entry.is_ignored() or self.is_alias_local(entry.alias)
-                    or not self.is_alias_mapped(entry.alias))
+            return self.is_entry_ignored(entry)
 
         return self.get_filtered_entries(date, entry_filter)
 
     def get_local_entries(self, date=None):
         return self.get_filtered_entries(
-            date, lambda e: self.is_alias_local(e.alias)
+            date, lambda e: aliases_database.is_local(e.alias)
         )
-
-    def is_alias_local(self, alias):
-        return self.is_alias_mapped(alias) and self.mappings[alias] is None
-
-    def is_alias_mapped(self, alias):
-        return alias in self.mappings
 
     def get_non_current_workday_entries(self):
         non_workday_entries = defaultdict(list)
@@ -121,13 +119,17 @@ class Timesheet(object):
         today = datetime.date.today()
         yesterday = date_utils.get_previous_working_day(today)
 
-        for (date, date_entries) in self.entries.iteritems():
+        for (date, date_entries) in six.iteritems(self.entries):
             if date not in (today, yesterday) or date.strftime('%w') in [6, 0]:
                 for entry in date_entries:
-                    if not entry.is_ignored():
+                    if not self.is_entry_ignored(entry):
                         non_workday_entries[date].append(entry)
 
         return non_workday_entries
+
+    def is_entry_ignored(self, entry):
+        return (entry.is_ignored() or aliases_database.is_local(entry.alias)
+                or entry.alias not in aliases_database)
 
     def continue_entry(self, date, end_time, description=None):
         try:
@@ -280,12 +282,7 @@ class TimesheetFile(object):
 
         with codecs.open(self.file_path, 'w', 'utf-8') as timesheet_file:
             for line in entries.to_lines():
-                timesheet_file.write(u'%s\n' % line)
-
-
-class AliasMappings(dict):
-    def is_local(self, alias):
-        return self[alias] is None
+                timesheet_file.write('%s\n' % line)
 
 
 class NoActivityInProgressError(Exception):

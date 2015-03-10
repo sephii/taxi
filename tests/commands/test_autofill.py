@@ -1,9 +1,10 @@
+from __future__ import unicode_literals
+
 from freezegun import freeze_time
 
 from . import CommandTestCase
 
 
-@freeze_time('2012-02-20')
 class AutofillCommandTestCase(CommandTestCase):
     """
     Tests for the `autofill` command.
@@ -11,6 +12,7 @@ class AutofillCommandTestCase(CommandTestCase):
     def run_autofill_command(self, config_options=None):
         self.run_command('autofill', config_options=config_options)
 
+    @freeze_time('2012-02-20')
     def test_autofill_bottom(self):
         config_options = self.default_config.copy()
         config_options['default'].update({
@@ -30,6 +32,7 @@ class AutofillCommandTestCase(CommandTestCase):
 28/02/2012
 """)
 
+    @freeze_time('2012-02-20')
     def test_autofill_top(self):
         config_options = self.default_config.copy()
         config_options['default'].update({
@@ -49,6 +52,7 @@ class AutofillCommandTestCase(CommandTestCase):
 07/02/2012
 """)
 
+    @freeze_time('2012-02-20')
     def test_autofill_existing_entries(self):
         config_options = self.default_config.copy()
         config_options['default'].update({
