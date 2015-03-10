@@ -19,5 +19,5 @@ stable version and install it on your system::
     sudo pip install taxi
 
 That's it! You should now be able to run ``taxi``. Head over to the
-`documentation <http://taxi.readthedocs.org/>`_ for a complete guide on how to
-use Taxi.
+`documentation <http://taxi-timesheets.readthedocs.org/>`_ for a complete guide
+on how to use Taxi.
