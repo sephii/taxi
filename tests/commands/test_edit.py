@@ -6,7 +6,7 @@ import tempfile
 
 from freezegun import freeze_time
 
-from taxi.utils.file import expand_filename
+from taxi.utils.file import expand_date
 
 from . import CommandTestCase
 
@@ -78,7 +78,7 @@ alias_1 2 hello world
 """)
             self.run_command('edit', config_options=config)
 
-            with open(expand_filename(self.entries_file), 'r') as f:
+            with open(expand_date(self.entries_file), 'r') as f:
                 lines = f.readlines()
 
             self.assertEqual('20/02/2014\n', lines[0])
@@ -107,7 +107,7 @@ alias_1 2 hello world
             self.run_command('edit', args=['1'], config_options=config)
 
         with freeze_time('2014-01-21'):
-            with open(expand_filename(self.entries_file), 'r') as f:
+            with open(expand_date(self.entries_file), 'r') as f:
                 lines = f.readlines()
 
             self.assertNotIn('21/02/2014\n', lines)

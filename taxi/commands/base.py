@@ -19,7 +19,7 @@ from .. import __version__
 
 def get_timesheet_collection_for_context(ctx, entries_file=None):
     if not entries_file:
-        entries_file = ctx.obj['settings'].get('file')
+        entries_file = ctx.obj['settings'].get_entries_file_path(False)
 
     return get_timesheet_collection(
         entries_file,

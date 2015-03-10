@@ -27,12 +27,14 @@ def edit(ctx, file_to_edit, previous_file):
     timesheet_collection = None
     autofill = not bool(file_to_edit) and previous_file == 0
     if not file_to_edit:
-        file_to_edit = ctx.obj['settings'].get('file')
+        file_to_edit = ctx.obj['settings'].get_entries_file_path(False)
 
     # If the file was not specified and if it's the current file, autofill it
     if autofill:
         try:
-            timesheet_collection = get_timesheet_collection_for_context(ctx)
+            timesheet_collection = get_timesheet_collection_for_context(
+                ctx, file_to_edit
+            )
         except ParseError:
             pass
         else:

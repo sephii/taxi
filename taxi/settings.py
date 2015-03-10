@@ -8,7 +8,7 @@ from six.moves import configparser
 
 from .aliases import Mapping
 from .projects import Project
-from .utils.file import expand_filename
+from .utils.file import expand_date as file_expand_date
 
 
 class Settings(dict):
@@ -161,8 +161,13 @@ class Settings(dict):
 
             self.config.remove_section('shared_wrmap')
 
-    def get_entries_file_path(self):
-        return expand_filename(self.get('file'))
+    def get_entries_file_path(self, expand_date=True):
+        file_path = os.path.expanduser(self.get('file'))
+
+        if expand_date:
+            file_path = file_expand_date(file_path)
+
+        return file_path
 
 
 def get_alias_section_name(backend_name, shared_section=False):

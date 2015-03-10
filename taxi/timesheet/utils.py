@@ -79,7 +79,7 @@ def get_files(filename, nb_previous_files):
     files = OrderedSet()
     file_date = datetime.date.today()
     for i in six.moves.xrange(0, nb_previous_files + 1):
-        files.add(file_utils.expand_filename(filename, file_date))
+        files.add(file_utils.expand_date(filename, file_date))
 
         if smallest_unit == 'm':
             if file_date.month == 1:

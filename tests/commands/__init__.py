@@ -13,7 +13,7 @@ from taxi.backends import BaseBackend, PushEntryFailed, PushEntriesFailed
 from taxi.backends.registry import backends_registry
 from taxi.commands.base import cli
 from taxi.projects import ProjectsDb
-from taxi.utils.file import expand_filename
+from taxi.utils.file import expand_date
 
 
 class TestBackendEntryPoint(object):
@@ -88,7 +88,7 @@ class CommandTestCase(TestCase):
 
     def tearDown(self):
         backends_registry._entry_points = self.backends_original_entry_points
-        entries_file = expand_filename(self.entries_file)
+        entries_file = expand_date(self.entries_file)
 
         os.remove(self.config_file)
         if os.path.exists(entries_file):
@@ -104,11 +104,11 @@ class CommandTestCase(TestCase):
                     f.write("%s = %s\n" % (param, value))
 
     def write_entries(self, contents):
-        with codecs.open(expand_filename(self.entries_file), 'a', 'utf-8') as f:
+        with codecs.open(expand_date(self.entries_file), 'a', 'utf-8') as f:
             f.write(contents)
 
     def read_entries(self):
-        with codecs.open(expand_filename(self.entries_file), 'r', 'utf-8') as f:
+        with codecs.open(expand_date(self.entries_file), 'r', 'utf-8') as f:
             contents = f.read()
 
         return contents
