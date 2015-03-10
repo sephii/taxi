@@ -12,7 +12,7 @@ run the following::
 
 You'll probably want to install a backend as well. The backend is the part that
 allows you to push your timesheet entries to a centralized location. For the
-list of available backends, refer to the :ref:`backends_list`.
+list of available backends, refer to the :ref:`supported_backends` list.
 
 Getting started
 ---------------
