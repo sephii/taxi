@@ -84,8 +84,12 @@ class BackendRegistry(object):
                 "registered entry points" % parsed.scheme
             )
 
+        password = (parse.unquote(parsed.password)
+                    if parsed.password
+                    else parsed.password)
+
         return backend(
-            username=parsed.username, password=parsed.password,
+            username=parsed.username, password=password,
             hostname=parsed.hostname, port=parsed.port,
             path=parsed.path, options=options
         )

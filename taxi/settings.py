@@ -134,7 +134,8 @@ class Settings(dict):
         site = parse.urlparse(self.get('site', default_value=''))
         backend_uri = 'zebra://{username}:{password}@{hostname}'.format(
             username=self.get('username', default_value=''),
-            password=self.get('password', default_value=''),
+            password=parse.quote(self.get('password', default_value=''),
+                                 safe=''),
             hostname=site.hostname
         )
         self.config.set('backends', 'default', backend_uri)
