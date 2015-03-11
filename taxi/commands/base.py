@@ -46,6 +46,7 @@ def create_config_file(filename):
     Create main configuration file if it doesn't exist.
     """
     import textwrap
+    from six.moves.urllib import parse
 
     if not os.path.exists(filename):
         old_default_config_file = os.path.join(os.path.dirname(filename),
@@ -86,8 +87,10 @@ def create_config_file(filename):
                 type=click.Choice(available_backends)
             )
             context['username'] = click.prompt("Enter your username")
-            context['password'] = click.prompt("Enter your password",
-                                               hide_input=True)
+            context['password'] = parse.quote(
+                click.prompt("Enter your password", hide_input=True),
+                safe=''
+            )
             context['hostname'] = click.prompt(
                 "Enter the hostname of the backend (eg. "
                 "timesheets.example.com)", type=Hostname()
