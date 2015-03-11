@@ -1,10 +1,15 @@
+from __future__ import unicode_literals
+
 import datetime
 import re
 
-from taxi.exceptions import TaxiException
-from taxi.utils import date as date_utils
+import six
+
+from ..exceptions import TaxiException
+from ..utils import date as date_utils
 
 
+@six.python_2_unicode_compatible
 class TextLine(object):
     """
     The TextLine is either a blank line or a comment line.
@@ -13,9 +18,6 @@ class TextLine(object):
         self._text = text
 
     def __str__(self):
-        return unicode(self).encode('utf-8')
-
-    def __unicode__(self):
         return self.text
 
     def __repr__(self):
@@ -81,26 +83,27 @@ class EntryLine(TextLine):
                    if self.duration[1] is not None
                    else '?')
 
-            duration = u'%s-%s' % (start, end)
+            duration = '%s-%s' % (start, end)
         else:
             # Remove '.0' if the number doesn't have a decimal part
             duration = str(self.duration).rstrip('0').rstrip('.')
 
         commented_prefix = '# ' if self.commented else ''
-        alias = u'%s?' % self.alias if self.ignored else self.alias
+        alias = '%s?' % self.alias if self.ignored else self.alias
 
         padding1 = (1 if formatting['width'][0] is None
                     else max(1, formatting['width'][0] - len(alias)))
         padding2 = (1 if formatting['width'][1] is None
                     else max(1, formatting['width'][1] - len(duration)))
 
-        text = (u'{commented}{alias}{padding1}{duration}{padding2}'
-                '{description}'.format(commented=commented_prefix,
-                                       alias=alias,
-                                       padding1=formatting['spacer'][0] * padding1,
-                                       duration=duration,
-                                       description=self.description,
-                                       padding2=formatting['spacer'][1] * padding2))
+        text = ('{commented}{alias}{padding1}{duration}{padding2}'
+                '{description}'.format(
+                    commented=commented_prefix,
+                    alias=alias,
+                    padding1=formatting['spacer'][0] * padding1,
+                    duration=duration,
+                    description=self.description,
+                    padding2=formatting['spacer'][1] * padding2))
 
         return text
 
@@ -183,7 +186,8 @@ class TimesheetParser(object):
                         yield DateLine(date, line)
             except ParseError as e:
                 e.line_number = lineno
-                raise e
+                e.line = line
+                raise
 
     @classmethod
     def parse_entry_line(cls, line):
@@ -219,7 +223,8 @@ class TimesheetParser(object):
         width of the two first components of the line (alias and duration),
         'time_format' containing the format of the time as a string usable by
         strftime and 'spacer' containing a 2-items tuple representing the space
-        format used for the two first components (either a space or a tabulation)
+        format used for the two first components (either a space or a
+        tabulation)
         """
         components = re.match(cls.formatting_match_re, line)
         split_line = cls.split_line(line)
@@ -265,7 +270,7 @@ class TimesheetParser(object):
                         )
                     total_hours = (time_start, time_end)
             except ValueError as e:
-                raise ParseError(e.message)
+                raise ParseError(str(e))
         else:
             try:
                 total_hours = float(str_time)
@@ -306,14 +311,30 @@ class TimesheetParser(object):
                              int(date_matches.group(1)))
 
 
+@six.python_2_unicode_compatible
 class ParseError(TaxiException):
-    def __init__(self, message, line_number=None):
+    def __init__(self, message, line=None, line_number=None):
+        self.line = line
         self.message = message
         self.line_number = line_number
+        self.file = None
 
     def __str__(self):
-        if self.line_number is not None:
-            return "Parse error at line %s: %s" % (self.line_number,
-                                                   self.message)
+        if self.line_number is not None and self.file:
+            msg = "Parse error in {file} at line {line}: {msg}.".format(
+                file=self.file,
+                line=self.line_number,
+                msg=self.message
+            )
+        elif self.line_number is not None:
+            msg = "Parse error at line {line}: {msg}.".format(
+                line=self.line_number,
+                msg=self.message
+            )
         else:
-            return self.message
+            msg = self.message
+
+        if self.line:
+            msg += " The line causing the error was:\n\n%s" % self.line
+
+        return msg

@@ -1,11 +1,4 @@
 [default]
-# The url to connect to
-site = https://zebra.liip.ch
-# Your zebra username
-username = my_zebra_username
-# Your zebra password, in cleartext
-password = my_zebra_password
-
 # The path of your entries file. You're free to use a single file to store all
 # your entries but you're strongly encouraged to use date placeholders here. The
 # following will expand to ~/zebra/2011/11.tks if you're in November 2011
@@ -38,9 +31,6 @@ auto_add = auto
 # 0,1,2,3,4 (Monday - Friday)
 # auto_fill_days = 0,1,2,3,4
 
-# Set this to 0 to disable colored output. Default is 1.
-# use_colors = 1
-
 # Defines a list of local aliases that you will be able to use in your timesheets
 # but that will never be pushed
 # local_aliases = _lunch, _coffee_break
@@ -50,20 +40,15 @@ auto_add = auto
 # Default is 1.
 # nb_previous_files = 1
 
+[backends]
+# You'll need taxi-zebra to be able to use this
+default = {backend}://{username}:{password}@{hostname}
+internal = dummy:///
+
 # This section contains your project name <-> id mapping. The format is:
 # project_name = project_id/activity_id
-[wrmap]
-liip_internal = 7/16
-liip_meeting = 7/11
-liip_presales = 7/8
-liip_infra = 7/17
-liip_marketing = 7/12
-liip_holiday = 7/18
-liip_sick = 7/19
-liip_german = 726/75
-liip_hosting = 7/17
-liip_techday = 1061/72
-liip_techtalk = 1061/71
-liip_hackday = 1061/96
-liip_reise = 7/15
-bizdev = 1070/8
+[default_aliases]
+internal = 7/16
+
+[internal_aliases]
+_pingpong = 0/0

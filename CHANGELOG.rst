@@ -2,6 +2,34 @@
 Changelog
 #########
 
+4.0.0 (2015-03-11)
+==================
+
+Added
+-----
+
+* Add support for multiple backends (#40).
+* Add support for Python 3 (#71).
+* Add support for command matching by prefix (eg. ``taxi e`` for ``taxi
+  edit``).
+* Add configuration file creation wizard.
+* Add file and line information in parsing error messages (#69, #75).
+* Add ``--not-today`` option to the ``commit`` command. Thanks @jeanmonod
+  (#63).
+* Add support for ``yesterday`` and ``today`` values for date options.
+* Add support for partial ranges for date options.
+* Add argument to ``edit`` command to set which file should be edited (#49).
+
+Changed
+-------
+
+* Rename ``--ignore-date-error`` to ``--yes`` and make it interactive if it is
+  not set.
+* Use `click <http://click.pocoo.org>`_. This should fix encoding and editor
+  issues reported in #67.
+* Don't display date error for unmapped or local entries.
+* Move ``~/.tksrc`` configuration file to ``~/.taxirc``.
+
 3.2.1 (2015-01-16)
 ==================
 

@@ -4,3 +4,6 @@
 /dist/*
 /MANIFEST
 /taxi.egg-info
+/.eggs
+/.tox
+/doc/_build/

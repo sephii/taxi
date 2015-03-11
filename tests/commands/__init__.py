@@ -1,128 +1,150 @@
+from __future__ import unicode_literals
+
+import codecs
 import os
-from StringIO import StringIO
+import six
+import shutil
 import tempfile
 from unittest import TestCase
 
-from mock import Mock
+from click.testing import CliRunner
 
-from taxi.app import Taxi
-from taxi.remote import ZebraRemote
-from taxi.utils.file import expand_filename
+from taxi.backends import BaseBackend, PushEntryFailed, PushEntriesFailed
+from taxi.backends.registry import backends_registry
+from taxi.commands.base import cli
+from taxi.projects import ProjectsDb
+from taxi.utils.file import expand_date
+
+
+class TestBackendEntryPoint(object):
+    """
+    Dedicated backend for tests. Entries with the alias `fail` will fail when
+    trying to push them.
+    """
+    class TestBackend(BaseBackend):
+        def __init__(self, *args, **kwargs):
+            super(TestBackendEntryPoint.TestBackend, self).__init__(
+                *args, **kwargs
+            )
+            self.entries = []
+
+        def push_entry(self, date, entry):
+            self.entries.append(entry)
+
+            if entry.alias == 'fail':
+                raise PushEntryFailed()
+
+        def post_push_entries(self):
+            failed_entries = {}
+
+            for entry in self.entries:
+                if entry.alias == 'post_push_fail':
+                    failed_entries[entry] = 'foobar'
+
+            if failed_entries:
+                raise PushEntriesFailed(entries=failed_entries)
+
+    def load(self):
+        return self.TestBackend
 
 
 class CommandTestCase(TestCase):
     def setUp(self):
-        def zebra_remote_send_entries(entries, mappings, callback):
-            pushed_entries = []
-            failed_entries = []
-
-            for (_, date_entries) in entries.iteritems():
-                for entry in date_entries:
-                    pushed = entry.alias != 'fail'
-
-                    if pushed:
-                        pushed_entries.append(entry)
-                    else:
-                        failed_entries.append((entry, 'fail'))
-
-                    callback(entry,
-                             entry.description if not pushed else None)
-
-            return (pushed_entries, failed_entries)
-
-        self.original_zebra_remote_send_entries = ZebraRemote.send_entries
-        ZebraRemote.send_entries = Mock(side_effect=zebra_remote_send_entries)
-        self.stdout = StringIO()
-
         _, self.config_file = tempfile.mkstemp()
         _, self.entries_file = tempfile.mkstemp()
-        _, self.projects_db = tempfile.mkstemp()
+        self.taxi_dir = tempfile.mkdtemp()
+        # Keep the original entry points to restore them in tearDown
+        self.backends_original_entry_points = backends_registry._entry_points
+
+        # Hot swap the entry points from the backends registry with our own
+        # test backend. This avoids having to register the test backend in the
+        # setup.py file
+        backends_registry._entry_points = {
+            'test': TestBackendEntryPoint()
+        }
+
+        # Create an empty projects db file
+        projects_db_file = os.path.join(self.taxi_dir,
+                                        ProjectsDb.PROJECTS_FILE)
+        with open(projects_db_file, 'w') as f:
+            f.close()
 
         self.default_config = {
             'default': {
-                'site': 'https://zebra.liip.ch',
-                'username': 'john.doe',
-                'password': 'john.doe',
                 'date_format': '%d/%m/%Y',
-                'editor': '/bin/false',
+                'editor': '/bin/true',
                 'file': self.entries_file,
                 'use_colors': '0'
             },
-            'wrmap': {
-                'alias_1': '123/456'
-            }
+            'backends': {
+                'test': 'test:///',
+            },
+            'test_aliases': {
+                'alias_1': '123/456',
+                'fail': '456/789',
+                'post_push_fail': '456/789',
+            },
         }
-
-        self.default_options = {
-        }
-
-        self.default_options['config'] = self.config_file
-        self.default_options['stdout'] = self.stdout
-        self.default_options['projects_db'] = self.projects_db
 
     def tearDown(self):
-        ZebraRemote.send_entries = self.original_zebra_remote_send_entries
-
-        entries_file = expand_filename(self.entries_file)
+        backends_registry._entry_points = self.backends_original_entry_points
+        entries_file = expand_date(self.entries_file)
 
         os.remove(self.config_file)
         if os.path.exists(entries_file):
             os.remove(entries_file)
-        os.remove(self.projects_db)
+        shutil.rmtree(self.taxi_dir)
 
     def write_config(self, config):
         with open(self.config_file, 'w') as f:
-            for (section, params) in config.iteritems():
+            for (section, params) in six.iteritems(config):
                 f.write("[%s]\n" % section)
 
-                for (param, value) in params.iteritems():
+                for (param, value) in six.iteritems(params):
                     f.write("%s = %s\n" % (param, value))
 
     def write_entries(self, contents):
-        with open(expand_filename(self.entries_file), 'a') as f:
+        with codecs.open(expand_date(self.entries_file), 'a', 'utf-8') as f:
             f.write(contents)
 
     def read_entries(self):
-        with open(expand_filename(self.entries_file), 'r') as f:
+        with codecs.open(expand_date(self.entries_file), 'r', 'utf-8') as f:
             contents = f.read()
 
         return contents
 
-    def run_command(self, command_name, args=None, options=None,
-                    config_options=None):
+    def run_command(self, command_name, args=None, config_options=None,
+                    input=None):
         """
         Run the given taxi command with the given arguments and options. Before
         running the command, the configuration file is written with the given
         `config_options`, if any, or with the default config options.
 
-        The output of the command is put in the `self.stdout` property and
-        returned as a string.
+        The output of the command is returned as a string.
 
         Args:
             command_name -- The name of the command to run
             args -- An optional list of arguments for the command
-            options -- An optional options hash for the command
             config_options -- An optional options hash that will be used to
                               write the config file before running the command
         """
         if args is None:
             args = []
 
-        if options is None:
-            options = self.default_options
-
         if config_options is None:
             config_options = self.default_config
         else:
             config_options = dict(
-                self.default_config.items() + config_options.items()
+                list(self.default_config.items()) +
+                list(config_options.items())
             )
         self.write_config(config_options)
 
-        self.stdout = StringIO()
-        options['stdout'] = self.stdout
+        args.insert(0, command_name)
+        args.insert(0, '--taxi-dir=%s' % self.taxi_dir)
+        args.insert(0, '--config=%s' % self.config_file)
 
-        app = Taxi()
-        app.run_command(command_name, options=options, args=args)
+        runner = CliRunner()
+        result = runner.invoke(cli, args, input=input)
 
-        return self.stdout.getvalue()
+        return result.output

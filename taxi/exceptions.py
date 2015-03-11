@@ -1,15 +1,11 @@
-# -*- coding: utf-8 -*-
-class TaxiException(Exception):
-    pass
+from __future__ import unicode_literals
+
+import click
 
 
-class UsageError(TaxiException):
+class TaxiException(click.ClickException):
     pass
 
 
 class CancelException(TaxiException):
-    pass
-
-
-class UndefinedAliasError(TaxiException):
     pass

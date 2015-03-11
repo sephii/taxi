@@ -1,22 +1,26 @@
+from __future__ import unicode_literals
+
 import re
+
+from six.moves import input
 
 
 def select_number(max, description, min=0):
     while True:
-        char = raw_input('\n%s' % description)
+        char = input('\n%s' % description)
         try:
             number = int(char)
             if min <= number <= max:
                 return number
             else:
-                print(u'Number out of range, try again')
+                print('Number out of range, try again')
         except ValueError:
-            print(u'Please enter a number')
+            print('Please enter a number')
 
 
 def select_string(description, format=None, regexp_flags=0, default=None):
     while True:
-        char = raw_input(description)
+        char = input(description)
         if char == '' and default is not None:
             return default
 
@@ -24,6 +28,6 @@ def select_string(description, format=None, regexp_flags=0, default=None):
             if re.match(format, char, regexp_flags):
                 return char
             else:
-                print(u'Invalid input, please try again')
+                print('Invalid input, please try again')
         else:
             return char

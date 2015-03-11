@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
 import os
 import tempfile
 
 from freezegun import freeze_time
 
-from taxi.utils.file import expand_filename
+from taxi.utils.file import expand_date
 
 from . import CommandTestCase
 
@@ -16,12 +18,9 @@ class EditCommandTestCase(CommandTestCase):
         Edit with specified date should not autofill it.
         """
         config = self.default_config.copy()
-        options = self.default_options.copy()
-
         config['default']['auto_fill_days'] = '0,1,2,3,4,5,6'
-        options['file'] = self.entries_file
 
-        self.run_command('edit', options=options)
+        self.run_command('edit', args=['--file=%s' % self.entries_file])
 
         with open(self.entries_file, 'r') as f:
             self.assertEqual(f.read(), '')
@@ -79,8 +78,36 @@ alias_1 2 hello world
 """)
             self.run_command('edit', config_options=config)
 
-            with open(expand_filename(self.entries_file), 'r') as f:
+            with open(expand_date(self.entries_file), 'r') as f:
                 lines = f.readlines()
 
             self.assertEqual('20/02/2014\n', lines[0])
             self.assertEqual('21/02/2014\n', lines[3])
+
+    def test_previous_file_doesnt_autofill(self):
+        config = self.default_config.copy()
+        tmp_entries_dir = tempfile.mkdtemp()
+        os.remove(self.entries_file)
+
+        self.entries_file = os.path.join(tmp_entries_dir, '%m_%Y.txt')
+        config['default']['file'] = self.entries_file
+
+        with freeze_time('2014-01-21'):
+            self.write_entries("""20/01/2014
+alias_1 2 hello world
+
+21/01/2014
+alias_1 1 foo bar
+""")
+
+        with freeze_time('2014-02-21'):
+            self.write_entries("""20/02/2014
+alias_1 2 hello world
+""")
+            self.run_command('edit', args=['1'], config_options=config)
+
+        with freeze_time('2014-01-21'):
+            with open(expand_date(self.entries_file), 'r') as f:
+                lines = f.readlines()
+
+            self.assertNotIn('21/02/2014\n', lines)

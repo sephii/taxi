@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
 import datetime
 import pytest
 
@@ -25,8 +27,8 @@ foo 09:00-10:00 baz"""
         t = self._create_timesheet(contents)
         self.assertEquals(len(t.entries), 1)
         self.assertIn(datetime.date(2012, 10, 10), t.entries)
-        self.assertEquals(len(t.entries.values()[0]), 1)
-        self.assertIsInstance(t.entries.values()[0][0], TimesheetEntry)
+        self.assertEquals(len(list(t.entries.values())[0]), 1)
+        self.assertIsInstance(list(t.entries.values())[0][0], TimesheetEntry)
 
     def test_to_lines(self):
         contents = """10.10.2012
@@ -204,7 +206,7 @@ foo 1 bar"""
         t = self._create_timesheet(contents)
         entries = t.get_entries(datetime.date(2013, 4, 1))
 
-        for entry in entries.values()[0]:
+        for entry in list(entries.values())[0]:
             entry.commented = True
 
         lines = t.entries.to_lines()

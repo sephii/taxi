@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 from . import CommandTestCase
 
 
@@ -10,15 +12,14 @@ class AliasCommandTestCase(CommandTestCase):
         super(AliasCommandTestCase, self).setUp()
 
         self.config = self.default_config.copy()
-        self.config['wrmap'] = {
+        self.config['test_aliases'] = {
             'alias_1': '123/456',
             'alias_2': '123/457',
             'foo': '777/777'
         }
 
     def run_alias_command(self, args, config_options):
-        return self.run_command('alias', args, self.default_options,
-                                config_options)
+        return self.run_command('alias', args, config_options)
 
     def test_alias_list(self):
         output = self.run_alias_command([], self.config)
@@ -65,7 +66,7 @@ class AliasCommandTestCase(CommandTestCase):
         self.assertEquals(len(lines), 0)
 
     def test_alias_add(self):
-        self.run_alias_command(['bar', '123/458'], self.config)
+        self.run_alias_command(['bar', '123/458', 'test'], self.config)
 
         with open(self.config_file, 'r') as f:
             config_lines = f.readlines()
