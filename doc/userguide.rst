@@ -48,7 +48,7 @@ let's say I played ping-pong from 9 to 10:30, and then I worked on Taxi from
 
     23/02/2015
 
-    pingpong 09:00-10:30 Played ping-pong
+    pingpong 09:00-10:30 Play ping-pong
     taxi     10:30-12:00 Write documentation
 
 Now if you close your editor you should see something like that::
@@ -56,7 +56,7 @@ Now if you close your editor you should see something like that::
     Staging changes :
 
     # Monday 23 february #
-    pingpong (not mapped)          1.50  Played ping-pong
+    pingpong (not mapped)          1.50  Play ping-pong
             Did you mean one of the following: _inno, _internal, _migration?
     taxi (2185/1369)               1.50  Write documentation
                                    3.00
@@ -87,14 +87,14 @@ so::
 
     23/02/2015
 
-    pingpong? 09:00-10:30 Played ping-pong
+    pingpong? 09:00-10:30 Play ping-pong
 
 The output becomes::
 
     Staging changes :
 
     # Monday 23 february #
-    pingpong (ignored)             1.50  Played ping-pong
+    pingpong (ignored)             1.50  Play ping-pong
                                    1.50
 
     Total                          1.50
@@ -111,14 +111,14 @@ spaces don't matter, you don't need to align them)::
 
     23/02/2015
 
-    pingpong 09:00-10:30 Played ping-pong
+    pingpong 09:00-10:30 Play ping-pong
     taxi          -12:00 Write documentation
 
 You can also chain them::
 
     23/02/2015
 
-    pingpong 09:00-10:30 Played ping-pong
+    pingpong 09:00-10:30 Play ping-pong
     taxi          -12:00 Write documentation
     internal      -13:00 Debug coffee machine
 
