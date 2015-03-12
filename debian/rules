@@ -1,4 +1,5 @@
 #!/usr/bin/make -f
 
 %:
-	dh $@ --with python2 --with bash-completion
+	dh $@ --with python2 --with bash-completion --buildsystem=pybuild
+
