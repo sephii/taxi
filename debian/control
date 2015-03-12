@@ -18,7 +18,9 @@ Vcs-Browser: https://github.com/sephii/taxi
 
 Package: taxi
 Architecture: all
-Depends: ${misc:Depends}, ${python:Depends}
+Depends: ${misc:Depends}, ${python:Depends},
+ python-six (>= 1.9.0),
+ python-click (>= 3.3)
 Description: Interface to Liip's Zebra
  Taxi is a new interface for Zebra, based on TKS.
  .
