@@ -12,7 +12,7 @@ run the following::
 
 You'll probably want to install a backend as well. The backend is the part that
 allows you to push your timesheet entries to a centralized location. For the
-list of available backends, refer to the :ref:`backends_list`.
+list of available backends, refer to the :ref:`supported_backends` list.
 
 Getting started
 ---------------
@@ -243,3 +243,39 @@ when starting a new month.
 
 This option only makes sense if you're using date placeholders in
 :ref:`config_file`.
+
+Backends configuration
+----------------------
+
+The configuration file has a section named ``backends`` that allows you to
+define the active backends and the credentials you want to use. The syntax of
+the backends part is::
+
+    [backends]
+    default = <backend_name>://<user>:<password>@<host>:<port><path><options>
+
+Here a backend named *default* is defined. The ``backend_name`` is the adapter
+this backend will use. You'll find this name in the specific backend package
+documentation. The ``backend_name`` is the only mandatory part, as some
+backends won't care about the ``user``, ``password``, or other configuration
+options.
+
+The name of each backend should be unique, and it will be used when defining
+aliases. Each backend will have a section named ``[backend_name_aliases]`` and
+``[backend_name_shared_aliases]``, where *backend_name* is the name of the
+backend, each containing the user-defined aliases, and the automatic aliases
+fetched with the ``update`` command.
+
+.. note::
+
+    If you have any special character in your password, make sure it is
+    URL-encoded, as Taxi won't be able to correctly parse the URI otherwise.
+    You can use the following snippet to encode your password::
+
+        >>> import urllib
+        >>> urllib.quote('my_password', safe='')
+
+    On Python 3::
+
+        >>> from urllib import parse
+        >>> parse.quote('my_password, safe='')

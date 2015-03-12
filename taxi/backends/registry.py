@@ -3,6 +3,8 @@ from __future__ import unicode_literals
 import pkg_resources
 from six.moves.urllib import parse
 
+from ..exceptions import TaxiException
+
 
 class BackendRegistry(object):
     """
@@ -81,17 +83,22 @@ class BackendRegistry(object):
         except KeyError:
             raise BackendNotFoundError(
                 "The requested backend `%s` could not be found in the "
-                "registered entry points" % parsed.scheme
+                "registered entry points. Perhaps you forgot to install the "
+                "corresponding backend package?" % parsed.scheme
             )
 
+        password = (parse.unquote(parsed.password)
+                    if parsed.password
+                    else parsed.password)
+
         return backend(
-            username=parsed.username, password=parsed.password,
+            username=parsed.username, password=password,
             hostname=parsed.hostname, port=parsed.port,
             path=parsed.path, options=options
         )
 
 
-class BackendNotFoundError(Exception):
+class BackendNotFoundError(TaxiException):
     pass
 
 backends_registry = BackendRegistry()
