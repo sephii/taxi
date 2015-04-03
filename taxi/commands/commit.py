@@ -58,28 +58,36 @@ def commit(ctx, f, force_yes, date, not_today):
     ctx.obj['view'].pushing_entries()
     backends_entries = defaultdict(list)
 
-    # Push entries
-    for timesheet in timesheet_collection.timesheets:
-        entries_to_push = get_entries_to_push(timesheet, date)
+    try:
+        # Push entries
+        for timesheet in timesheet_collection.timesheets:
+            entries_to_push = get_entries_to_push(timesheet, date)
 
-        for (entries_date, entries) in entries_to_push.items():
-            for entry in entries:
-                backend_name = aliases_database[entry.alias].backend
-                backend = backends_registry[backend_name]
-                backends_entries[backend].append(entry)
+            for (entries_date, entries) in entries_to_push.items():
+                for entry in entries:
+                    backend_name = aliases_database[entry.alias].backend
+                    backend = backends_registry[backend_name]
+                    backends_entries[backend].append(entry)
 
-                try:
-                    backend.push_entry(entries_date, entry)
-                except Exception as e:
-                    entry.push_error = six.text_type(e)
-                else:
-                    entry.push_error = None
-                finally:
-                    ctx.obj['view'].pushed_entry(entry)
+                    try:
+                        backend.push_entry(entries_date, entry)
+                    except Exception as e:
+                        entry.push_error = six.text_type(e)
+                    except KeyboardInterrupt:
+                        entry.push_error = ("Interrupted, check status in"
+                                            " backend")
+                        raise
+                    else:
+                        entry.push_error = None
+                    finally:
+                        ctx.obj['view'].pushed_entry(entry)
 
-    # Call post_push_entries on backends
-    backends_post_push(backends_entries)
-    comment_timesheets_entries(timesheet_collection, date)
+        # Call post_push_entries on backends
+        backends_post_push(backends_entries)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        comment_timesheets_entries(timesheet_collection, date)
 
     ignored_entries = timesheet_collection.get_ignored_entries(date)
     ignored_entries_list = []
@@ -119,7 +127,7 @@ def comment_timesheets_entries(timesheet_collection, date):
 
         for (entries_date, entries) in pushed_entries.items():
             for entry in entries:
-                if entry.push_error is None:
+                if hasattr(entry, 'push_error') and entry.push_error is None:
                     entry.commented = True
 
                 entry.fix_start_time()
