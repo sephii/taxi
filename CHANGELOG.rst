@@ -17,6 +17,7 @@ Changed
 * Don't mark local aliases as deleted in ``update`` command (#84).
 * Don't break indentation when committing entries that use continuation
   durations (#81).
+* Comment pushed entries when interrupting ``commit`` command (#82).
 
 4.0.0 (2015-03-11)
 ==================
