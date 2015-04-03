@@ -169,8 +169,9 @@ class BaseUi(object):
 
     def confirm_commit_entries(self, entries_dict):
         self.msg("The following entries will be included in your commit:\n")
+        sorted_entries = sorted(entries_dict.items(), key=lambda e: e[0])
 
-        for date, entries in six.iteritems(entries_dict):
+        for date, entries in sorted_entries:
             self.msg(date_utils.unicode_strftime(date, '%A %d %B'))
 
             for entry in entries:

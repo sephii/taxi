@@ -2,6 +2,14 @@
 Changelog
 #########
 
+4.0.1 (unreleased)
+==================
+
+Changed
+-------
+
+* Sort entries by date in commit confirm message (#80).
+
 4.0.0 (2015-03-11)
 ==================
 

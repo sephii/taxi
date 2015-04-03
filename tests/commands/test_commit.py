@@ -305,3 +305,20 @@ alias_1 2 Play ping-pong
         stdout = self.run_command('commit')
 
         self.assertNotIn('Failed entries', stdout)
+
+    @freeze_time('2014-01-22')
+    def test_commit_confirmation_date_order(self):
+        self.write_entries("""20/01/2014
+alias_1 2 Play ping-pong
+
+18/01/2014
+alias_1 2 Play ping-pong
+
+19/01/2014
+alias_1 1 Play ping-pong
+""")
+        stdout = self.run_command('commit', input='y').splitlines()
+        dates = [stdout[2], stdout[4], stdout[6]]
+        self.assertTrue(dates[0].endswith('18 January'))
+        self.assertTrue(dates[1].endswith('19 January'))
+        self.assertTrue(dates[2].endswith('20 January'))
