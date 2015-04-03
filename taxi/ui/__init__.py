@@ -342,10 +342,10 @@ class BaseUi(object):
 
         self.msg("Projects database updated successfully.")
 
-        deleted_aliases = (set(aliases_database.keys()) -
+        deleted_aliases = (set(aliases_database.aliases.keys()) -
                            set(aliases_after_update.keys()))
         added_aliases = (set(aliases_after_update.keys()) -
-                         set(aliases_database.keys()))
+                         set(aliases_database.aliases.keys()))
 
         modified_aliases = set()
         for alias, mapping in six.iteritems(aliases_after_update):

@@ -9,6 +9,7 @@ Changed
 -------
 
 * Sort entries by date in commit confirm message (#80).
+* Don't mark local aliases as deleted in ``update`` command (#84).
 
 4.0.0 (2015-03-11)
 ==================
