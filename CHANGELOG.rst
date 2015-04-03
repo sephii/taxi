@@ -5,6 +5,11 @@ Changelog
 4.0.1 (unreleased)
 ==================
 
+Added
+-----
+
+* Add example for ``local_aliases`` in the user docs (#79).
+
 Changed
 -------
 
