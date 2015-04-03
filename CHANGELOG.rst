@@ -15,6 +15,8 @@ Changed
 
 * Sort entries by date in commit confirm message (#80).
 * Don't mark local aliases as deleted in ``update`` command (#84).
+* Don't break indentation when committing entries that use continuation
+  durations (#81).
 
 4.0.0 (2015-03-11)
 ==================

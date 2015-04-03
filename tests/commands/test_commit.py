@@ -322,3 +322,19 @@ alias_1 1 Play ping-pong
         self.assertTrue(dates[0].endswith('18 January'))
         self.assertTrue(dates[1].endswith('19 January'))
         self.assertTrue(dates[2].endswith('20 January'))
+
+    @freeze_time('2014-01-21')
+    def test_dont_fix_start_time_on_commented_entries(self):
+        self.write_entries("""
+21/01/2014
+alias_1            09:00-09:30    Daily
+alias_1                 -10:00    Blabla
+alias_1                 -11:30    improve existing styles
+alias_1                 -12:15    investigate broken tests
+alias_1            13:30-16:15    improve existing styles and fix the tests
+""")
+        self.run_command('commit')
+        with open(self.entries_file, 'r') as f:
+            entries = f.readlines()
+
+        self.assertNotIn('09:30', entries[2])
