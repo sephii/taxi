@@ -8,7 +8,7 @@ from setuptools.command.test import test as TestCommand
 
 tests_require = [
     'freezegun==0.2.8',
-    'pytest==2.6.4',
+    'pytest==2.7.0',
 ]
 
 install_requires = [

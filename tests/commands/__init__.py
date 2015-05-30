@@ -147,4 +147,7 @@ class CommandTestCase(TestCase):
         runner = CliRunner()
         result = runner.invoke(cli, args, input=input)
 
+        if result.exception:
+            raise result.exception
+
         return result.output
