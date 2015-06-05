@@ -232,6 +232,12 @@ Defines a list of local aliases that you will be able to use in your timesheets
 but that will never be pushed. These aliases will appear in the timesheet
 summary and will get marked as pushed when running the `commit` command.
 
+The list should be separated by commas. For example the following value will
+define the `__lunch` and `__hacking` local aliases (note that the double
+underscore is just a personal convention to distinguish them from standard
+aliases, you're free to use any name you want): ``local_aliases = __lunch,
+__hacking``.
+
 nb_previous_files
 ~~~~~~~~~~~~~~~~~
 

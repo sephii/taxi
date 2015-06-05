@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 from collections import defaultdict
+import copy
 import os
 
 from six.moves import configparser
@@ -11,7 +12,55 @@ from .projects import Project
 from .utils.file import expand_date as file_expand_date
 
 
-class Settings(dict):
+class StringSetting(object):
+    def __init__(self, default='', choices=None):
+        if default and choices and default not in choices:
+            raise ValueError(
+                "Default value %s not in acceptable choices (%s)" %
+                (default, choices)
+            )
+
+        self.default = default
+        self.choices = choices
+
+    def to_python(self, value):
+        return value
+
+    @property
+    def value(self):
+        if not hasattr(self, '_value'):
+            return self.default
+
+        return self._value
+
+    @value.setter
+    def value(self, value):
+        value = self.to_python(value)
+
+        if self.choices and value not in self.choices:
+            raise ValueError("%s not an acceptable choice")
+
+        self._value = value
+
+
+class ListSetting(StringSetting):
+    def to_python(self, value):
+        value = super(ListSetting, self).to_python(value)
+        return list(filter(None, map(lambda x: x.strip(), value.split(','))))
+
+
+class IntegerSetting(StringSetting):
+    def to_python(self, value):
+        value = super(IntegerSetting, self).to_python(value)
+        return int(value)
+
+
+class IntegerListSetting(ListSetting):
+    def to_python(self, value):
+        return list(map(int, super(IntegerListSetting, self).to_python(value)))
+
+
+class Settings:
     TAXI_PATH = os.path.expanduser('~/.taxi')
     AUTO_ADD_OPTIONS = {
         'NO': 'no',
@@ -20,20 +69,24 @@ class Settings(dict):
         'AUTO': 'auto'
     }
 
-    DEFAULTS = {
-        'auto_fill_days': '0,1,2,3,4',
-        'date_format': '%d/%m/%Y',
-        'auto_add': 'auto',
-        'nb_previous_files': '1',
-        'use_colors': '1',
-        'local_aliases': '',
-        'file': '~/zebra/%Y/%m/%d.tks'
+    SETTINGS = {
+        'default': {
+            'auto_fill_days': IntegerListSetting(default=range(0, 5)),
+            'date_format': StringSetting(default='%d/%m/%Y'),
+            'auto_add': StringSetting(default='auto',
+                                      choices=AUTO_ADD_OPTIONS.values()),
+            'nb_previous_files': IntegerSetting(default=1),
+            'local_aliases': ListSetting(),
+            'file': StringSetting(default='~/zebra/%Y/%m/%d.tks'),
+            'editor': StringSetting()
+        }
     }
 
     def __init__(self, file):
         self.config = configparser.RawConfigParser()
         self.filepath = os.path.expanduser(file)
         self._backends_registry = {}
+        self._settings = {}
 
         try:
             with open(self.filepath, 'r') as fp:
@@ -43,30 +96,23 @@ class Settings(dict):
                 "The specified configuration file `%s` doesn't exist" % file
             )
 
+        # Copy the class settings to the instance so we don't set global values
+        # on the class
+        for section, settings in self.SETTINGS.items():
+            self._settings[section] = {}
+            for key, setting in settings.items():
+                self._settings[section][key] = copy.copy(setting)
+
+                try:
+                    self._settings[section][key].value = self.config.get(section, key)
+                except configparser.NoOptionError:
+                    pass
+
+    def __getitem__(self, key):
+        return self.get(key)
+
     def get(self, key, section='default', default_value=None):
-        try:
-            return self.config.get(section, key)
-        except configparser.NoOptionError:
-            if default_value is not None:
-                return default_value
-
-            if key in self.DEFAULTS:
-                return self.DEFAULTS[key]
-
-            raise
-
-    def get_auto_fill_days(self):
-        auto_fill_days = self.get('auto_fill_days')
-
-        if not auto_fill_days:
-            return []
-
-        return [int(e.strip()) for e in auto_fill_days.split(',')]
-
-    def get_local_aliases(self):
-        return [alias.strip()
-                for alias in self.get('local_aliases').split(',')
-                if alias.strip()]
+        return self._settings[section][key].value
 
     def add_alias(self, alias, mapping):
         alias_section = get_alias_section_name(mapping.backend, False)

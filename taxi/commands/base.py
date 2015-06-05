@@ -23,9 +23,9 @@ def get_timesheet_collection_for_context(ctx, entries_file=None):
 
     return get_timesheet_collection(
         entries_file,
-        int(ctx.obj['settings'].get('nb_previous_files')),
-        ctx.obj['settings'].get('date_format'),
-        ctx.obj['settings'].get('auto_add')
+        ctx.obj['settings']['nb_previous_files'],
+        ctx.obj['settings']['date_format'],
+        ctx.obj['settings']['auto_add']
     )
 
 
@@ -171,7 +171,7 @@ def cli(ctx, config, taxi_dir):
     if not os.path.exists(settings.TAXI_PATH):
         os.mkdir(settings.TAXI_PATH)
 
-    populate_aliases(settings.get_aliases(), settings.get_local_aliases())
+    populate_aliases(settings.get_aliases(), settings['local_aliases'])
     populate_backends(settings.get_backends())
 
     ctx.obj = {}
