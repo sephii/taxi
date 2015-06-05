@@ -61,8 +61,18 @@ class IntegerListSetting(ListSetting):
 
 
 class BooleanSetting(StringSetting):
+    VALUES_MAPPING = {
+        True: ['1', 'true'],
+        False: ['0', 'false']
+    }
+
     def to_python(self, value):
-        return value.lower() in ['1', 'true']
+        if value not in self.VALUES_MAPPING[True] + self.VALUES_MAPPING[False]:
+            raise ValueError(
+                "Value %s is not accepted for this setting." % value
+            )
+
+        return value.lower() in self.VALUES_MAPPING[True]
 
 
 class Settings:
@@ -110,7 +120,13 @@ class Settings:
                 self._settings[section][key] = copy.copy(setting)
 
                 try:
-                    self._settings[section][key].value = self.config.get(section, key)
+                    value = self.config.get(section, key)
+                    self._settings[section][key].value = value
+                except ValueError:
+                    raise ValueError(
+                        "Value %s is not allowed for setting %s:%s" %
+                        (value, section, key)
+                    )
                 except configparser.NoOptionError:
                     pass
 
