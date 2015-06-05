@@ -95,3 +95,19 @@ unmapped? 0800-0900 Play ping-pong
             "unmapped (ignored)             1.00  Play ping-pong",
             stdout
         )
+
+    @freeze_time('2014-01-20')
+    def test_regroup_entries_setting(self):
+        self.write_entries("""20/01/2014
+alias_1 0800-0900 Play ping-pong
+alias_1 1200-1300 Play ping-pong
+""")
+
+        config = self.default_config.copy()
+        config['default']['regroup_entries'] = '0'
+
+        stdout = self.run_command('status')
+        self.assertIn(
+            "alias_1 (123/456)              1.00  Play ping-pong",
+            stdout
+        )

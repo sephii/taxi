@@ -60,6 +60,11 @@ class IntegerListSetting(ListSetting):
         return list(map(int, super(IntegerListSetting, self).to_python(value)))
 
 
+class BooleanSetting(StringSetting):
+    def to_python(self, value):
+        return value.lower() in ['1', 'true']
+
+
 class Settings:
     TAXI_PATH = os.path.expanduser('~/.taxi')
     AUTO_ADD_OPTIONS = {
@@ -78,7 +83,8 @@ class Settings:
             'nb_previous_files': IntegerSetting(default=1),
             'local_aliases': ListSetting(),
             'file': StringSetting(default='~/zebra/%Y/%m/%d.tks'),
-            'editor': StringSetting()
+            'editor': StringSetting(),
+            'regroup_entries': BooleanSetting(default=True),
         }
     }
 

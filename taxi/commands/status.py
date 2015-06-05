@@ -26,5 +26,7 @@ def status(ctx, date, f):
         ctx.obj['view'].err(e)
     else:
         ctx.obj['view'].show_status(
-            timesheet_collection.get_entries(date, regroup=True)
+            timesheet_collection.get_entries(
+                date, regroup=ctx.obj['settings']['regroup_entries']
+            )
         )

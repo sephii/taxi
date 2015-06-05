@@ -238,6 +238,17 @@ underscore is just a personal convention to distinguish them from standard
 aliases, you're free to use any name you want): ``local_aliases = __lunch,
 __hacking``.
 
+regroup_entries
+~~~~~~~~~~~~~~~
+
+Default: true
+
+If set to false, similar entries (ie. entries on the same date that are on the
+same alias and have the same description) won't be regrouped.
+
+.. note::
+    This setting is available since Taxi 4.1
+
 nb_previous_files
 ~~~~~~~~~~~~~~~~~
 

@@ -338,3 +338,19 @@ alias_1            13:30-16:15    improve existing styles and fix the tests
             entries = f.readlines()
 
         self.assertNotIn('09:30', entries[2])
+
+    @freeze_time('2014-01-21')
+    def test_regroup_entries_setting(self):
+        self.write_entries("""20/01/2014
+alias_1 0800-0900 Play ping-pong
+alias_1 1200-1300 Play ping-pong
+""")
+
+        config = self.default_config.copy()
+        config['default']['regroup_entries'] = '0'
+
+        stdout = self.run_command('commit')
+        self.assertIn(
+            "alias_1 (123/456)              1.00  Play ping-pong",
+            stdout
+        )
