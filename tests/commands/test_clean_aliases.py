@@ -5,21 +5,18 @@ from freezegun import freeze_time
 from taxi.projects import Activity, Project, ProjectsDb
 from taxi.settings import Settings
 
-from . import CommandTestCase
+from . import CommandTestCase, override_settings
 
 
 class CleanAliasesCommandTestCase(CommandTestCase):
+    @override_settings({'test_aliases': {
+        'alias_not_started': '0/0',
+        'alias_active': '1/0',
+        'alias_finished': '2/0',
+        'alias_cancelled': '3/0',
+    }})
     @freeze_time('2014-01-21')
     def test_project_status(self):
-        config = self.default_config.copy()
-
-        config['test_aliases'] = {
-            'alias_not_started': '0/0',
-            'alias_active': '1/0',
-            'alias_finished': '2/0',
-            'alias_cancelled': '3/0',
-        }
-
         projects_db = ProjectsDb(self.taxi_dir)
 
         project_not_started = Project(0, 'not started project',
@@ -42,8 +39,7 @@ class CleanAliasesCommandTestCase(CommandTestCase):
             project_cancelled
         ])
 
-        self.run_command('clean-aliases', args=['--yes'],
-                         config_options=config)
+        self.run_command('clean-aliases', args=['--yes'])
 
         settings = Settings(self.config_file)
         self.assertEqual(list(settings.get_aliases().keys()), ['alias_active'])
