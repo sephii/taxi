@@ -2,25 +2,23 @@ from __future__ import unicode_literals
 
 from freezegun import freeze_time
 
-from . import CommandTestCase
+from . import CommandTestCase, override_settings
 
 
 class AutofillCommandTestCase(CommandTestCase):
     """
     Tests for the `autofill` command.
     """
-    def run_autofill_command(self, config_options=None):
-        self.run_command('autofill', config_options=config_options)
+    def run_autofill_command(self):
+        self.run_command('autofill')
 
+    @override_settings({'default': {
+        'auto_fill_days': '1',
+        'auto_add': 'bottom'
+    }})
     @freeze_time('2012-02-20')
     def test_autofill_bottom(self):
-        config_options = self.default_config.copy()
-        config_options['default'].update({
-            'auto_fill_days': '1',
-            'auto_add': 'bottom'
-        })
-
-        self.run_autofill_command(config_options)
+        self.run_autofill_command()
         entries_file_contents = self.read_entries()
 
         self.assertEqual(entries_file_contents, """07/02/2012
@@ -32,15 +30,13 @@ class AutofillCommandTestCase(CommandTestCase):
 28/02/2012
 """)
 
+    @override_settings({'default': {
+        'auto_fill_days': '1',
+        'auto_add': 'top'
+    }})
     @freeze_time('2012-02-20')
     def test_autofill_top(self):
-        config_options = self.default_config.copy()
-        config_options['default'].update({
-            'auto_fill_days': '1',
-            'auto_add': 'top'
-        })
-
-        self.run_autofill_command(config_options)
+        self.run_autofill_command()
         entries_file_contents = self.read_entries()
 
         self.assertEqual(entries_file_contents, """28/02/2012
@@ -52,17 +48,15 @@ class AutofillCommandTestCase(CommandTestCase):
 07/02/2012
 """)
 
+    @override_settings({'default': {
+        'auto_fill_days': '1',
+        'auto_add': 'top'
+    }})
     @freeze_time('2012-02-20')
     def test_autofill_existing_entries(self):
-        config_options = self.default_config.copy()
-        config_options['default'].update({
-            'auto_fill_days': '1',
-            'auto_add': 'top'
-        })
-
         self.write_entries("15/02/2012\n\n07/02/2012")
 
-        self.run_autofill_command(config_options)
+        self.run_autofill_command()
         entries_file_contents = self.read_entries()
 
         self.assertEqual(entries_file_contents, """28/02/2012

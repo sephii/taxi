@@ -1,6 +1,9 @@
 from __future__ import unicode_literals
 
 import codecs
+import collections
+import copy
+from functools import wraps
 import os
 import six
 import shutil
@@ -69,7 +72,10 @@ class CommandTestCase(TestCase):
         with open(projects_db_file, 'w') as f:
             f.close()
 
-        self.default_config = {
+        existing_settings = (self._settings
+                             if hasattr(self, '_settings')
+                             else {})
+        self._settings = recursive_update({
             'default': {
                 'date_format': '%d/%m/%Y',
                 'editor': '/bin/true',
@@ -84,7 +90,7 @@ class CommandTestCase(TestCase):
                 'fail': '456/789',
                 'post_push_fail': '456/789',
             },
-        }
+        }, existing_settings)
 
     def tearDown(self):
         backends_registry._entry_points = self.backends_original_entry_points
@@ -94,6 +100,15 @@ class CommandTestCase(TestCase):
         if os.path.exists(entries_file):
             os.remove(entries_file)
         shutil.rmtree(self.taxi_dir)
+
+    def settings(self, *args, **kwargs):
+        """
+        Context manager to temporarily override the settings:
+
+            with self.settings({'default': {'file': '/tmp/test.txt'}}):
+                ...
+        """
+        return override_settings(*args, container=self, **kwargs)
 
     def write_config(self, config):
         with open(self.config_file, 'w') as f:
@@ -113,32 +128,19 @@ class CommandTestCase(TestCase):
 
         return contents
 
-    def run_command(self, command_name, args=None, config_options=None,
-                    input=None):
+    def run_command(self, command_name, args=None, input=None):
         """
-        Run the given taxi command with the given arguments and options. Before
-        running the command, the configuration file is written with the given
-        `config_options`, if any, or with the default config options.
-
-        The output of the command is returned as a string.
+        Run the given taxi command with the given arguments and options. The
+        output of the command is returned as a string.
 
         Args:
             command_name -- The name of the command to run
             args -- An optional list of arguments for the command
-            config_options -- An optional options hash that will be used to
-                              write the config file before running the command
         """
         if args is None:
             args = []
 
-        if config_options is None:
-            config_options = self.default_config
-        else:
-            config_options = dict(
-                list(self.default_config.items()) +
-                list(config_options.items())
-            )
-        self.write_config(config_options)
+        self.write_config(self._settings)
 
         args.insert(0, command_name)
         args.insert(0, '--taxi-dir=%s' % self.taxi_dir)
@@ -147,4 +149,79 @@ class CommandTestCase(TestCase):
         runner = CliRunner()
         result = runner.invoke(cli, args, input=input)
 
+        if result.exception:
+            raise result.exception
+
         return result.output
+
+
+class override_settings(object):
+    """
+    Allow to temporarily override settings in the given portion of code. Can be
+    used as a class decorator, a method decorator or as a context manager.
+    Example usage:
+
+        @override_settings({'default': {'file': '/tmp/test'txt'}})
+        class MyTestClass(CommandTestCase):
+            ...
+    """
+    def __init__(self, settings=None, container=None):
+        self.settings = settings or {}
+        # The container is the test instance that holds the settings
+        self.container = container
+
+    def __call__(self, func):
+        # Class decorator
+        if isinstance(func, type):
+            self.container = func
+            self.enable()
+
+            return func
+        else:
+            # Method decorator. This only works on bound methods since we use
+            # the first arg as the settings container
+            @wraps(func)
+            def inner(*args, **kwargs):
+                self.container = args[0]
+
+                with self:
+                    return func(*args, **kwargs)
+
+            return inner
+
+    def enable(self):
+        # The _settings attribute might not exist, eg. if it's used as a class
+        # decorator
+        if not hasattr(self.container, '_settings'):
+            self.container._settings = {}
+
+        # Keep a copy of the current settings and override them
+        self.original_settings = copy.deepcopy(self.container._settings)
+        for section, settings in six.iteritems(self.settings):
+            if section not in self.container._settings:
+                self.container._settings[section] = {}
+
+            for setting, value in six.iteritems(settings):
+                self.container._settings[section][setting] = value
+
+    def disable(self):
+        self.container._settings = self.original_settings
+
+    def __enter__(self):
+        self.enable()
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.disable()
+
+
+def recursive_update(d, u):
+    """
+    Recursive dict update.
+    """
+    for k, v in six.iteritems(u):
+        if isinstance(v, collections.Mapping):
+            r = recursive_update(d.get(k, {}), v)
+            d[k] = r
+        else:
+            d[k] = u[k]
+    return d
