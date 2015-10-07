@@ -52,10 +52,9 @@ def get_timesheet_collection(unparsed_file, nb_previous_files, date_format,
     # timesheet, if any
     previous_timesheet = None
     for timesheet in reversed(timesheet_collection.timesheets):
-        if (timesheet.entries.add_date_to_bottom is None
-                and previous_timesheet
-                and previous_timesheet.entries.add_date_to_bottom
-                is not None):
+        if (timesheet.entries.add_date_to_bottom is None and
+                previous_timesheet and
+                previous_timesheet.entries.add_date_to_bottom is not None):
             timesheet.entries.add_date_to_bottom = (
                 previous_timesheet.entries.add_date_to_bottom
             )
@@ -64,9 +63,12 @@ def get_timesheet_collection(unparsed_file, nb_previous_files, date_format,
     return timesheet_collection
 
 
-def get_files(filename, nb_previous_files):
+def get_files(filename, nb_previous_files, from_date=None):
     date_units = ['m', 'Y']
     smallest_unit = None
+
+    if not from_date:
+        from_date = datetime.date.today()
 
     for date in date_units:
         if '%%%s' % date in filename:
@@ -77,7 +79,7 @@ def get_files(filename, nb_previous_files):
         return OrderedSet([filename])
 
     files = OrderedSet()
-    file_date = datetime.date.today()
+    file_date = from_date
     for i in six.moves.xrange(0, nb_previous_files + 1):
         files.add(file_utils.expand_date(filename, file_date))
 
@@ -89,7 +91,6 @@ def get_files(filename, nb_previous_files):
             else:
                 file_date = file_date.replace(day=1,
                                               month=file_date.month - 1)
-
         elif smallest_unit == 'Y':
             file_date = file_date.replace(day=1, year=file_date.year - 1)
 
