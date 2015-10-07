@@ -17,6 +17,11 @@ from ..ui.tty import TtyUi
 from .. import __version__
 
 
+# Disable click 5.0 unicode_literals warnings. See
+# http://click.pocoo.org/5/python3/
+click.disable_unicode_literals_warning = True
+
+
 def get_timesheet_collection_for_context(ctx, entries_file=None):
     if not entries_file:
         entries_file = ctx.obj['settings'].get_entries_file_path(False)

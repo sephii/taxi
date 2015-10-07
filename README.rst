@@ -7,16 +7,16 @@ down what you've worked on and how long, like so::
 
     23/01/2014
 
-    pingpong 09:00-10:00 Played ping-pong
-    infra         -11:00 Repaired coffee machine
+    pingpong 09:00-10:00 Play ping-pong
+    infra         -11:00 Repair coffee machine
 
 You can then get a summary of your timesheet::
 
     Staging changes :
 
     # Thursday 23 january #
-    pingpong (123/456)             1.00  Played ping-pong
-    infra (123/42)                 1.00  Repaired coffee machine
+    pingpong (123/456)             1.00  Play ping-pong
+    infra (123/42)                 1.00  Repair coffee machine
                                    2.00
 
     Total                          2.00
@@ -38,6 +38,19 @@ found below in :ref:`supported_backends`.
 That's it! You should now be able to run ``taxi``. Head over to the
 `documentation <http://taxi-timesheets.readthedocs.org/en/master/userguide.html>`_ for a complete guide
 on how to use Taxi.
+
+Upgrading to 4.0
+================
+
+Starting with Taxi 4, backends are shipped separately from Taxi itself. This
+allows you to plug Taxi on whatever backend you're using, or even allows you to
+use multiple backends in parallel.
+
+The default backend Taxi used in previous versions is the Zebra backend. Since
+it is now shipped as a separate module, you'll need to install it as well if
+you're ugrading from a previous version of Taxi::
+
+    sudo pip install taxi-zebra
 
 .. _supported_backends:
 
