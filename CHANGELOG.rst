@@ -2,6 +2,14 @@
 Changelog
 #########
 
+4.0.2 (2015-14-09)
+==================
+
+Changed
+-------
+
+* Fix warnings reported by click when using click >= 5.0.
+
 4.0.1 (2015-04-03)
 ==================
 
