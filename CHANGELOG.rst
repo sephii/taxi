@@ -2,6 +2,14 @@
 Changelog
 #########
 
+4.1.0 (unreleased)
+==================
+
+Added
+-----
+
+* Add configuration option ``regroup_entries`` (#77).
+
 4.0.2 (2015-14-09)
 ==================
 
