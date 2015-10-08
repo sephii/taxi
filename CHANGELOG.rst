@@ -2,6 +2,15 @@
 Changelog
 #########
 
+4.1.0 (unreleased)
+==================
+
+Removed
+-------
+
+* Remove ``local_aliases`` option, which can be mimicked by using a dummy
+  backend.
+
 4.0.2 (2015-14-09)
 ==================
 
