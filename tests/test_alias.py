@@ -8,23 +8,8 @@ def test_alias_in():
     assert 'foo' in db
 
 
-def test_alias_in_local_alias():
-    db = AliasesDatabase({'foo': Mapping(mapping=(1, 2), backend='test')})
-    db.local_aliases.add('local_alias')
-
-    assert 'foo' in db
-    assert 'local_alias' in db
-
-
 def test_alias_not_in():
     db = AliasesDatabase({'foo': Mapping(mapping=(1, 2), backend='test')})
-    assert 'bar' not in db
-
-
-def test_alias_not_in_local_alias():
-    db = AliasesDatabase({'foo': Mapping(mapping=(1, 2), backend='test')})
-    db.local_aliases.add('local_alias')
-
     assert 'bar' not in db
 
 
@@ -33,10 +18,9 @@ def test_alias_iter():
         'foo': Mapping(mapping=(1, 2), backend='test'),
         'bar': Mapping(mapping=(1, 3), backend='test'),
     })
-    db.local_aliases.add('local_alias')
     alias_set = set(db)
 
-    assert alias_set == set(['foo', 'bar', 'local_alias'])
+    assert alias_set == set(['foo', 'bar'])
 
 
 def test_alias_update_item():
@@ -59,13 +43,11 @@ def test_alias_iteritems():
         'foo': Mapping(mapping=(1, 2), backend='test'),
         'bar': Mapping(mapping=(1, 3), backend='test'),
     })
-    db.local_aliases.add('local_alias')
     alias_set = set(db.iteritems())
 
     assert alias_set == set([
         ('foo', Mapping(mapping=(1, 2), backend='test')),
         ('bar', Mapping(mapping=(1, 3), backend='test')),
-        ('local_alias', None)
     ])
 
 
@@ -74,8 +56,7 @@ def test_keys():
         'foo': Mapping(mapping=(1, 2), backend='test'),
         'bar': Mapping(mapping=(1, 3), backend='test'),
     })
-    db.local_aliases.add('local_alias')
-    assert set(db.keys()) == set(['foo', 'bar', 'local_alias'])
+    assert set(db.keys()) == set(['foo', 'bar'])
 
 
 def test_update():
@@ -102,22 +83,11 @@ def test_reset():
     assert 'foo' not in db
 
 
-def test_is_local():
-    db = AliasesDatabase({
-        'foo': Mapping(mapping=(1, 2), backend='test'),
-    })
-    db.local_aliases.add('local_alias')
-
-    assert not db.is_local('foo')
-    assert db.is_local('local_alias')
-
-
 def test_get_reversed_aliases():
     db = AliasesDatabase({
         'foo': Mapping(mapping=(1, 2), backend='test'),
         'bar': Mapping(mapping=(1, 3), backend='test'),
     })
-    db.local_aliases.add('local_alias')
     reversed_aliases = db.get_reversed_aliases().items()
 
     assert set(reversed_aliases) == set([

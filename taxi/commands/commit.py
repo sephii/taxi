@@ -119,13 +119,7 @@ def backends_post_push(backends_entries):
 
 def comment_timesheets_entries(timesheet_collection, date):
     for timesheet in timesheet_collection.timesheets:
-        # Mark local entries as pushed without pushing them
-        local_entries = timesheet.get_local_entries(date)
         pushed_entries = get_entries_to_push(timesheet, date)
-
-        for (entries_date, entries) in six.iteritems(local_entries):
-            for entry in entries:
-                entry.commented = True
 
         for (entries_date, entries) in pushed_entries.items():
             for entry in entries:
@@ -146,6 +140,5 @@ def comment_timesheets_entries(timesheet_collection, date):
 
 def get_entries_to_push(timesheet, date, regroup=True):
     return timesheet.get_entries(
-        date, exclude_ignored=True,
-        exclude_local=True, exclude_unmapped=True, regroup=regroup
+        date, exclude_ignored=True, exclude_unmapped=True, regroup=regroup
     )

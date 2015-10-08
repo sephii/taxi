@@ -24,7 +24,7 @@ def clean_aliases(ctx, force_yes):
 
     for (alias, mapping) in six.iteritems(aliases_database):
         # Ignore local aliases
-        if mapping is None:
+        if mapping.mapping is None:
             continue
 
         project = ctx.obj['projects_db'].get(mapping.mapping[0],

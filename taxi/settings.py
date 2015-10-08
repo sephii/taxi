@@ -91,7 +91,6 @@ class Settings:
             'auto_add': StringSetting(default='auto',
                                       choices=AUTO_ADD_OPTIONS.values()),
             'nb_previous_files': IntegerSetting(default=1),
-            'local_aliases': ListSetting(),
             'file': StringSetting(default='~/zebra/%Y/%m/%d.tks'),
             'editor': StringSetting(),
             'regroup_entries': BooleanSetting(default=True),
@@ -99,7 +98,7 @@ class Settings:
     }
 
     def __init__(self, file):
-        self.config = configparser.RawConfigParser()
+        self.config = configparser.RawConfigParser(allow_no_value=True)
         self.filepath = os.path.expanduser(file)
         self._backends_registry = {}
         self._settings = {}
@@ -143,7 +142,7 @@ class Settings:
             self.config.add_section(alias_section)
 
         self.config.set(alias_section, alias,
-                        Project.tuple_to_str(mapping.mapping))
+                        Project.tuple_to_str(mapping.mapping) if mapping.mapping else None)
 
     def remove_aliases(self, aliases):
         for alias, mapping in aliases:
@@ -181,8 +180,9 @@ class Settings:
 
                 if self.config.has_section(backend_aliases_section):
                     for (alias, mapping) in self.config.items(backend_aliases_section):
-                        mapping = Project.str_to_tuple(mapping)
+                        mapping = Project.str_to_tuple(mapping) if mapping is not None else None
                         mapping_obj = Mapping(mapping, backend)
+
                         aliases[alias] = mapping_obj
 
         return aliases

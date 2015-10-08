@@ -31,10 +31,6 @@ auto_add = auto
 # 0,1,2,3,4 (Monday - Friday)
 # auto_fill_days = 0,1,2,3,4
 
-# Defines a list of local aliases that you will be able to use in your timesheets
-# but that will never be pushed
-# local_aliases = _lunch, _coffee_break
-
 # How many previous files should Taxi parse? This allows you to make sure you
 # don't forget hours in files from previous months when starting a new month.
 # Default is 1.

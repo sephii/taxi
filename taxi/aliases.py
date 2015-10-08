@@ -2,7 +2,6 @@ from __future__ import unicode_literals
 
 import collections
 import difflib
-import itertools
 import six
 
 
@@ -11,10 +10,7 @@ Mapping = collections.namedtuple('Mapping', ['mapping', 'backend'])
 
 class AliasesDatabase(object):
     """
-    Dict-like object containing aliases and their corresponding mappings. It
-    contains aliases and "local aliases". Local aliases are not mapped to
-    anything, so even if they're present in the database, they'll always have a
-    `None` value.
+    Dict-like object containing aliases and their corresponding mappings.
 
     Example usage:
 
@@ -37,28 +33,22 @@ class AliasesDatabase(object):
 
     def __getitem__(self, key):
         """
-        Return the corresponding :py:class:`Mapping` object or `None` if the
-        alias is local.
+        Return the corresponding :py:class:`Mapping` object. It might raise
+        KeyError if not found but that's the expected behaviour.
         """
-        if key in self.local_aliases:
-            return None
-        else:
-            # Might raise KeyError if not found but that's the expected
-            # behaviour
-            return self.aliases[key]
+        return self.aliases[key]
 
     def __setitem__(self, key, value):
         self.aliases[key] = value
 
     def __contains__(self, key):
-        return key in self.aliases or key in self.local_aliases
+        return key in self.aliases
 
     def __iter__(self):
         """
-        Iterate over local aliases and standard aliases. Local aliases always
-        come first in the iteration.
+        Iterate over aliases.
         """
-        return itertools.chain(self.local_aliases_to_dict(), self.aliases)
+        return self.aliases.__iter__()
 
     def iteritems(self):
         """
@@ -67,42 +57,24 @@ class AliasesDatabase(object):
         return self.items()
 
     def items(self):
-        return itertools.chain(
-            six.iteritems(self.local_aliases_to_dict()),
-            six.iteritems(self.aliases)
-        )
+        return six.iteritems(self.aliases)
 
     def keys(self):
-        return list(self.aliases.keys()) + list(self.local_aliases)
+        return list(self.aliases.keys())
 
     def update(self, other):
         self.aliases.update(other)
 
     def reset(self):
         """
-        Reset both the aliases and local aliases to an empty state.
+        Reset the aliases to an empty state.
         """
-        self.local_aliases = set()
         self.aliases = {}
-
-    def local_aliases_to_dict(self):
-        """
-        Transform the local aliases set to a dict with null values.
-        """
-        return dict((alias, None) for alias in self.local_aliases)
-
-    def is_local(self, alias):
-        """
-        Return `True` if the given alias is in the `local_aliases` set.
-        """
-        return alias in self.local_aliases
 
     def get_reversed_aliases(self):
         """
         Return the reversed aliases dict. Instead of being in the form
-        {'alias': mapping}, the dict is in the form {mapping: 'alias'}. Local
-        aliases are not included in this list for the obvious reason that
-        they're all mapped to a `None` mapping.
+        {'alias': mapping}, the dict is in the form {mapping: 'alias'}.
         """
         return dict((v, k) for k, v in six.iteritems(self.aliases))
 
@@ -124,8 +96,8 @@ class AliasesDatabase(object):
             key, item = key_item
 
             return (
-                item.mapping == mapping
-                or (mapping[1] is None and item.mapping[0] == mapping[0])
+                item.mapping == mapping or
+                (mapping[1] is None and item.mapping[0] == mapping[0])
             )
 
         if not mapping:
@@ -155,7 +127,7 @@ class AliasesDatabase(object):
 
         aliases = collections.OrderedDict(
             sorted(items, key=lambda alias: alias[1].mapping
-                   if alias[1] is not None else (0, 0))
+                   if alias[1].mapping is not None else (0, 0))
         )
 
         return aliases

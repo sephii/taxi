@@ -63,7 +63,8 @@ class CommandTestCase(TestCase):
         # test backend. This avoids having to register the test backend in the
         # setup.py file
         backends_registry._entry_points = {
-            'test': TestBackendEntryPoint()
+            'test': TestBackendEntryPoint(),
+            'local': TestBackendEntryPoint(),
         }
 
         # Create an empty projects db file
@@ -84,6 +85,7 @@ class CommandTestCase(TestCase):
             },
             'backends': {
                 'test': 'test:///',
+                'local': 'test:///',
             },
             'test_aliases': {
                 'alias_1': '123/456',

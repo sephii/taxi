@@ -91,12 +91,9 @@ class Timesheet(object):
         return filtered_entries
 
     def get_entries(self, date=None, exclude_ignored=False,
-                    exclude_local=False, exclude_unmapped=False,
-                    regroup=False):
+                    exclude_unmapped=False, regroup=False):
         def entry_filter(entry):
             return (not (exclude_ignored and entry.is_ignored())
-                    and not (exclude_local
-                             and aliases_database.is_local(entry.alias))
                     and (not exclude_unmapped
                          or entry.alias in aliases_database))
 
@@ -107,11 +104,6 @@ class Timesheet(object):
             return self.is_entry_ignored(entry)
 
         return self.get_filtered_entries(date, entry_filter)
-
-    def get_local_entries(self, date=None):
-        return self.get_filtered_entries(
-            date, lambda e: aliases_database.is_local(e.alias)
-        )
 
     def get_non_current_workday_entries(self):
         non_workday_entries = defaultdict(list)
@@ -128,8 +120,7 @@ class Timesheet(object):
         return non_workday_entries
 
     def is_entry_ignored(self, entry):
-        return (entry.is_ignored() or aliases_database.is_local(entry.alias)
-                or entry.alias not in aliases_database)
+        return entry.is_ignored() or entry.alias not in aliases_database
 
     def continue_entry(self, date, end_time, description=None):
         try:

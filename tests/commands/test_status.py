@@ -33,7 +33,7 @@ class StatusCommandTestCase(CommandTestCase):
         self.assertIn('january', stdout)
         self.assertIn('february', stdout)
 
-    @override_settings({'default': {'local_aliases': '_pingpong'}})
+    @override_settings({'local_aliases': {'_pingpong': None}})
     @freeze_time('2014-01-20')
     def test_local_alias(self):
         self.write_entries("""20/01/2014
@@ -42,11 +42,14 @@ _pingpong 0800-0900 Play ping-pong
         stdout = self.run_command('status')
 
         self.assertIn(
-            "_pingpong (local)              1.00  Play ping-pong",
+            "_pingpong (not mapped, local)  1.00  Play ping-pong",
             stdout
         )
 
-    @override_settings({'default': {'local_aliases': '_pingpong, _coffee'}})
+    @override_settings({'local_aliases': {
+        '_pingpong': None,
+        '_coffee': None
+    }})
     @freeze_time('2014-01-20')
     def test_multiple_local_aliases(self):
         self.write_entries("""20/01/2014
@@ -56,11 +59,11 @@ _coffee 0900-1000 Drink some coffee
 
         stdout = self.run_command('status')
         self.assertIn(
-            "_pingpong (local)              1.00  Play ping-pong",
+            "_pingpong (not mapped, local)  1.00  Play ping-pong",
             stdout
         )
         self.assertIn(
-            "_coffee (local)                1.00  Drink some coffee",
+            "_coffee (not mapped, local)    1.00  Drink some coffee",
             stdout
         )
 
@@ -73,7 +76,7 @@ alias_1 1200-1300 Play ping-pong
 
         stdout = self.run_command('status')
         self.assertIn(
-            "alias_1 (123/456)              2.00  Play ping-pong",
+            "alias_1 (123/456, test)        2.00  Play ping-pong",
             stdout
         )
 
@@ -99,6 +102,6 @@ alias_1 1200-1300 Play ping-pong
 
         stdout = self.run_command('status')
         self.assertIn(
-            "alias_1 (123/456)              1.00  Play ping-pong",
+            "alias_1 (123/456, test)        1.00  Play ping-pong",
             stdout
         )
