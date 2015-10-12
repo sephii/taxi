@@ -392,7 +392,8 @@ class TimesheetEntry(object):
         """
         if (isinstance(self.duration, tuple) and self.duration[0] is None
                 and self.previous_entry is not None
-                and self.previous_entry.commented):
+                and self.previous_entry.commented
+                and not self.commented):
             self.duration = (
                 self.get_start_time(),
                 self.duration[1]
