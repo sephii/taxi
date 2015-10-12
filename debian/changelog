@@ -1,3 +1,9 @@
+taxi (4.0.2-1) liip; urgency=medium
+
+  * New upstream release
+
+ -- Didier Raboud <didier.raboud@liip.ch>  Mon, 12 Oct 2015 14:09:15 +0200
+
 taxi (4.0.0-1) liip; urgency=medium
 
   * Initial 4.0.0 release
