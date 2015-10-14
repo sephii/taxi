@@ -47,4 +47,4 @@ internal = dummy:///
 internal = 7/16
 
 [internal_aliases]
-_pingpong = 0/0
+_pingpong

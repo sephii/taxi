@@ -132,7 +132,7 @@ class Settings:
     def __getitem__(self, key):
         return self.get(key)
 
-    def get(self, key, section='default', default_value=None):
+    def get(self, key, section='default'):
         return self._settings[section][key].value
 
     def add_alias(self, alias, mapping):
@@ -229,6 +229,35 @@ class Settings:
                 self.config.set('default_shared_aliases', alias, mapping)
 
             self.config.remove_section('shared_wrmap')
+
+    def convert_to_4_1(self):
+        if not self.config.has_option('default', 'local_aliases'):
+            return
+
+        local_aliases = self.config.get('default', 'local_aliases')
+        local_aliases = ListSetting().to_python(local_aliases)
+
+        if not self.config.has_section('backends'):
+            self.config.add_section('backends')
+
+        self.config.set('backends', 'local', 'dummy://')
+
+        if not self.config.has_section('local_aliases'):
+            self.config.add_section('local_aliases')
+
+        for alias in local_aliases:
+            self.config.set('local_aliases', alias, None)
+
+        self.config.remove_option('default', 'local_aliases')
+
+    @property
+    def needed_conversions(self):
+        conversions = []
+
+        if self.config.has_option('default', 'local_aliases'):
+            conversions.append(self.convert_to_4_1)
+
+        return conversions
 
     def get_entries_file_path(self, expand_date=True):
         file_path = os.path.expanduser(self.get('file'))

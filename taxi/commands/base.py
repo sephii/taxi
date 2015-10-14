@@ -103,6 +103,15 @@ def create_config_file(filename):
         else:
             print("Ok then.")
             sys.exit(1)
+    else:
+        settings = Settings(filename)
+        conversions = settings.needed_conversions
+
+        if conversions:
+            for conversion in conversions:
+                conversion()
+
+            settings.write_config()
 
 
 class AliasedCommand(click.Command):
