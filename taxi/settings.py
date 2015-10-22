@@ -12,7 +12,6 @@ from .utils.file import expand_date as file_expand_date
 
 
 class Settings(dict):
-    TAXI_PATH = os.path.expanduser('~/.taxi')
     AUTO_ADD_OPTIONS = {
         'NO': 'no',
         'TOP': 'top',

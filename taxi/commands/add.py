@@ -15,7 +15,7 @@ def add(ctx, search):
     Usage: add search_string
 
     Searches and prompts for project, activity and alias and adds that as a new
-    entry to .taxirc.
+    entry to the config file.
 
     """
     projects = ctx.obj['projects_db'].search(search, active_only=True)
