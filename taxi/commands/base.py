@@ -20,7 +20,6 @@ from .. import __version__
 
 xdg_dirs = AppDirs("taxi", "sephii")
 
-
 # Disable click 5.0 unicode_literals warnings. See
 # http://click.pocoo.org/5/python3/
 click.disable_unicode_literals_warning = True
@@ -109,6 +108,7 @@ def create_config_file(filename):
             directory = os.path.dirname(filename)
             if not os.path.exists(directory):
                 os.makedirs(directory)
+
             with open(filename, 'w') as f:
                 f.write(templated_config)
         else:
@@ -167,19 +167,19 @@ def print_version(ctx, param, value):
 
 
 def get_config_file():
-    name='taxirc'
+    config_file_name = 'taxirc'
 
-    home = os.path.join(os.path.expanduser('~'), '.' + name)
-    if os.path.isfile(home):
-        return home
+    config_file = os.path.join(os.path.expanduser('~'), '.' + config_file_name)
+    if os.path.isfile(config_file):
+        return config_file
 
-    return os.path.join(xdg_dirs.user_config_dir, name)
+    return os.path.join(xdg_dirs.user_config_dir, config_file_name)
 
 
 def get_data_dir():
-    home = os.path.join(os.path.expanduser('~'), '.taxi')
-    if os.path.isdir(home):
-        return home
+    data_dir = os.path.join(os.path.expanduser('~'), '.taxi')
+    if os.path.isdir(data_dir):
+        return data_dir
 
     return xdg_dirs.user_data_dir
 

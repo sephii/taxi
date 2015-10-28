@@ -2,7 +2,14 @@
 Changelog
 #########
 
-* Respect the XDG Base Directory specification (http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html)
+4.1.0 (unreleased)
+==================
+
+Changed
+-------
+
+* Respect the XDG Base Directory specification
+  (http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html)
 
 4.0.1 (2015-04-03)
 ==================
