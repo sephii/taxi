@@ -10,6 +10,12 @@ Added
 
 * Add configuration option ``regroup_entries`` (#77).
 
+Removed
+-------
+
+* Remove ``local_aliases`` option, which can be mimicked by using a dummy
+  backend (#85).
+
 4.0.2 (2015-14-09)
 ==================
 

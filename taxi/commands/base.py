@@ -34,12 +34,9 @@ def get_timesheet_collection_for_context(ctx, entries_file=None):
     )
 
 
-def populate_aliases(aliases, local_aliases):
+def populate_aliases(aliases):
     aliases_database.reset()
     aliases_database.update(aliases)
-
-    for alias in local_aliases:
-        aliases_database.local_aliases.add(alias)
 
 
 def populate_backends(backends):
@@ -106,6 +103,15 @@ def create_config_file(filename):
         else:
             print("Ok then.")
             sys.exit(1)
+    else:
+        settings = Settings(filename)
+        conversions = settings.needed_conversions
+
+        if conversions:
+            for conversion in conversions:
+                conversion()
+
+            settings.write_config()
 
 
 class AliasedCommand(click.Command):
@@ -176,7 +182,7 @@ def cli(ctx, config, taxi_dir):
     if not os.path.exists(settings.TAXI_PATH):
         os.mkdir(settings.TAXI_PATH)
 
-    populate_aliases(settings.get_aliases(), settings['local_aliases'])
+    populate_aliases(settings.get_aliases())
     populate_backends(settings.get_backends())
 
     ctx.obj = {}

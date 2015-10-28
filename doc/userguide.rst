@@ -122,6 +122,29 @@ You can also chain them::
     taxi          -12:00 Write documentation
     internal      -13:00 Debug coffee machine
 
+Local aliases
+~~~~~~~~~~~~~
+
+Some people like to timesheet everything they do: lunch, ping-pong games, going
+to the restroom... anyway, if you're that kind of people you probably don't
+want these entries to be pushed. To achieve that, start by adding a dummy
+backend to your ``.taxirc`` file::
+
+    [backends]
+    local = dummy://
+
+Then to add a local alias, either add it in the corresponding section in your
+``.taxirc`` file::
+
+    [local_aliases]
+    _pingpong
+    _lunch
+    _shit
+
+Or use the ``alias`` command::
+
+    taxi alias _pingpong "" local
+
 Getting help
 ~~~~~~~~~~~~
 
@@ -227,20 +250,6 @@ You can use any datetime placeholder defined in `the strftime documentation
 **However** taxi only supports the ``%Y`` and ``%m`` placeholders to check for
 previous timesheets (used for example when you run ``taxi edit X``, where ``X``
 is the number of timesheets to go back in time).
-
-
-local_aliases
-~~~~~~~~~~~~~
-
-Defines a list of local aliases that you will be able to use in your timesheets
-but that will never be pushed. These aliases will appear in the timesheet
-summary and will get marked as pushed when running the `commit` command.
-
-The list should be separated by commas. For example the following value will
-define the `__lunch` and `__hacking` local aliases (note that the double
-underscore is just a personal convention to distinguish them from standard
-aliases, you're free to use any name you want): ``local_aliases = __lunch,
-__hacking``.
 
 regroup_entries
 ~~~~~~~~~~~~~~~

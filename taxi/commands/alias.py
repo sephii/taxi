@@ -31,7 +31,7 @@ def alias(ctx, alias, mapping, backend):
     mappings.
 
     """
-    if all([alias, mapping, backend]):
+    if all([alias, backend]) and mapping is not None:
         add_mapping(ctx, alias, mapping, backend)
     elif alias:
         show_mapping(ctx, alias)
@@ -40,17 +40,20 @@ def alias(ctx, alias, mapping, backend):
 
 
 def add_mapping(ctx, alias, mapping, backend):
-    mapping = Project.str_to_tuple(mapping)
-    if mapping is None:
-        raise click.UsageError(
-            "The mapping must be in the format xxx/yyy"
-        )
+    if mapping:
+        mapping = Project.str_to_tuple(mapping)
+        if mapping is None:
+            raise click.UsageError(
+                "The mapping must be in the format xxx/yyy"
+            )
+    else:
+        mapping = None
 
     mapping = Mapping(mapping=mapping, backend=backend)
 
     if alias in aliases_database:
         existing_mapping = aliases_database[alias]
-        confirm = ctx.obj['view'].view.overwrite_alias(
+        confirm = ctx.obj['view'].overwrite_alias(
             alias, existing_mapping, False
         )
 
@@ -69,9 +72,9 @@ def show_mapping(ctx, mapping_str):
     if mapping is not None:
         for alias, m in aliases_database.filter_from_mapping(mapping).items():
             ctx.obj['view'].mapping_detail(
-                (alias, m.mapping if m is not None else None),
+                (alias, m),
                 ctx.obj['projects_db'].get(m.mapping[0], m.backend)
-                if m is not None else None
+                if m.mapping is not None else None
             )
     else:
         show_alias(ctx, mapping_str)
@@ -80,7 +83,7 @@ def show_mapping(ctx, mapping_str):
 def show_alias(ctx, alias):
     for alias, m in aliases_database.filter_from_alias(alias).items():
         ctx.obj['view'].alias_detail(
-            (alias, m.mapping if m is not None else None),
+            (alias, m),
             ctx.obj['projects_db'].get(m.mapping[0], m.backend)
-            if m is not None else None
+            if m.mapping is not None else None
         )

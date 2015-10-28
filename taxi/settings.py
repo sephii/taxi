@@ -91,7 +91,6 @@ class Settings:
             'auto_add': StringSetting(default='auto',
                                       choices=AUTO_ADD_OPTIONS.values()),
             'nb_previous_files': IntegerSetting(default=1),
-            'local_aliases': ListSetting(),
             'file': StringSetting(default='~/zebra/%Y/%m/%d.tks'),
             'editor': StringSetting(),
             'regroup_entries': BooleanSetting(default=True),
@@ -99,7 +98,7 @@ class Settings:
     }
 
     def __init__(self, file):
-        self.config = configparser.RawConfigParser()
+        self.config = configparser.RawConfigParser(allow_no_value=True)
         self.filepath = os.path.expanduser(file)
         self._backends_registry = {}
         self._settings = {}
@@ -133,7 +132,7 @@ class Settings:
     def __getitem__(self, key):
         return self.get(key)
 
-    def get(self, key, section='default', default_value=None):
+    def get(self, key, section='default'):
         return self._settings[section][key].value
 
     def add_alias(self, alias, mapping):
@@ -143,7 +142,7 @@ class Settings:
             self.config.add_section(alias_section)
 
         self.config.set(alias_section, alias,
-                        Project.tuple_to_str(mapping.mapping))
+                        Project.tuple_to_str(mapping.mapping) if mapping.mapping else None)
 
     def remove_aliases(self, aliases):
         for alias, mapping in aliases:
@@ -181,8 +180,9 @@ class Settings:
 
                 if self.config.has_section(backend_aliases_section):
                     for (alias, mapping) in self.config.items(backend_aliases_section):
-                        mapping = Project.str_to_tuple(mapping)
+                        mapping = Project.str_to_tuple(mapping) if mapping is not None else None
                         mapping_obj = Mapping(mapping, backend)
+
                         aliases[alias] = mapping_obj
 
         return aliases
@@ -229,6 +229,35 @@ class Settings:
                 self.config.set('default_shared_aliases', alias, mapping)
 
             self.config.remove_section('shared_wrmap')
+
+    def convert_to_4_1(self):
+        if not self.config.has_option('default', 'local_aliases'):
+            return
+
+        local_aliases = self.config.get('default', 'local_aliases')
+        local_aliases = ListSetting().to_python(local_aliases)
+
+        if not self.config.has_section('backends'):
+            self.config.add_section('backends')
+
+        self.config.set('backends', 'local', 'dummy://')
+
+        if not self.config.has_section('local_aliases'):
+            self.config.add_section('local_aliases')
+
+        for alias in local_aliases:
+            self.config.set('local_aliases', alias, None)
+
+        self.config.remove_option('default', 'local_aliases')
+
+    @property
+    def needed_conversions(self):
+        conversions = []
+
+        if self.config.has_option('default', 'local_aliases'):
+            conversions.append(self.convert_to_4_1)
+
+        return conversions
 
     def get_entries_file_path(self, expand_date=True):
         file_path = os.path.expanduser(self.get('file'))

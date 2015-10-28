@@ -25,29 +25,29 @@ class AliasCommandTestCase(CommandTestCase):
         lines = output.splitlines()
 
         self.assertEquals(len(lines), 3)
-        self.assertIn("alias_1 -> 123/456", lines)
-        self.assertIn("alias_2 -> 123/457", lines)
-        self.assertIn("foo -> 777/777", lines)
+        self.assertIn("[test] alias_1 -> 123/456", lines)
+        self.assertIn("[test] alias_2 -> 123/457", lines)
+        self.assertIn("[test] foo -> 777/777", lines)
 
     def test_alias_search_mapping_exact(self):
         output = self.run_alias_command(['alias_1'])
-        self.assertEquals(output, "alias_1 -> 123/456\n")
+        self.assertEquals(output, "[test] alias_1 -> 123/456\n")
 
     def test_alias_search_mapping_partial(self):
         output = self.run_alias_command(['alias'])
         lines = output.splitlines()
 
         self.assertEquals(len(lines), 2)
-        self.assertIn("alias_1 -> 123/456", lines)
-        self.assertIn("alias_2 -> 123/457", lines)
+        self.assertIn("[test] alias_1 -> 123/456", lines)
+        self.assertIn("[test] alias_2 -> 123/457", lines)
 
     def test_alias_search_project(self):
         output = self.run_alias_command(['123'])
         lines = output.splitlines()
 
         self.assertEquals(len(lines), 2)
-        self.assertIn("123/456 -> alias_1", lines)
-        self.assertIn("123/457 -> alias_2", lines)
+        self.assertIn("[test] 123/456 -> alias_1", lines)
+        self.assertIn("[test] 123/457 -> alias_2", lines)
 
         output = self.run_alias_command(['12'])
         lines = output.splitlines()
@@ -58,7 +58,7 @@ class AliasCommandTestCase(CommandTestCase):
         output = self.run_alias_command(['123/457'])
         lines = output.splitlines()
         self.assertEquals(len(lines), 1)
-        self.assertIn("123/457 -> alias_2", lines)
+        self.assertIn("[test] 123/457 -> alias_2", lines)
 
         output = self.run_alias_command(['123/458'])
         lines = output.splitlines()
@@ -72,9 +72,9 @@ class AliasCommandTestCase(CommandTestCase):
 
         self.assertIn('bar = 123/458\n', config_lines)
 
-    @override_settings({'default': {
-        'local_aliases': 'pingpong'
+    @override_settings({'local_aliases': {
+        '__pingpong': None
     }})
     def test_local_alias(self):
         stdout = self.run_alias_command([])
-        self.assertIn('pingpong -> local alias', stdout)
+        self.assertIn('[local] __pingpong -> not mapped', stdout)
