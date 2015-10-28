@@ -75,7 +75,7 @@ class BooleanSetting(StringSetting):
         return value.lower() in self.VALUES_MAPPING[True]
 
 
-class Settings:
+class Settings(object):
     AUTO_ADD_OPTIONS = {
         'NO': 'no',
         'TOP': 'top',
