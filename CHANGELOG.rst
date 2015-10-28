@@ -10,6 +10,12 @@ Added
 
 * Add configuration option ``regroup_entries`` (#77).
 
+Changed
+-------
+
+* Respect the XDG Base Directory specification
+  (http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html).
+
 Removed
 -------
 

@@ -76,7 +76,6 @@ class BooleanSetting(StringSetting):
 
 
 class Settings:
-    TAXI_PATH = os.path.expanduser('~/.taxi')
     AUTO_ADD_OPTIONS = {
         'NO': 'no',
         'TOP': 'top',

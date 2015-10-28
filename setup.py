@@ -14,6 +14,7 @@ tests_require = [
 install_requires = [
     'click>=3.3',
     'six>=1.9.0',
+    'appdirs>=1.4.0',
 ]
 
 
