@@ -14,18 +14,22 @@ from .base import cli
 @click.pass_context
 def alias(ctx, alias, mapping, backend):
     """
+    \b
     Usage: alias [alias]
            alias [project_id]
            alias [project_id/activity_id]
            alias [alias] [project_id/activity_id] [backend]
 
-    - The first form will display the mappings whose aliases start with the
+    * The first form will display the mappings whose aliases start with the
       search string you entered
-    - The second form will display the mapping(s) you've defined for this
+
+    * The second form will display the mapping(s) you've defined for this
       project and all of its activities
-    - The third form will display the mapping you've defined for this exact
+
+    * The third form will display the mapping you've defined for this exact
       project/activity tuple
-    - The last form will add a new alias in your configuration file
+
+    * The last form will add a new alias in your configuration file
 
     You can also run this command without any argument to view all your
     mappings.

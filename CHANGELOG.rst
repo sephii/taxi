@@ -15,6 +15,7 @@ Changed
 
 * Respect the XDG Base Directory specification
   (http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html).
+* Fix help layout for ``alias`` command (#95).
 
 Removed
 -------
