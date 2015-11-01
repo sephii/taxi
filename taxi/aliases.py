@@ -85,7 +85,7 @@ class AliasesDatabase(object):
         return difflib.get_close_matches(alias,
                                          self.keys(), cutoff=0.2)
 
-    def filter_from_mapping(self, mapping):
+    def filter_from_mapping(self, mapping, backend=None):
         """
         Return mappings that either exactly correspond to the given `mapping`
         tuple, or, if the second item of `mapping` is `None`, include mappings
@@ -96,14 +96,12 @@ class AliasesDatabase(object):
             key, item = key_item
 
             return (
-                item.mapping == mapping or
-                (mapping[1] is None and item.mapping[0] == mapping[0])
+                (mapping is None or item.mapping == mapping or
+                    (mapping[1] is None and item.mapping[0] == mapping[0])) and
+                (backend is None or item.backend == backend)
             )
 
-        if not mapping:
-            items = six.iteritems(self)
-        else:
-            items = six.moves.filter(mapping_filter, six.iteritems(self))
+        items = six.moves.filter(mapping_filter, six.iteritems(self))
 
         aliases = collections.OrderedDict(
             sorted(items, key=lambda alias: alias[1].mapping
@@ -112,22 +110,22 @@ class AliasesDatabase(object):
 
         return aliases
 
-    def filter_from_alias(self, alias):
+    def filter_from_alias(self, alias, backend=None):
         """
-        Return aliases that start with the given `alias`.
+        Return aliases that start with the given `alias`, optionally filtered
+        by backend.
         """
         def alias_filter(key_item):
             key, item = key_item
-            return key.startswith(alias)
 
-        if not alias:
-            items = six.iteritems(self)
-        else:
-            items = six.moves.filter(alias_filter, six.iteritems(self))
+            return ((alias is None or alias in key) and
+                    (backend is None or item.backend == backend))
+
+        items = six.moves.filter(alias_filter, six.iteritems(self))
 
         aliases = collections.OrderedDict(
-            sorted(items, key=lambda alias: alias[1].mapping
-                   if alias[1].mapping is not None else (0, 0))
+            sorted(items, key=lambda a: a[1].mapping
+                   if a[1].mapping is not None else (0, 0))
         )
 
         return aliases
