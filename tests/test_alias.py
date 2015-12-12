@@ -127,7 +127,7 @@ def test_filter_from_mapping_empty_search():
     }
     db = AliasesDatabase(aliases)
 
-    assert db.filter_from_mapping('') == aliases
+    assert db.filter_from_mapping(None) == aliases
 
 
 def test_filter_from_alias():

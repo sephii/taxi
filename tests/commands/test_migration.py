@@ -8,7 +8,7 @@ from . import override_settings, CommandTestCase
 class MigrationTestCase(CommandTestCase):
     @override_settings({'default': {'local_aliases': '_foo, _bar'}})
     def test_migration_to_41_copies_local_aliases(self):
-        stdout = self.run_command('alias', ['_foo'])
+        stdout = self.run_command('alias', ['list', '_foo'])
         self.assertIn('[local] _foo -> not mapped', stdout)
 
         settings = Settings(self.config_file)

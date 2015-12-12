@@ -309,7 +309,7 @@ class BaseUi(object):
 
     def search_results(self, projects):
         for project in projects:
-            self.msg('%s %s %4s %s' % (
+            self.msg('%s [%s] %4s %s' % (
                 project.get_short_status(), project.backend, project.id,
                 project.name
             ))
@@ -379,3 +379,57 @@ class BaseUi(object):
         if modified_aliases:
             self.msg("\nThe following shared aliases have been updated:\n")
             show_aliases(modified_aliases)
+
+    def show_command_results(self, search, matches, projects_db):
+        def mapping_to_activity_name(mapping):
+            activity = projects_db.mapping_to_project(mapping)
+            if not activity[0] or not activity[1]:
+                activity_str = "a non-existent activity"
+            else:
+                activity_str = '{}, {}'.format(
+                    activity[0].name, activity[1].name
+                )
+
+            return activity_str
+
+        matches_str = []
+
+        for alias in matches['aliases']:
+            if alias.mapping is None:
+                matches_str.append("a local alias")
+            else:
+                activity_str = mapping_to_activity_name(alias)
+                matches_str.append(
+                    "an alias to {activity} ({mapping}) on the {backend} "
+                    "backend".format(
+                        activity=click.style(activity_str, bold=True),
+                        mapping='%s/%s' % alias.mapping,
+                        backend=click.style(alias.backend, bold=True)
+                    )
+                )
+        for project, activity in matches['projects']:
+            if activity:
+                matches_str.append(
+                    "the activity {activity} of the project {project}".format(
+                        project=click.style(project.name, bold=True),
+                        activity=click.style(activity.name, bold=True)
+                    )
+                )
+            else:
+                matches_str.append("the project {}".format(
+                    click.style(project.name, bold=True)
+                ))
+
+        for mapping, alias in matches['mappings']:
+            activity_str = mapping_to_activity_name(mapping)
+            matches_str.append(
+                "aliased by {alias} on the {backend} backend".format(
+                    alias=click.style(alias, bold=True),
+                    backend=click.style(mapping.backend, bold=True)
+                )
+            )
+
+        self.msg("Your search string %s is %s." % (
+            click.style(search, bold=True),
+            ', '.join(matches_str) if matches_str else "nothing"
+        ))

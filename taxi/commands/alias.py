@@ -7,40 +7,49 @@ from ..projects import Project
 from .base import cli
 
 
-@cli.command(short_help="Show aliases or add a mapping.")
-@click.argument('alias', required=False)
-@click.argument('mapping', required=False)
-@click.argument('backend', required=False)
+@cli.group(invoke_without_command=True)
 @click.pass_context
-def alias(ctx, alias, mapping, backend):
+def alias(ctx):
+    if ctx.invoked_subcommand is None:
+        ctx.forward(list_)
+
+
+@alias.command(name='list')
+@click.argument('search_string', required=False)
+@click.option('--reverse', '-r', default=False, is_flag=True,
+              help="If this flag is set, list (and search) mappings instead "
+                   "of aliases.")
+@click.option('--backend', '-b', help="Limit search to given backend.")
+@click.pass_context
+def list_(ctx, search_string, reverse, backend):
     """
-    \b
-    Usage: alias [alias]
-           alias [project_id]
-           alias [project_id/activity_id]
-           alias [alias] [project_id/activity_id] [backend]
-
-    * The first form will display the mappings whose aliases start with the
-      search string you entered
-
-    * The second form will display the mapping(s) you've defined for this
-      project and all of its activities
-
-    * The third form will display the mapping you've defined for this exact
-      project/activity tuple
-
-    * The last form will add a new alias in your configuration file
-
-    You can also run this command without any argument to view all your
-    mappings.
-
+    List configured aliases.
     """
-    if all([alias, backend]) and mapping is not None:
-        add_mapping(ctx, alias, mapping, backend)
-    elif alias:
-        show_mapping(ctx, alias)
+    if not reverse:
+        list_aliases(ctx, search_string, backend)
     else:
-        show_alias(ctx, alias)
+        show_mapping(ctx, search_string, backend)
+
+
+@alias.command()
+@click.argument('alias', required=True)
+@click.argument('mapping', required=True)
+@click.option('--backend', '-b', help="Add alias to given backend.")
+@click.pass_context
+def add(ctx, alias, mapping, backend):
+    """
+    Add a new alias to your configuration file.
+    """
+    if not backend:
+        backends_list = ctx.obj['settings'].get_backends()
+        if len(backends_list) > 1:
+            raise click.UsageError(
+                "You're using more than 1 backend. Please set the backend to "
+                "add the alias to with the --backend option (choices are %s)" %
+                ", ".join(dict(backends_list).keys())
+            )
+
+    add_mapping(ctx, alias, mapping, backend)
 
 
 def add_mapping(ctx, alias, mapping, backend):
@@ -70,22 +79,22 @@ def add_mapping(ctx, alias, mapping, backend):
     ctx.obj['view'].alias_added(alias, mapping.mapping)
 
 
-def show_mapping(ctx, mapping_str):
+def show_mapping(ctx, mapping_str, backend):
     mapping = Project.str_to_tuple(mapping_str)
 
-    if mapping is not None:
-        for alias, m in aliases_database.filter_from_mapping(mapping).items():
-            ctx.obj['view'].mapping_detail(
-                (alias, m),
-                ctx.obj['projects_db'].get(m.mapping[0], m.backend)
-                if m.mapping is not None else None
-            )
-    else:
-        show_alias(ctx, mapping_str)
+    if mapping is None:
+        return
+
+    for alias, m in aliases_database.filter_from_mapping(mapping, backend).items():
+        ctx.obj['view'].mapping_detail(
+            (alias, m),
+            ctx.obj['projects_db'].get(m.mapping[0], m.backend)
+            if m.mapping is not None else None
+        )
 
 
-def show_alias(ctx, alias):
-    for alias, m in aliases_database.filter_from_alias(alias).items():
+def list_aliases(ctx, search, backend):
+    for alias, m in aliases_database.filter_from_alias(search, backend).items():
         ctx.obj['view'].alias_detail(
             (alias, m),
             ctx.obj['projects_db'].get(m.mapping[0], m.backend)
