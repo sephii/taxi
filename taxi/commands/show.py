@@ -9,7 +9,7 @@ from .base import cli
 
 @cli.command(short_help="Resolve any object passed to it (aliases, projects, "
                         "etc).")
-@click.argument('search', nargs=-1)
+@click.argument('search', nargs=1)
 @click.pass_context
 def show(ctx, search):
     """
@@ -23,7 +23,6 @@ def show(ctx, search):
         - Project ids (123)
     """
     matches = {'aliases': [], 'mappings': [], 'projects': []}
-    search = (' '.join(search)).strip()
     projects_db = ctx.obj['projects_db']
 
     matches = get_alias_matches(search, matches)
