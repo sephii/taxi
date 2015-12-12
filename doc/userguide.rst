@@ -143,7 +143,7 @@ Then to add a local alias, either add it in the corresponding section in your
 
 Or use the ``alias`` command::
 
-    taxi alias _pingpong "" local
+    taxi alias add -b local _pingpong ""
 
 Getting help
 ~~~~~~~~~~~~
