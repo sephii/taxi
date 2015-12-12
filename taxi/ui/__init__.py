@@ -309,7 +309,7 @@ class BaseUi(object):
 
     def search_results(self, projects):
         for project in projects:
-            self.msg('%s %s %4s %s' % (
+            self.msg('%s [%s] %4s %s' % (
                 project.get_short_status(), project.backend, project.id,
                 project.name
             ))

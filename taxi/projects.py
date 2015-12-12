@@ -189,7 +189,7 @@ class ProjectsDb:
         self._projects_cache = None
         self._projects_by_id_cache = None
 
-    def search(self, search, active_only=False):
+    def search(self, search, active_only=False, backend=None):
         projects = self.get_projects()
         found_list = []
 
@@ -203,6 +203,9 @@ class ProjectsDb:
 
                 if not found:
                     break
+
+            found = found and (backend is None or project.backend ==
+                               backend)
 
             if found:
                 if not active_only or project.is_active():

@@ -18,8 +18,8 @@ def alias(ctx):
 @click.argument('search_string', required=False)
 @click.option('--reverse', '-r', default=False, is_flag=True,
               help="If this flag is set, list (and search) mappings instead "
-                   "of aliases")
-@click.option('--backend', '-b', help="Limit search to given backend")
+                   "of aliases.")
+@click.option('--backend', '-b', help="Limit search to given backend.")
 @click.pass_context
 def list_(ctx, search_string, reverse, backend):
     """
@@ -34,7 +34,7 @@ def list_(ctx, search_string, reverse, backend):
 @alias.command()
 @click.argument('alias', required=True)
 @click.argument('mapping', required=True)
-@click.option('--backend', '-b', help="Add alias to the given backend")
+@click.option('--backend', '-b', help="Add alias to given backend.")
 @click.pass_context
 def add(ctx, alias, mapping, backend):
     """
