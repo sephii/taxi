@@ -16,6 +16,9 @@ Changed
 * Respect the XDG Base Directory specification
   (http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html).
 * Fix help layout for ``alias`` command (#95).
+* Merge the ``search`` and ``add`` commands into the ``project`` command (#90).
+* Make the ``show`` command much more useful by allowing it to explore aliases,
+  project ids and mappings (#87).
 
 Removed
 -------
