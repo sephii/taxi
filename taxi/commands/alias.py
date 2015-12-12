@@ -7,19 +7,21 @@ from ..projects import Project
 from .base import cli
 
 
-@cli.group()
-def alias():
-    pass
+@cli.group(invoke_without_command=True)
+@click.pass_context
+def alias(ctx):
+    if ctx.invoked_subcommand is None:
+        ctx.forward(list_)
 
 
-@alias.command()
+@alias.command(name='list')
 @click.argument('search_string', required=False)
 @click.option('--reverse', '-r', default=False, is_flag=True,
               help="If this flag is set, list (and search) mappings instead "
                    "of aliases")
 @click.option('--backend', '-b', help="Limit search to given backend")
 @click.pass_context
-def list(ctx, search_string, reverse, backend):
+def list_(ctx, search_string, reverse, backend):
     """
     List configured aliases.
     """
