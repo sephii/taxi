@@ -7,10 +7,6 @@ from . import CommandTestCase, override_settings
 
 @override_settings()
 class ProjectCommandTestCase(CommandTestCase):
-    """
-    We can't test exact output in the tests because the aliases returned by the
-    `alias` command is a dict and thus is not ordered.
-    """
     def setUp(self):
         super(ProjectCommandTestCase, self).setUp()
         self.projects_db = ProjectsDb(self.taxi_dir)
