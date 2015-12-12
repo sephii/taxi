@@ -15,10 +15,7 @@ from .base import cli
 @click.pass_context
 def clean_aliases(ctx, force_yes):
     """
-    Usage: clean-aliases
-
     Removes aliases from your config file that point to inactive projects.
-
     """
     inactive_aliases = []
 

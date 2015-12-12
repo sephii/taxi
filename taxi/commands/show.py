@@ -13,7 +13,7 @@ from .base import cli
 @click.pass_context
 def show(ctx, search):
     """
-    Resolve any object passed to it (aliases, projects, etc).
+    Resolves any object passed to it (aliases, projects, etc).
 
     This will resolve the following:
 

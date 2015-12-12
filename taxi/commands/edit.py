@@ -15,14 +15,11 @@ from .base import cli, get_timesheet_collection_for_context
 @click.pass_context
 def edit(ctx, file_to_edit, previous_file):
     """
-    Usage: edit
-
     Opens your timesheet file in your favourite editor.
 
     The PREVIOUS_FILE argument can be used to specify which nth previous file
     to edit. A value of 1 will edit the previous file, 2 will edit the
     second-previous file, etc.
-
     """
     timesheet_collection = None
     autofill = not bool(file_to_edit) and previous_file == 0
