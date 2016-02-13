@@ -20,6 +20,8 @@ Changed
 * Merge the ``search`` and ``add`` commands into the ``project`` command (#90).
 * Make the ``show`` command much more useful by allowing it to explore aliases,
   project ids and mappings (#87).
+* Improve status output by using a specific color for entries that use
+  undefined mappings.
 
 Removed
 -------
