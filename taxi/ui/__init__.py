@@ -130,7 +130,7 @@ class BaseUi(object):
         (alias, mapping) = mapping
 
         # Handle local aliases
-        if mapping.mapping is None:
+        if not mapping.is_mapped():
             self.msg("[%s] %s -> not mapped" % (mapping.backend, alias))
             return
 
@@ -219,15 +219,16 @@ class BaseUi(object):
             status = 'inexistent alias'
         # alias is in the database
         else:
-            if aliases_database[entry.alias].mapping is None:
-                status = 'not mapped'
+            if not aliases_database[entry.alias].is_mapped():
+                status = ''
             else:
                 status = '%s/%s' % aliases_database[entry.alias].mapping
 
         try:
-            status = '%s, %s' % (
-                status,
-                aliases_database[entry.alias].backend
+            status_format = '{status}, {backend}' if status else '{backend}'
+            status = status_format.format(
+                status=status,
+                backend=aliases_database[entry.alias].backend
             )
         except (KeyError, AttributeError):
             pass
@@ -237,8 +238,16 @@ class BaseUi(object):
         else:
             project_name = entry.alias
 
-        return '%-30s %-5.2f %s' % (project_name, entry.hours,
-                                    entry.description)
+        foo = '{:>5.2f}'
+        # Put parentheses around internal aliases since they don't count in the
+        # hours total
+        if (entry.alias in aliases_database and
+                not aliases_database[entry.alias].is_mapped()):
+            foo = '(' + foo + ')'
+
+        return '{:<30}{:^7} {}'.format(
+            project_name, foo.format(entry.hours), entry.description
+        )
 
     def show_status(self, entries_dict):
         self.msg('Staging changes :\n')
@@ -253,28 +262,38 @@ class BaseUi(object):
             subtotal_hours = 0
             # The encoding of date.strftime output depends on the current
             # locale, so we decode it to get a unicode string
-            self.msg('# %s #' % date_utils.unicode_strftime(
-                date, '%A %d %B').capitalize())
-            for entry in entries:
-                self.msg(self.get_entry_status(entry))
+            current_date = date_utils.unicode_strftime(date, '%A %d %B').capitalize()
 
+            self.msg(click.style(
+                '%s\n' % (current_date),
+                bold=True
+            ))
+            for entry in entries:
                 if (not entry.is_ignored() and entry.alias not in
                         aliases_database):
+                    self.msg(click.style(
+                        self.get_entry_status(entry), fg='yellow'
+                    ))
+
                     close_matches = aliases_database.get_close_matches(
                         entry.alias
                     )
                     if close_matches:
-                        self.msg('\tDid you mean one of the following: %s?' %
-                                 ', '.join(close_matches))
+                        self.msg(click.style(
+                            '\tDid you mean one of the following: %s?' %
+                            ', '.join(close_matches), fg='yellow'
+                        ))
+                else:
+                    self.msg(self.get_entry_status(entry))
 
                 if (entry.alias not in aliases_database or
                         aliases_database[entry.alias].mapping is not None):
                     subtotal_hours += entry.hours or 0
 
-            self.msg('%-29s %5.2f\n' % ('', subtotal_hours))
+            self.msg('{}{:^7}\n'.format(' ' * 30, '{:5.2f}'.format(subtotal_hours)))
             total_hours += subtotal_hours
 
-        self.msg('%-29s %5.2f' % ('Total', total_hours))
+        self.msg('{:<30}{:^7}'.format('Total', '{:5.2f}'.format(total_hours)))
         self.msg('\nUse `taxi ci` to commit staging changes to the server')
 
     def pushed_entry(self, entry):
@@ -395,7 +414,7 @@ class BaseUi(object):
         matches_str = []
 
         for alias in matches['aliases']:
-            if alias.mapping is None:
+            if not alias.is_mapped():
                 matches_str.append("a local alias")
             else:
                 activity_str = mapping_to_activity_name(alias)

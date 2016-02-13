@@ -41,8 +41,8 @@ _pingpong 0800-0900 Play ping-pong
 """)
         stdout = self.run_command('status')
 
-        self.assertIn(
-            "_pingpong (not mapped, local)  1.00  Play ping-pong",
+        self.assertLineIn(
+            "_pingpong (local)  (1.00)  Play ping-pong",
             stdout
         )
 
@@ -58,12 +58,12 @@ _coffee 0900-1000 Drink some coffee
 """)
 
         stdout = self.run_command('status')
-        self.assertIn(
-            "_pingpong (not mapped, local)  1.00  Play ping-pong",
+        self.assertLineIn(
+            "_pingpong (local)  (1.00)  Play ping-pong",
             stdout
         )
-        self.assertIn(
-            "_coffee (not mapped, local)    1.00  Drink some coffee",
+        self.assertLineIn(
+            "_coffee (local)    (1.00)  Drink some coffee",
             stdout
         )
 
@@ -75,7 +75,7 @@ alias_1 1200-1300 Play ping-pong
 """)
 
         stdout = self.run_command('status')
-        self.assertIn(
+        self.assertLineIn(
             "alias_1 (123/456, test)        2.00  Play ping-pong",
             stdout
         )
@@ -87,7 +87,7 @@ unmapped? 0800-0900 Play ping-pong
 """)
 
         stdout = self.run_command('status')
-        self.assertIn(
+        self.assertLineIn(
             "unmapped (ignored)             1.00  Play ping-pong",
             stdout
         )
@@ -101,7 +101,7 @@ alias_1 1200-1300 Play ping-pong
 """)
 
         stdout = self.run_command('status')
-        self.assertIn(
+        self.assertLineIn(
             "alias_1 (123/456, test)        1.00  Play ping-pong",
             stdout
         )
