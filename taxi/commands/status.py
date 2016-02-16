@@ -12,8 +12,9 @@ from .types import DateRange
               help="Only show entries of the given date.")
 @click.option('-f', '--file', 'f', type=click.Path(dir_okay=False),
               help="Path to the entries file to use.")
+@click.option('--pushed', is_flag=True, help="Include pushed entries.")
 @click.pass_context
-def status(ctx, date, f):
+def status(ctx, date, f, pushed):
     """
     Shows the summary of what's going to be committed to the server.
     """
@@ -24,6 +25,7 @@ def status(ctx, date, f):
     else:
         ctx.obj['view'].show_status(
             timesheet_collection.get_entries(
-                date, regroup=ctx.obj['settings']['regroup_entries']
+                date, regroup=ctx.obj['settings']['regroup_entries'],
+                exclude_pushed=not pushed
             )
         )

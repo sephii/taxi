@@ -209,7 +209,7 @@ class BaseUi(object):
             self.msg(date_utils.unicode_strftime(date, '%A %d %B'))
 
             for entry in entries:
-                self.msg(six.text_type(entry))
+                self.msg(self.entry_to_str(entry))
 
         return click.confirm("\nAre you sure you want to continue?")
 
@@ -237,28 +237,13 @@ class BaseUi(object):
         ), bold=True, fg='red'))
 
     def get_entry_status(self, entry):
-        if entry.is_ignored():
-            status = 'ignored'
-        elif entry.alias not in aliases_database:
-            status = 'inexistent alias'
-        # alias is in the database
-        else:
-            if not aliases_database[entry.alias].is_mapped():
-                status = ''
-            else:
-                status = '%s/%s' % aliases_database[entry.alias].mapping
+        status = [flag for flag in entry.flags]
 
-        try:
-            status_format = '{status}, {backend}' if status else '{backend}'
-            status = status_format.format(
-                status=status,
-                backend=aliases_database[entry.alias].backend
-            )
-        except (KeyError, AttributeError):
-            pass
+        if entry.alias not in aliases_database:
+            status.append('inexistent alias')
 
         if status:
-            project_name = '%s (%s)' % (entry.alias, status)
+            project_name = '%s (%s)' % (entry.alias, ', '.join(status))
         else:
             project_name = entry.alias
 
@@ -304,7 +289,7 @@ class BaseUi(object):
                 bold=True
             ))
             for entry in entries:
-                if (not entry.is_ignored() and entry.alias not in
+                if (not entry.ignored and entry.alias not in
                         aliases_database):
                     self.msg(click.style(
                         self.get_entry_status(entry), fg='yellow'
@@ -343,6 +328,14 @@ class BaseUi(object):
             ), fg='red', bold=True))
         else:
             self.msg(self.get_entry_status(entry))
+
+    def entry_to_str(self, entry):
+        if entry.ignored:
+            alias = u'%s (ignored)' % entry.alias
+        else:
+            alias = entry.alias
+
+        return '%-30s %-5.2f %s' % (alias, entry.hours, entry.description)
 
     def pushed_entries_summary(self, entries, ignored_entries):
         backends_total = defaultdict(int)

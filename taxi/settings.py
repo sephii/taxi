@@ -93,6 +93,10 @@ class Settings(object):
             'file': StringSetting(default='~/zebra/%Y/%m/%d.tks'),
             'editor': StringSetting(),
             'regroup_entries': BooleanSetting(default=True),
+        },
+        'flags': {
+            'ignored': StringSetting(default='?'),
+            'pushed': StringSetting(default='='),
         }
     }
 
@@ -125,7 +129,7 @@ class Settings(object):
                         "Value %s is not allowed for setting %s:%s" %
                         (value, section, key)
                     )
-                except configparser.NoOptionError:
+                except (configparser.NoOptionError, configparser.NoSectionError):
                     pass
 
     def __getitem__(self, key):
@@ -265,6 +269,12 @@ class Settings(object):
             file_path = file_expand_date(file_path)
 
         return file_path
+
+    def get_flags(self):
+        return {flag: value.value for flag, value in self._settings['flags'].items()}
+
+    def get_add_to_bottom(self):
+        return {'auto': None, 'bottom': True, 'top': False}.get(self.get('auto_add'), None)
 
 
 def get_alias_section_name(backend_name, shared_section=False):

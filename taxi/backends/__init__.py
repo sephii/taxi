@@ -12,11 +12,14 @@ class BaseBackend(object):
     All Taxi backends should inherit from the :class:`BaseBackend` class.
     Backends are usually constructed from a URL in the form
     `<backend_name>://<username>:<password>@<hostname>:<port><path>?<options>`.
-    The information you get in the :meth:`__init__` method will be already
-    parsed so you don't need to do the parsing yourself. The ``options``
+    The :class:`~taxi.backends.registry.BackendRegistry` takes care of the
+    parsing and the instanciation of the backend objects. The `options`
     parameter is a dictionary constructed from the backend URL querystring.
     """
     def __init__(self, username, password, hostname, port, path, options):
+        """
+        Construct the backend.
+        """
         self.username = username
         self.password = password
         self.hostname = hostname
@@ -27,8 +30,8 @@ class BaseBackend(object):
     def push_entry(self, date, entry):
         """
         Called when an entry should be pushed to the backend. `date` is a
-        :func:`datetime.date` object. `entry` is a
-        :class:`taxi.timesheet.entry.TimesheetEntry` object.
+        :class:`datetime.date` object. `entry` is a
+        :class:`~taxi.timesheet.entry.TimesheetEntry` object.
 
         If the push fails, this method should raise a :class:`PushEntryFailed`
         exception.
@@ -38,7 +41,7 @@ class BaseBackend(object):
     def get_projects(self):
         """
         Return a list of projects and activities. These will be then stored for
-        further use. The list should contain :class:`taxi.projects.Project`
+        further use. The list should contain :class:`~taxi.projects.Project`
         objects.
         """
         return []

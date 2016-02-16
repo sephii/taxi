@@ -13,14 +13,17 @@ class BackendRegistry(object):
     the backends and provides a way to easily get backends via a dict-like
     interface.
 
-    The backend registry should be initialized via :py:meth:`populate`. The
-    list of available backends is automatically discovered by checking the
-    `taxi.backends` entry points.
+    The backend registry should be initialized via :meth:`populate`. The list
+    of available backends is automatically discovered by checking the
+    ``taxi.backends`` entry points.
 
-    Once populated, backends can be loaded and retrieved with the following
-    syntax:
+    Once populated, backend objects can be loaded and retrieved using a
+    dict-like syntax::
 
-        backends_registry['backend_name']
+        my_backend = backends_registry['backend_name']
+
+        # Fetch the projects list from the loaded backend
+        my_backend.get_projects()
     """
     def __init__(self):
         self._entry_points = {}
@@ -57,17 +60,16 @@ class BackendRegistry(object):
     def populate(self, backends):
         """
         Iterate over the given backends list and instantiate every backend
-        found. Can raise :py:exc:`BackendNotFoundException` if a backend
+        found. Can raise :exc:`BackendNotFoundError` if a backend
         could not be found in the registered entry points.
 
         The `backends` parameter should be a dict with backend names as keys
-        and URIs as values. For details about the URIs or the way backends are
-        loaded, see the :py:meth:`load_backend` method.
+        and URIs as values.
         """
         for name, uri in backends.items():
-            self._backends_registry[name] = self.load_backend(uri)
+            self._backends_registry[name] = self._load_backend(uri)
 
-    def load_backend(self, backend_uri):
+    def _load_backend(self, backend_uri):
         """
         Return the instantiated backend object identified by the given
         `backend_uri`.

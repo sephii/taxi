@@ -5,18 +5,15 @@ Changelog
 Unreleased (xxx-xx-xx)
 ======================
 
+4.2.0 (unreleased)
+==================
+
 Changed
 -------
 
 * Fix installation script on OS X when Python 3 is available (#104).
+* Add support for flags: pushed lines are no longer commented.
 
-4.2.0 (2016-05-25)
-==================
-
-Added
------
-
-* Add installer script and plugin management commands.
 
 4.1.0 (2016-03-09)
 ==================

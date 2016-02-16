@@ -1,302 +1,314 @@
-from __future__ import unicode_literals
-
 import datetime
 import re
 
 import six
 
-from ..exceptions import TaxiException
-from ..utils import date as date_utils
+from taxi.exceptions import TaxiException
+from taxi.utils import date as date_utils
+
+from .lines import DateLine, EntryLine, TextLine
 
 
-@six.python_2_unicode_compatible
-class TextLine(object):
+def create_time_from_text(text):
     """
-    The TextLine is either a blank line or a comment line.
+    Parse a time in the form ``hh:mm`` or ``hhmm`` (or even ``hmm``) and return a :class:`datetime.time` object. If no
+    valid time can be extracted from the given string, :exc:`ValueError` will be raised.
     """
-    def __init__(self, text):
-        self._text = text
+    text = text.replace(':', '')
 
-    def __str__(self):
-        return self.text
+    if not re.match('^\d{3,}$', text):
+        raise ValueError("Time must be numeric")
 
-    def __repr__(self):
-        return '"%s"' % str(self.text)
+    minutes = int(text[-2:])
+    hours = int(text[0:2] if len(text) > 3 else text[0])
 
-    @property
-    def text(self):
-        return self._text
-
-    @text.setter
-    def text(self, value):
-        self._text = value
+    return datetime.time(hours, minutes)
 
 
-class EntryLine(TextLine):
+def is_top_down(lines):
     """
-    The EntryLine is a line representing a timesheet entry, with an alias, a
-    duration and a description. The text attribute allows to keep the original
-    formatting of the duration as long as the entry is not changed.
+    Return `True` if dates in the given lines go in an ascending order, or `False` if they go in a descending order. If
+    no order can be determined, return `None`. The given `lines` must be a list of lines, ie.
+    :class:`~taxi.timesheet.lines.TextLine`, :class:`taxi.timesheet.lines.EntryLine` or
+    :class:`~taxi.timesheet.lines.DateLine`.
     """
-    def __init__(self, alias, duration, description, text=None, ignored=False):
-        self._alias = alias
-        self.duration = duration
-        self.description = description
-        self.formatting = None
+    date_lines = [
+        line for line in lines if isinstance(line, DateLine)
+    ]
 
-        # These should normally be always set to False, but can be changed
-        # later
-        self.commented = False
-        self.ignored = ignored
+    if len(date_lines) < 2 or date_lines[0].date == date_lines[1].date:
+        return None
+    else:
+        return date_lines[1].date > date_lines[0].date
 
-        if text is not None:
-            self._text = text
 
-    def __setattr__(self, name, value):
-        super(EntryLine, self).__setattr__(name, value)
+def trim(lines):
+    """
+    Remove lines at the start and at the end of the given `lines` that are :class:`~taxi.timesheet.lines.TextLine`
+    instances and don't have any text.
+    """
+    trim_top = None
+    trim_bottom = None
+    _lines = lines[:]
 
-        if name != '_text':
-            self._text = None
-
-    def generate_text(self):
-        """
-        Return a textual representation of the line.
-
-        An effort is made to preserve the original formatting of the line since
-        some OCD people like to have perfectly aligned timesheets.
-        """
-        formatting = self.formatting
-
-        if not formatting:
-            formatting = {
-                'width': (None, None),
-                'time_format': '%H:%M',
-                'spacer': (' ', ' ')
-            }
-
-        if isinstance(self.duration, tuple):
-            start = (self.duration[0].strftime(formatting['time_format'])
-                     if self.duration[0] is not None
-                     else '')
-
-            end = (self.duration[1].strftime(formatting['time_format'])
-                   if self.duration[1] is not None
-                   else '?')
-
-            duration = '%s-%s' % (start, end)
+    for (lineno, line) in enumerate(_lines):
+        if type(line) == TextLine and not line.text.strip():
+            trim_top = lineno
         else:
-            # Remove '.0' if the number doesn't have a decimal part
-            duration = str(self.duration).rstrip('0').rstrip('.')
+            break
 
-        commented_prefix = '# ' if self.commented else ''
-        alias = '%s?' % self.alias if self.ignored else self.alias
-
-        padding1 = (1 if formatting['width'][0] is None
-                    else max(1, formatting['width'][0] - len(alias)))
-        padding2 = (1 if formatting['width'][1] is None
-                    else max(1, formatting['width'][1] - len(duration)))
-
-        text = ('{commented}{alias}{padding1}{duration}{padding2}'
-                '{description}'.format(
-                    commented=commented_prefix,
-                    alias=alias,
-                    padding1=formatting['spacer'][0] * padding1,
-                    duration=duration,
-                    description=self.description,
-                    padding2=formatting['spacer'][1] * padding2))
-
-        return text
-
-    @property
-    def text(self):
-        if self._text is not None:
-            return self._text
+    for (lineno, line) in enumerate(reversed(_lines)):
+        if type(line) == TextLine and not line.text.strip():
+            trim_bottom = lineno
         else:
-            return self.generate_text()
+            break
 
-    @property
-    def alias(self):
-        return self._alias.replace('?', '')
+    if trim_top is not None:
+        _lines = _lines[trim_top + 1:]
 
-    @alias.setter
-    def alias(self, value):
-        self._alias = value
+    if trim_bottom is not None:
+        trim_bottom = len(_lines) - trim_bottom - 1
+        _lines = _lines[:trim_bottom]
 
-
-class DateLine(TextLine):
-    def __init__(self, date, text=None, date_format='%d.%m.%Y'):
-        self.date = date
-
-        if text is not None:
-            self.text = text
-        else:
-            self.text = date_utils.unicode_strftime(self.date, date_format)
+    return _lines
 
 
 class TimesheetParser(object):
     """
-    Parse a string and transform it into a list of parsed lines (date line,
-    entry line, text line). The basic structure is as follows:
-
-    Date line: <date>, where `date` is formatted as dd.mm.yyyy (the `.`
-    separator can be replaced by any non-word character)
-    Entry line: <alias> <duration> <description>, where `duration` can either
-    be expressed as a float/int to mean hours or as a time range (eg.
-    `09:00-09:30`, the `:` separator being optional)
-    Comment line: any line starting with `#` will be ignored
-
-    For the parsed string to be a valid timesheet, any entry line needs to
-    be preceded by at least a date line.
+    The parser takes care of the textual representation of the different line types (dates and entries).
     """
-    time_match_re = re.compile(
-        r'(?:(\d{1,2}):?(\d{1,2}))?-(?:(?:(\d{1,2}):?(\d{1,2}))|\?)'
+    # Regular expression to match entry lines. This will capture the following groups: flags, spacing1, alias,
+    # spacing2, time, start_time, end_time, duration, spacing3, description. Spacings are captured so that indentation
+    # can be preserved when reformatting lines
+    ENTRY_LINE_REGEXP = re.compile(
+        r"^(?:(?P<flags>.+?)(?P<spacing1>\s+))?"
+        r"(?P<alias>[?\w_-]+)(?P<spacing2>\s+)"
+        r"(?P<time>(?:(?P<start_time>(?:\d{1,2}):?(?:\d{1,2}))?-(?P<end_time>(?:(?:\d{1,2}):?(?:\d{1,2}))|\?))|"
+        r"(?P<duration>\d+(?:\.\d+)?))(?P<spacing3>\s+)"
+        r"(?P<description>.+)$"
     )
-    date_match_re = re.compile(r'(\d{1,2})\D(\d{1,2})\D(\d{4}|\d{2})')
-    us_date_match_re = re.compile(r'(\d{4})\D(\d{1,2})\D(\d{1,2})')
-    formatting_match_re = re.compile(r'([^\s]+\s+)([^\s]+\s+)')
+    # Regular expressions to match date lines
+    DATE_LINE_REGEXP = re.compile(r'(\d{1,2})\D(\d{1,2})\D(\d{4}|\d{2})')
+    US_DATE_LINE_REGEXP = re.compile(r'(\d{4})\D(\d{1,2})\D(\d{1,2})')
 
-    @classmethod
-    def parse(cls, text):
-        text = text.strip()
-        lines_parser = cls.parser(text.splitlines())
+    # Position of the different attributes in an entry line. An entry line is:
+    # <0: flags><1: spacing1><2: alias><3: spacing2><4: duration><5: spacing3><6: description>
+    ENTRY_ATTRS_POSITION = {
+        0: 'flags',
+        2: 'alias',
+        4: 'duration',
+        6: 'description',
+    }
+    # Methods to call to transform a field to text. Fields that are not in this dict won't be transformed for their
+    # representation
+    ENTRY_ATTRS_TRANSFORMERS = {
+        'flags': 'flags_to_text',
+        'duration': 'duration_to_text',
+    }
+    # Format to use to output entry duration
+    ENTRY_DURATION_FORMAT = '%H:%M'
+    # Default representation of flags
+    ENTRY_FLAGS_REPR = {
+        EntryLine.FLAG_IGNORED: '?',
+        EntryLine.FLAG_PUSHED: '=',
+    }
+    # Methods to call to transform a line instance to its textual representation. These methods will take a single
+    # argument, the instance of the line to be transformed
+    ENTRY_TRANSFORMERS = {
+        DateLine: 'date_line_to_text',
+        TextLine: 'text_line_to_text',
+        EntryLine: 'entry_line_to_text',
+    }
 
-        return [line for line in lines_parser]
+    def __init__(self, flags_repr=None, add_date_to_bottom=None, date_format='%d.%m.%Y'):
+        """
+        If `flags_repr` is set, it must be a :class:`dict` where keys are supported flags from
+        :class:`~taxi.timesheet.lines.EntryLine` and the values are a single characters that are unique among all the
+        flags.
 
-    @classmethod
-    def parser(cls, lines):
-        current_date = None
+        If `add_date_to_bottom` is set, it will define whether new dates should be added to the bottom (`True`) or to
+        the top (`False`) of the lines. If it's set to `None`, it means the direction detection will be automatic based
+        on the existing lines.
 
-        for (lineno, line) in enumerate(lines, 1):
-            line = line.strip()
+        `date_format` is the output date format when transforming the lines to text. This should be a format supported
+        by :py:obj:`datetime.date.strftime`:
+        """
+        self.flags_repr = flags_repr or self.ENTRY_FLAGS_REPR
+        self.add_date_to_bottom = add_date_to_bottom
+        self.date_format = date_format
 
-            try:
-                if len(line) == 0 or line.startswith('#'):
-                    yield TextLine(line)
+    def flags_to_text(self, flags):
+        """
+        Return the textual representation of the given flags. See :attr:`ENTRY_FLAGS_REPR` for the list of flags.
+        """
+        return ''.join([self.flags_repr[flag] for flag in flags])
+
+    def duration_to_text(self, duration):
+        """
+        Return the textual representation of the given `duration`. The duration can either be a tuple of
+        :class:`datetime.time` objects, or a simple number. The returned text will be either a hhmm-hhmm string (if the
+        given `duration` is a tuple) or a number.
+        """
+        if isinstance(duration, tuple):
+            start = (duration[0].strftime(self.ENTRY_DURATION_FORMAT)
+                     if duration[0] is not None
+                     else '')
+
+            end = (duration[1].strftime(self.ENTRY_DURATION_FORMAT)
+                   if duration[1] is not None
+                   else '?')
+
+            duration = '%s-%s' % (start, end)
+        else:
+            duration = six.text_type(duration)
+
+        return duration
+
+    def to_text(self, line):
+        """
+        Return the textual representation of the given `line`.
+        """
+        return getattr(self, self.ENTRY_TRANSFORMERS[line.__class__])(line)
+
+    def date_line_to_text(self, date_line):
+        """
+        Return the textual representation of the given :class:`~taxi.timesheet.lines.DateLine` instance. The date
+        format is set by the `date_format` parameter given when instanciating the parser instance.
+        """
+        # Changing the date in a dateline is not supported yet, but if it gets implemented someday this will need to be
+        # changed
+        if date_line.text is not None:
+            return date_line.text
+        else:
+            return date_utils.unicode_strftime(date_line.date, self.date_format)
+
+    def text_line_to_text(self, text_line):
+        """
+        This... well... transforms text to... text.
+        """
+        return text_line.text
+
+    def entry_line_to_text(self, entry):
+        """
+        Return the textual representation of an :class:`~taxi.timesheet.lines.EntryLine` instance. This method is a bit
+        convoluted since we don't want to completely mess up the original formatting of the entry.
+        """
+        line = []
+
+        # The entry is new, it didn't come from an existing line, so let's just return a simple text representation of
+        # it
+        if not entry._text:
+            flags_text = self.flags_to_text(entry.flags)
+            duration_text = self.duration_to_text(entry.duration)
+
+            return ''.join(
+                (flags_text, ' ' if flags_text else '', entry.alias, ' ', duration_text, ' ', entry.description)
+            )
+
+        for i, text in enumerate(entry._text):
+            # If this field is mapped to an attribute, check if it has changed
+            # and, if so, regenerate its text. The only fields that are not
+            # mapped to attributes are spacing fields
+            if i in self.ENTRY_ATTRS_POSITION:
+                if self.ENTRY_ATTRS_POSITION[i] in entry._changed_attrs:
+                    attr_name = self.ENTRY_ATTRS_POSITION[i]
+                    attr_value = getattr(entry, self.ENTRY_ATTRS_POSITION[i])
+
+                    # Some attributes need to be transformed to their textual representation, such as flags or duration
+                    if attr_name in self.ENTRY_ATTRS_TRANSFORMERS:
+                        attr_value = getattr(self, self.ENTRY_ATTRS_TRANSFORMERS[attr_name])(attr_value)
                 else:
-                    try:
-                        date = cls.extract_date(line)
-                    except ValueError:
-                        if current_date is None:
-                            raise ParseError("Entries must be defined inside a"
-                                             " date section")
+                    attr_value = text
 
-                        yield cls.parse_entry_line(line)
-                    else:
-                        current_date = date
-                        yield DateLine(date, line)
-            except ParseError as e:
-                e.line_number = lineno
-                e.line = line
-                raise
+                line.append(attr_value)
+            else:
+                # If the length of the field has changed, do whatever we can to keep the current formatting (ie. number
+                # of whitespaces)
+                if len(line[i-1]) != len(entry._text[i-1]):
+                    text = ' ' * max(1, (len(text) - (len(line[i-1]) - len(entry._text[i-1]))))
 
-    @classmethod
-    def parse_entry_line(cls, line):
-        split_line = cls.split_line(line)
+                line.append(text)
 
-        alias = split_line[0].replace('?', '')
-        time = cls.parse_time(split_line[1])
-        description = split_line[2]
-        formatting = cls.detect_formatting(line)
+        return ''.join(line).strip()
 
-        ignored = split_line[0].endswith('?') or split_line[0].startswith('?')
+    def create_entry_line_from_text(self, text):
+        """
+        Try to parse the given text line and extract and entry. Return an :class:`~taxi.timesheet.lines.EntryLine`
+        object if parsing is successful, otherwise raise :class:`ParseError`.
+        """
+        split_line = re.match(self.ENTRY_LINE_REGEXP, text)
 
-        entry_line = EntryLine(alias, time, description, line, ignored)
-        entry_line.formatting = formatting
+        if not split_line:
+            raise ParseError("Line must have an alias, a duration and a description")
+
+        alias = split_line.group('alias')
+        start_time = end_time = None
+
+        if split_line.group('start_time') is not None:
+            if split_line.group('start_time'):
+                try:
+                    start_time = create_time_from_text(split_line.group('start_time'))
+                except ValueError:
+                    raise ParseError("Duration must be in format hh:mm or hhmm")
+            else:
+                start_time = None
+
+        if split_line.group('end_time') is not None:
+            if split_line.group('end_time') == '?':
+                end_time = None
+            else:
+                end_time = create_time_from_text(split_line.group('end_time'))
+
+        if start_time or end_time:
+            duration = (start_time, end_time)
+
+        if split_line.group('duration') is not None:
+            duration = float(split_line.group('duration'))
+
+        description = split_line.group('description')
+
+        # Parse and set line flags
+        if split_line.group('flags'):
+            try:
+                flags = self.extract_flags_from_text(split_line.group('flags'))
+            # extract_flags_from_text will raise `KeyError` if one of the flags is not recognized
+            except KeyError as e:
+                raise ParseError(*e.args)
+        else:
+            flags = set()
+
+        line = (
+            split_line.group('flags') or '',
+            split_line.group('spacing1') or '',
+            split_line.group('alias'),
+            split_line.group('spacing2'),
+            split_line.group('time'),
+            split_line.group('spacing3'),
+            split_line.group('description'),
+        )
+
+        entry_line = EntryLine(alias, duration, description, flags=flags, text=line)
 
         return entry_line
 
-    @staticmethod
-    def split_line(line):
-        split_line = line.split(None, 2)
-
-        if len(split_line) != 3:
-            raise ParseError("Couldn't split line into 3 chunks")
-
-        return split_line
-
-    @classmethod
-    def detect_formatting(cls, line):
+    def create_date_from_text(self, text):
         """
-        Extract the width (= number of columns) of the different components of
-        the line as well as the time format. The returned data is a dictionary
-        with 3 values, 'width' containing a 2-items tuple representing the
-        width of the two first components of the line (alias and duration),
-        'time_format' containing the format of the time as a string usable by
-        strftime and 'spacer' containing a 2-items tuple representing the space
-        format used for the two first components (either a space or a
-        tabulation)
+        Parse a text in the form dd/mm/yyyy, dd/mm/yy or yyyy/mm/dd and return a corresponding :class:`datetime.date`
+        object. If no date can be extracted from the given text, a :exc:`ValueError` will be raised.
         """
-        components = re.match(cls.formatting_match_re, line)
-        split_line = cls.split_line(line)
-
-        if components and len(components.groups()) == 2:
-            width = tuple(len(separator) for separator in components.groups())
-            spacer = tuple('\t' if separator[-1] == '\t' else ' '
-                           for separator in components.groups())
-        else:
-            return None
-
-        time_format = '%H:%M' if ':' in split_line[1] else '%H%M'
-
-        return {
-            'width': width,
-            'time_format': time_format,
-            'spacer': spacer
-        }
-
-    @classmethod
-    def parse_time(cls, str_time):
-        time = re.match(cls.time_match_re, str_time)
-        time_end = None
-
-        # HH:mm-HH:mm syntax found
-        if time is not None:
-            try:
-                # -HH:mm syntax found
-                if time.group(1) is None and time.group(2) is None:
-                    if time.group(3) is not None and time.group(4) is not None:
-                        time_end = datetime.time(
-                            int(time.group(3)), int(time.group(4))
-                        )
-
-                    total_hours = (None, time_end)
-                else:
-                    time_start = datetime.time(
-                        int(time.group(1)), int(time.group(2))
-                    )
-                    if time.group(3) is not None and time.group(4) is not None:
-                        time_end = datetime.time(
-                            int(time.group(3)), int(time.group(4))
-                        )
-                    total_hours = (time_start, time_end)
-            except ValueError as e:
-                raise ParseError(str(e))
-        else:
-            try:
-                total_hours = float(str_time)
-            except ValueError:
-                raise ParseError("The duration must be a float number or a "
-                                 "HH:mm string")
-
-        return total_hours
-
-    @classmethod
-    def extract_date(cls, line):
         # Try to match dd/mm/yyyy format
-        date_matches = re.match(cls.date_match_re, line)
+        date_matches = re.match(self.DATE_LINE_REGEXP, text)
 
         # If no match, try with yyyy/mm/dd format
         if date_matches is None:
-            date_matches = re.match(cls.us_date_match_re, line)
+            date_matches = re.match(self.US_DATE_LINE_REGEXP, text)
 
         if date_matches is None:
             raise ValueError("No date could be extracted from the given value")
 
         # yyyy/mm/dd
         if len(date_matches.group(1)) == 4:
-            return datetime.date(int(date_matches.group(1)),
-                                 int(date_matches.group(2)),
-                                 int(date_matches.group(3)))
+            return datetime.date(int(date_matches.group(1)), int(date_matches.group(2)), int(date_matches.group(3)))
 
         # dd/mm/yy
         if len(date_matches.group(3)) == 2:
@@ -307,8 +319,96 @@ class TimesheetParser(object):
         else:
             year = int(date_matches.group(3))
 
-        return datetime.date(year, int(date_matches.group(2)),
-                             int(date_matches.group(1)))
+        return datetime.date(year, int(date_matches.group(2)), int(date_matches.group(1)))
+
+    def extract_flags_from_text(self, text):
+        """
+        Extract the flags from the given text and return a :class:`set` of flag values. See
+        :class:`~taxi.timesheet.lines.EntryLine` for a list of existing flags.
+        """
+        flags = set()
+        reversed_flags_repr = {v: k for k, v in self.flags_repr.items()}
+        for flag_repr in text:
+            if flag_repr not in reversed_flags_repr:
+                raise KeyError("Flag '%s' is not recognized" % flag_repr)
+            else:
+                flags.add(reversed_flags_repr[flag_repr])
+
+        return flags
+
+    def parse_text(self, text):
+        """
+        Parse the given text and return a list of :class:`~taxi.timesheet.lines.DateLine`,
+        :class:`~taxi.timesheet.lines.EntryLine`, and :class:`~taxi.timesheet.lines.TextLine` objects. If there's an
+        error during parsing, a :exc:`ParseError` will be raised.
+        """
+        text = text.strip()
+        lines = text.splitlines()
+        parsed_lines = []
+        encountered_date = False
+
+        for (lineno, line) in enumerate(lines, 1):
+            try:
+                parsed_line = self.parse_line(line)
+
+                if isinstance(parsed_line, DateLine):
+                    encountered_date = True
+                elif isinstance(parsed_line, EntryLine) and not encountered_date:
+                    raise ParseError("Entries must be defined inside a date section")
+            except ParseError as e:
+                # Update exception with some more information
+                e.line_number = lineno
+                e.line = line
+                raise
+            else:
+                parsed_lines.append(parsed_line)
+
+        return parsed_lines
+
+    def parse_line(self, text):
+        """
+        Parse the given `text` and return either a :class:`~taxi.timesheet.lines.DateLine`, an
+        :class:`~taxi.timesheet.lines.EntryLine`, or a :class:`~taxi.timesheet.lines.TextLine`, or raise
+        :exc:`ParseError` if the line can't be parser. See the transformation methods :meth:`create_date_from_text` and
+        :meth:`create_entry_line_from_text` for details about the format the line is expected to have.
+        """
+        text = text.strip().replace('\t', ' ' * 4)
+
+        # The logic is: if the line starts with a #, consider it's a comment (TextLine), otherwise try to parse it as a
+        # date and if this fails, try to parse it as an entry. If this fails too, the line is not valid
+        if len(text) == 0 or text.startswith('#'):
+            parsed_line = TextLine(text)
+        else:
+            try:
+                date = self.create_date_from_text(text)
+            except ValueError:
+                parsed_line = self.create_entry_line_from_text(text)
+            else:
+                parsed_line = DateLine(date, text)
+
+        return parsed_line
+
+    def add_date(self, date, lines):
+        """
+        Return the given `lines` with the `date` added in the right place (ie. to the beginning or to the end of the
+        given lines, depending on the `add_date_to_bottom` property).
+        """
+        _lines = lines[:]
+        _lines = trim(_lines)
+
+        if self.add_date_to_bottom is None:
+            add_date_to_bottom = is_top_down(lines)
+        else:
+            add_date_to_bottom = self.add_date_to_bottom
+
+        if add_date_to_bottom:
+            _lines.append(TextLine(''))
+            _lines.append(DateLine(date))
+        else:
+            _lines.insert(0, TextLine(''))
+            _lines.insert(0, DateLine(date))
+
+        return trim(_lines)
 
 
 @six.python_2_unicode_compatible
