@@ -6,6 +6,7 @@ import sys
 
 import click
 import six
+from appdirs import AppDirs
 
 from .types import ExpandedPath, Hostname
 from ..aliases import aliases_database
@@ -16,6 +17,8 @@ from ..timesheet.utils import get_timesheet_collection
 from ..ui.tty import TtyUi
 from .. import __version__
 
+
+xdg_dirs = AppDirs("taxi", "sephii")
 
 # Disable click 5.0 unicode_literals warnings. See
 # http://click.pocoo.org/5/python3/
@@ -28,18 +31,15 @@ def get_timesheet_collection_for_context(ctx, entries_file=None):
 
     return get_timesheet_collection(
         entries_file,
-        int(ctx.obj['settings'].get('nb_previous_files')),
-        ctx.obj['settings'].get('date_format'),
-        ctx.obj['settings'].get('auto_add')
+        ctx.obj['settings']['nb_previous_files'],
+        ctx.obj['settings']['date_format'],
+        ctx.obj['settings']['auto_add']
     )
 
 
-def populate_aliases(aliases, local_aliases):
+def populate_aliases(aliases):
     aliases_database.reset()
     aliases_database.update(aliases)
-
-    for alias in local_aliases:
-        aliases_database.local_aliases.add(alias)
 
 
 def populate_backends(backends):
@@ -101,11 +101,25 @@ def create_config_file(filename):
                 "timesheets.example.com)", type=Hostname()
             )
             templated_config = config.format(**context)
+
+            directory = os.path.dirname(filename)
+            if not os.path.exists(directory):
+                os.makedirs(directory)
+
             with open(filename, 'w') as f:
                 f.write(templated_config)
         else:
             print("Ok then.")
             sys.exit(1)
+    else:
+        settings = Settings(filename)
+        conversions = settings.needed_conversions
+
+        if conversions:
+            for conversion in conversions:
+                conversion()
+
+            settings.write_config()
 
 
 class AliasedCommand(click.Command):
@@ -158,11 +172,29 @@ def print_version(ctx, param, value):
     ctx.exit()
 
 
+def get_config_file():
+    config_file_name = 'taxirc'
+
+    config_file = os.path.join(os.path.expanduser('~'), '.' + config_file_name)
+    if os.path.isfile(config_file):
+        return config_file
+
+    return os.path.join(xdg_dirs.user_config_dir, config_file_name)
+
+
+def get_data_dir():
+    data_dir = os.path.join(os.path.expanduser('~'), '.taxi')
+    if os.path.isdir(data_dir):
+        return data_dir
+
+    return xdg_dirs.user_data_dir
+
+
 @click.group(cls=AliasedGroup)
-@click.option('--config', '-c', default='~/.taxirc',
+@click.option('--config', '-c', default=get_config_file(),
               type=ExpandedPath(dir_okay=False),
               help="Path to the configuration file to use.")
-@click.option('--taxi-dir', default='~/.taxi',
+@click.option('--taxi-dir', default=get_data_dir(),
               type=ExpandedPath(file_okay=False), help="Path to the directory "
               "that will be used for internal files.")
 @click.option('--version', is_flag=True, callback=print_version,
@@ -173,10 +205,10 @@ def cli(ctx, config, taxi_dir):
     create_config_file(config)
     settings = Settings(config)
 
-    if not os.path.exists(settings.TAXI_PATH):
-        os.mkdir(settings.TAXI_PATH)
+    if not os.path.exists(taxi_dir):
+        os.makedirs(taxi_dir)
 
-    populate_aliases(settings.get_aliases(), settings.get_local_aliases())
+    populate_aliases(settings.get_aliases())
     populate_backends(settings.get_backends())
 
     ctx.obj = {}

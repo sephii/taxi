@@ -122,6 +122,29 @@ You can also chain them::
     taxi          -12:00 Write documentation
     internal      -13:00 Debug coffee machine
 
+Local aliases
+~~~~~~~~~~~~~
+
+Some people like to timesheet everything they do: lunch, ping-pong games, going
+to the restroom... anyway, if you're that kind of people you probably don't
+want these entries to be pushed. To achieve that, start by adding a dummy
+backend to your ``.taxirc`` file::
+
+    [backends]
+    local = dummy://
+
+Then to add a local alias, either add it in the corresponding section in your
+``.taxirc`` file::
+
+    [local_aliases]
+    _pingpong
+    _lunch
+    _shit
+
+Or use the ``alias`` command::
+
+    taxi alias add -b local _pingpong ""
+
 Getting help
 ~~~~~~~~~~~~
 
@@ -221,22 +244,23 @@ Default: ~/zebra/%Y/%m.tks
 The path of your entries file. You're free to use a single file to store all
 your entries but you're strongly encouraged to use date placeholders here. The
 following will expand to ``~/zebra/2011/11.tks`` if you're in November 2011.
-See `the strftime documentation
-<http://docs.python.org/library/datetime.html#strftime-and-strptime-behavior>`_
-for a complete list of available formats.
 
-local_aliases
-~~~~~~~~~~~~~
+You can use any datetime placeholder defined in `the strftime documentation
+<http://docs.python.org/library/datetime.html#strftime-and-strptime-behavior>`_.
+**However** taxi only supports the ``%Y`` and ``%m`` placeholders to check for
+previous timesheets (used for example when you run ``taxi edit X``, where ``X``
+is the number of timesheets to go back in time).
 
-Defines a list of local aliases that you will be able to use in your timesheets
-but that will never be pushed. These aliases will appear in the timesheet
-summary and will get marked as pushed when running the `commit` command.
+regroup_entries
+~~~~~~~~~~~~~~~
 
-The list should be separated by commas. For example the following value will
-define the `__lunch` and `__hacking` local aliases (note that the double
-underscore is just a personal convention to distinguish them from standard
-aliases, you're free to use any name you want): ``local_aliases = __lunch,
-__hacking``.
+Default: true
+
+If set to false, similar entries (ie. entries on the same date that are on the
+same alias and have the same description) won't be regrouped.
+
+.. note::
+    This setting is available since Taxi 4.1
 
 nb_previous_files
 ~~~~~~~~~~~~~~~~~
