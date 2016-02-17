@@ -7,7 +7,8 @@ from ..exceptions import CancelException
 from .base import cli
 
 
-@cli.group(invoke_without_command=True)
+@cli.group(invoke_without_command=True,
+           short_help="List and show projects, add aliases for activities.")
 @click.option('--backend', '-b', help="Limit search to given backend.")
 @click.pass_context
 def project(ctx, backend):
@@ -22,8 +23,8 @@ def project(ctx, backend):
 @click.pass_context
 def list_(ctx, search, backend):
     """
-    Search for a project by its name. The letter in the first column indicates
-    the status of the project: [N]ot started, [A]ctive, [F]inished,
+    Searches for a project by its name. The letter in the first column
+    indicates the status of the project: [N]ot started, [A]ctive, [F]inished,
     [C]ancelled.
     """
     projects = ctx.obj['projects_db'].search(search, backend=backend)
@@ -37,7 +38,7 @@ def list_(ctx, search, backend):
 @click.pass_context
 def alias(ctx, search, backend):
     """
-    Search for the given project and interactively add an alias for it.
+    Searches for the given project and interactively add an alias for it.
     """
     projects = ctx.obj['projects_db'].search(search, active_only=True)
     projects = sorted(projects, key=lambda project: project.name)
@@ -101,7 +102,7 @@ def alias(ctx, search, backend):
 @click.pass_context
 def show(ctx, project_id, backend):
     """
-    Show the details of the given project id.
+    Shows the details of the given project id.
     """
     try:
         project = ctx.obj['projects_db'].get(project_id, backend)

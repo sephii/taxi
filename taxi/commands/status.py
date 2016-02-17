@@ -15,10 +15,7 @@ from .types import DateRange
 @click.pass_context
 def status(ctx, date, f):
     """
-    Usage: status
-
     Shows the summary of what's going to be committed to the server.
-
     """
     try:
         timesheet_collection = get_timesheet_collection_for_context(ctx, f)

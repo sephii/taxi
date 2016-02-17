@@ -5,7 +5,13 @@ import difflib
 import six
 
 
-Mapping = collections.namedtuple('Mapping', ['mapping', 'backend'])
+class Mapping(collections.namedtuple('BaseMapping', ['mapping', 'backend'])):
+    def is_mapped(self):
+        """
+        Return False if the alias doesn't have any mapping, ie. the alias is
+        declared but without any mapping information. Return True otherwise.
+        """
+        return self.mapping is not None
 
 
 class AliasesDatabase(object):

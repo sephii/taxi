@@ -5,6 +5,7 @@ import collections
 import copy
 from functools import wraps
 import os
+import re
 import six
 import shutil
 import tempfile
@@ -102,6 +103,26 @@ class CommandTestCase(TestCase):
         if os.path.exists(entries_file):
             os.remove(entries_file)
         shutil.rmtree(self.taxi_dir)
+
+    def assertLineIn(self, line, content):
+        """
+        Check that the given line is present in the given content, ignoring
+        whitespace differences.
+        """
+        def remove_spaces(text):
+            chars_to_strip = [' ', '\t']
+
+            for char in chars_to_strip:
+                text = text.replace(char, '')
+
+            return text
+
+        self.assertIn(
+            remove_spaces(line),
+            remove_spaces(content),
+            "Line `%s` not found in `%s`" % (line, content)
+        )
+
 
     def settings(self, *args, **kwargs):
         """

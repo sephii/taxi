@@ -20,6 +20,8 @@ Changed
 * Merge the ``search`` and ``add`` commands into the ``project`` command (#90).
 * Make the ``show`` command much more useful by allowing it to explore aliases,
   project ids and mappings (#87).
+* Improve status output by using a specific color for entries that use
+  undefined mappings.
 
 Removed
 -------
@@ -27,7 +29,7 @@ Removed
 * Remove ``local_aliases`` option, which can be mimicked by using a dummy
   backend (#85).
 
-4.0.2 (2015-14-09)
+4.0.2 (2015-09-14)
 ==================
 
 Changed

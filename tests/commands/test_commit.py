@@ -333,7 +333,7 @@ alias_1 1200-1300 Play ping-pong
 
         with self.settings({'default': {'regroup_entries': '0'}}):
             stdout = self.run_command('commit')
-        self.assertIn(
+        self.assertLineIn(
             "alias_1 (123/456, test)        1.00  Play ping-pong",
             stdout
         )
