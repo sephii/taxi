@@ -6,4 +6,5 @@
 /taxi.egg-info
 /.eggs
 /.tox
+/.cache
 /doc/_build/

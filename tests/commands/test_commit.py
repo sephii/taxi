@@ -207,7 +207,7 @@ _pingpong 0800-0900 Play ping-pong
 """)
 
         stdout = self.run_command('commit')
-        self.assertIn("Total pushed                   1.00", stdout)
+        self.assertLineIn("Total pushed, local  1.00", stdout)
 
     @freeze_time('2014-01-21')
     def test_fix_entries_start_time_without_previous(self):
