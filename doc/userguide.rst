@@ -4,15 +4,23 @@ User guide
 Installation
 ------------
 
-Taxi runs on either Python 2.7 and 3.4. It might run on older versions as well
-but it's only tested against the latest Python 2 and 3 versions. To install it,
-run the following::
+Taxi runs on either Python 2.7, 3.4 and 3.5. It might run on older versions as
+well but it's only tested against the latest Python 2 and 3 versions. To
+install it, you can use the install script::
 
-    pip install taxi
+    curl https://github.com/sephii/taxi/blob/stable/install.sh | sh
 
-You'll probably want to install a backend as well. The backend is the part that
-allows you to push your timesheet entries to a centralized location. For the
-list of available backends, refer to the :ref:`supported_backends` list.
+The install script will take care of asking you a few questions and getting
+Taxi installed on your system.
+
+.. note::
+    If you don't like piping into sh, you can also install it directly from PyPI::
+
+        pip install taxi
+
+    If you install Taxi that way, you'll need to install a backend separately
+    to be able to push your entries and retrieve projects and activities. For a
+    list of available backends, refer to the :ref:`supported_backends` list.
 
 Getting started
 ---------------
@@ -188,6 +196,58 @@ being ignored. Each part of the range should have the format ``HH:mm``, or
 
 ``description`` can be any text but cannot be left blank.
 
+Backends
+--------
+
+Backends are provided through Taxi plugins. To install (or upgrade) a plugin,
+use the `plugin install` command::
+
+    taxi plugin install taxi-zebra
+
+This will fetch and install the backend plugin. Once installed, you'll still
+need to tell Taxi to use it. This is explained in the next section.
+
+You can also see which plugins are installed with `plugin list`::
+
+    $> taxi plugin list
+    taxi-zebra (1.2.0)
+
+Configuration
+~~~~~~~~~~~~~
+
+The configuration file has a section named ``backends`` that allows you to
+define the active backends and the credentials you want to use. The syntax of
+the backends part is::
+
+    [backends]
+    default = <backend_name>://<user>:<password>@<host>:<port><path><options>
+
+Here a backend named *default* is defined. The ``backend_name`` is the adapter
+this backend will use. You'll find this name in the specific backend package
+documentation. The ``backend_name`` is the only mandatory part, as some
+backends won't care about the ``user``, ``password``, or other configuration
+options.
+
+The name of each backend should be unique, and it will be used when defining
+aliases. Each backend will have a section named ``[backend_name_aliases]`` and
+``[backend_name_shared_aliases]``, where *backend_name* is the name of the
+backend, each containing the user-defined aliases, and the automatic aliases
+fetched with the ``update`` command.
+
+.. note::
+
+    If you have any special character in your password, make sure it is
+    URL-encoded, as Taxi won't be able to correctly parse the URI otherwise.
+    You can use the following snippet to encode your password::
+
+        >>> import urllib
+        >>> urllib.quote('my_password', safe='')
+
+    On Python 3::
+
+        >>> from urllib import parse
+        >>> parse.quote('my_password, safe='')
+
 .. _config:
 
 Configuration options
@@ -273,39 +333,3 @@ when starting a new month.
 
 This option only makes sense if you're using date placeholders in
 :ref:`config_file`.
-
-Backends configuration
-----------------------
-
-The configuration file has a section named ``backends`` that allows you to
-define the active backends and the credentials you want to use. The syntax of
-the backends part is::
-
-    [backends]
-    default = <backend_name>://<user>:<password>@<host>:<port><path><options>
-
-Here a backend named *default* is defined. The ``backend_name`` is the adapter
-this backend will use. You'll find this name in the specific backend package
-documentation. The ``backend_name`` is the only mandatory part, as some
-backends won't care about the ``user``, ``password``, or other configuration
-options.
-
-The name of each backend should be unique, and it will be used when defining
-aliases. Each backend will have a section named ``[backend_name_aliases]`` and
-``[backend_name_shared_aliases]``, where *backend_name* is the name of the
-backend, each containing the user-defined aliases, and the automatic aliases
-fetched with the ``update`` command.
-
-.. note::
-
-    If you have any special character in your password, make sure it is
-    URL-encoded, as Taxi won't be able to correctly parse the URI otherwise.
-    You can use the following snippet to encode your password::
-
-        >>> import urllib
-        >>> urllib.quote('my_password', safe='')
-
-    On Python 3::
-
-        >>> from urllib import parse
-        >>> parse.quote('my_password, safe='')

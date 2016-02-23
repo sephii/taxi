@@ -5,7 +5,6 @@ import collections
 import copy
 from functools import wraps
 import os
-import re
 import six
 import shutil
 import tempfile
@@ -151,7 +150,8 @@ class CommandTestCase(TestCase):
 
         return contents
 
-    def run_command(self, command_name, args=None, input=None):
+    def run_command(self, command_name, args=None, input=None,
+                    write_config=True):
         """
         Run the given taxi command with the given arguments and options. The
         output of the command is returned as a string.
@@ -163,7 +163,8 @@ class CommandTestCase(TestCase):
         if args is None:
             args = []
 
-        self.write_config(self._settings)
+        if write_config:
+            self.write_config(self._settings)
 
         args.insert(0, command_name)
         args.insert(0, '--taxi-dir=%s' % self.taxi_dir)

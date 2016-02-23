@@ -5,6 +5,7 @@ from pkg_resources import resource_string
 import sys
 
 import click
+from click._termui_impl import Editor
 import six
 from appdirs import AppDirs
 
@@ -87,18 +88,30 @@ def create_config_file(filename):
             available_backends = backends_registry._entry_points.keys()
             context = {}
             context['backend'] = click.prompt(
-                "Enter the backend you want to use (choices are %s)" %
+                "Backend you want to use (choices are %s)" %
                 ', '.join(available_backends),
                 type=click.Choice(available_backends)
             )
-            context['username'] = click.prompt("Enter your username")
+            context['username'] = click.prompt("Username or token")
             context['password'] = parse.quote(
-                click.prompt("Enter your password", hide_input=True),
+                click.prompt("Password (leave empty if you're using"
+                             " a token)", hide_input=True, default=''),
                 safe=''
             )
+            # Password can be empty in case of token auth so the ':' separator
+            # is not included in the template config, so we add it if the user
+            # has set a password
+            if context['password']:
+                context['password'] = ':' + context['password']
+
+            editor = Editor().get_editor()
+            context['editor'] = click.prompt(
+                "Editor command to edit your timesheets", default=editor
+            )
+
             context['hostname'] = click.prompt(
-                "Enter the hostname of the backend (eg. "
-                "timesheets.example.com)", type=Hostname()
+                "Hostname of the backend (eg. timesheets.example.com)",
+                type=Hostname()
             )
             templated_config = config.format(**context)
 
@@ -209,7 +222,6 @@ def cli(ctx, config, taxi_dir):
         os.makedirs(taxi_dir)
 
     populate_aliases(settings.get_aliases())
-    populate_backends(settings.get_backends())
 
     ctx.obj = {}
     ctx.obj['settings'] = settings

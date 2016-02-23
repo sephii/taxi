@@ -5,7 +5,7 @@ import six
 
 from ..aliases import Mapping
 from ..backends.registry import backends_registry
-from .base import cli
+from .base import cli, populate_backends
 
 
 @cli.command(short_help="Fetch projects and shared aliases from backends.")
@@ -15,6 +15,8 @@ def update(ctx):
     Synchronizes your project database with the server and updates the shared
     aliases.
     """
+    populate_backends(ctx.obj['settings'].get_backends())
+
     ctx.obj['view'].updating_projects_database()
 
     projects = []
