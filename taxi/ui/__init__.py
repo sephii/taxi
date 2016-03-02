@@ -26,6 +26,12 @@ class BaseUi(object):
             fg='red')
         )
 
+    def warn(self, message):
+        self.msg(click.style(
+            click.wrap_text(message, preserve_paragraphs=False),
+            fg='yellow')
+        )
+
     def projects_list(self, projects, numbered=False):
         for (key, project) in enumerate(projects):
             if numbered:
