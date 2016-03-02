@@ -9,7 +9,7 @@ from .project import list_
 @click.pass_context
 def search(ctx, search):
     """
-    List or manage aliases.
+    Deprecated, use `project list`.
     """
     ctx.obj['view'].warn(
         "Deprecation warning: the `search` command has been superseded by the "

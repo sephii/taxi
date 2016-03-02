@@ -9,7 +9,7 @@ from .project import alias
 @click.pass_context
 def add(ctx, search):
     """
-    List or manage aliases.
+    Deprecated, use `project alias`.
     """
     ctx.obj['view'].warn(
         "Deprecation warning: the `add` command has been superseded by the "
