@@ -10,6 +10,12 @@ from .base import cli
 @cli.group(invoke_without_command=True)
 @click.pass_context
 def alias(ctx):
+    """
+    List or manage aliases.
+
+    If invoked without any subcommand, it will display all your defined
+    aliases.
+    """
     if ctx.invoked_subcommand is None:
         ctx.forward(list_)
 
@@ -23,7 +29,7 @@ def alias(ctx):
 @click.pass_context
 def list_(ctx, search_string, reverse, backend):
     """
-    Lists configured aliases.
+    List configured aliases.
     """
     if not reverse:
         list_aliases(ctx, search_string, backend)
@@ -38,7 +44,7 @@ def list_(ctx, search_string, reverse, backend):
 @click.pass_context
 def add(ctx, alias, mapping, backend):
     """
-    Adds a new alias to your configuration file.
+    Add a new alias to your configuration file.
     """
     if not backend:
         backends_list = ctx.obj['settings'].get_backends()
