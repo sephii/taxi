@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+from collections import defaultdict
 import inspect
 import re
 import six
@@ -14,6 +15,8 @@ from ..projects import Project
 
 
 class BaseUi(object):
+    DURATION_FORMAT = '{:>5.2f}'
+
     def msg(self, message, color=None):
         click.echo(message)
 
@@ -21,6 +24,12 @@ class BaseUi(object):
         self.msg(click.style(
             click.wrap_text("Error: %s" % message, preserve_paragraphs=True),
             fg='red')
+        )
+
+    def warn(self, message):
+        self.msg(click.style(
+            click.wrap_text(message, preserve_paragraphs=False),
+            fg='yellow')
         )
 
     def projects_list(self, projects, numbered=False):
@@ -185,32 +194,28 @@ class BaseUi(object):
 
         return click.confirm("\nAre you sure you want to continue?")
 
-    def display_entries_list(self, entries, msg, details=True):
+    def ignored_entries_list(self, entries):
         total = 0
         for entry in entries:
-            if isinstance(entry, tuple):
-                reason = entry[1]
-                entry = entry[0]
-                line = "%s - %s" % (six.text_type(entry), reason)
-            else:
-                line = six.text_type(entry)
-
+            self.msg(self.get_entry_status(entry))
             total += entry.hours
-            if details:
-                self.msg(line)
 
-        self.msg('\n%-29s %5.2f' % (msg, total))
+        self.msg(click.style('\n' + self.columnize([
+            "Total ignored", self.DURATION_FORMAT.format(total)]
+        ), bold=True))
 
-    def pushed_entries_total(self, pushed_entries):
-        self.display_entries_list(pushed_entries, 'Total pushed', False)
+    def failed_entries_list(self, entries):
+        total = 0
+        for entry in entries:
+            self.msg(click.style(
+                self.get_entry_status(entry) + " - " + entry.push_error,
+                fg='red'
+            ))
+            total += entry.hours
 
-    def ignored_entries_list(self, ignored_entries):
-        self.display_entries_list(ignored_entries, 'Total ignored')
-
-    def failed_entries_list(self, failed_entries):
-        self.display_entries_list([
-            (entry, entry.push_error) for entry in failed_entries
-        ], 'Total failed')
+        self.msg(click.style('\n' + self.columnize([
+            "Total failed", self.DURATION_FORMAT.format(total)]
+        ), bold=True, fg='red'))
 
     def get_entry_status(self, entry):
         if entry.is_ignored():
@@ -238,18 +243,29 @@ class BaseUi(object):
         else:
             project_name = entry.alias
 
-        foo = '{:>5.2f}'
+        duration_format = self.DURATION_FORMAT
         # Put parentheses around internal aliases since they don't count in the
         # hours total
         if (entry.alias in aliases_database and
                 not aliases_database[entry.alias].is_mapped()):
-            foo = '(' + foo + ')'
+            duration_format = '(' + duration_format + ')'
 
-        return '{:<30}{:^7} {}'.format(
-            project_name, foo.format(entry.hours), entry.description
-        )
+        return self.columnize([
+            project_name, duration_format.format(entry.hours),
+            entry.description
+        ])
+
+    def columnize(self, text):
+        for _ in range(len(text), 3):
+            text.append('')
+
+        return '{:<30}{:^7} {}'.format(*text)
 
     def show_status(self, entries_dict):
+        if not list(filter(None, entries_dict.values())):
+            self.msg("No staging changes. Run `taxi edit` to add entries.")
+            return
+
         self.msg('Staging changes :\n')
         entries_list = entries_dict.items()
         entries_list = sorted(entries_list)
@@ -290,10 +306,14 @@ class BaseUi(object):
                         aliases_database[entry.alias].mapping is not None):
                     subtotal_hours += entry.hours or 0
 
-            self.msg('{}{:^7}\n'.format(' ' * 30, '{:5.2f}'.format(subtotal_hours)))
+            self.msg(self.columnize([
+                '', self.DURATION_FORMAT.format(subtotal_hours)
+            ]))
             total_hours += subtotal_hours
 
-        self.msg('{:<30}{:^7}'.format('Total', '{:5.2f}'.format(total_hours)))
+        self.msg("\n" + click.style(self.columnize([
+            "Total", self.DURATION_FORMAT.format(total_hours)
+        ]), bold=True))
         self.msg('\nUse `taxi ci` to commit staging changes to the server')
 
     def pushed_entry(self, entry):
@@ -306,12 +326,21 @@ class BaseUi(object):
             self.msg(self.get_entry_status(entry))
 
     def pushed_entries_summary(self, entries, ignored_entries):
-        pushed_entries = list(filter(lambda e: e.push_error is None, entries))
+        backends_total = defaultdict(int)
+        for entry in entries:
+            if entry.push_error is None:
+                backends_total[aliases_database[entry.alias].backend] += entry.hours
+
         failed_entries = list(
             filter(lambda e: e.push_error is not None, entries)
         )
 
-        self.pushed_entries_total(pushed_entries)
+        self.msg('')
+        for backend_name, total in backends_total.items():
+            self.msg(click.style(self.columnize([
+                "Total pushed, " + backend_name,
+                self.DURATION_FORMAT.format(total)
+            ]), bold=True))
 
         if ignored_entries:
             self.msg(click.style("\nIgnored entries\n",
