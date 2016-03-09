@@ -1,3 +1,10 @@
+taxi (4.1.0-1) liip; urgency=medium
+
+  * New upstream release
+  * Add bash-completion to build-depends
+
+ -- Didier Raboud (Liip) <didier.raboud@liip.ch>  Wed, 09 Mar 2016 10:34:31 +0100
+
 taxi (4.0.2-1) liip; urgency=medium
 
   * New upstream release
