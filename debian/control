@@ -6,6 +6,7 @@ Uploaders:
  Gilles Meier <gilles.meier@liip.ch>
 Build-Depends:
  debhelper (>= 9),
+ bash-completion,
  dh-python,
  python3,
  python3-appdirs (>= 1.4.0),
