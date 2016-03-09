@@ -15,16 +15,13 @@ from .base import cli
 @click.pass_context
 def clean_aliases(ctx, force_yes):
     """
-    Usage: clean-aliases
-
     Removes aliases from your config file that point to inactive projects.
-
     """
     inactive_aliases = []
 
     for (alias, mapping) in six.iteritems(aliases_database):
         # Ignore local aliases
-        if mapping is None:
+        if mapping.mapping is None:
             continue
 
         project = ctx.obj['projects_db'].get(mapping.mapping[0],

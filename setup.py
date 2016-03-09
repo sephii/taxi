@@ -7,13 +7,14 @@ from setuptools.command.test import test as TestCommand
 
 
 tests_require = [
-    'freezegun==0.2.8',
-    'pytest==2.6.4',
+    'freezegun>=0.2.8',
+    'pytest>=2.7.3',
 ]
 
 install_requires = [
     'click>=3.3',
     'six>=1.9.0',
+    'appdirs>=1.4.0',
 ]
 
 
@@ -47,7 +48,7 @@ setup(
     license='wtfpl',
     tests_require=tests_require,
     include_package_data=False,
-    cmdclass = {'test': PyTest},
+    cmdclass={'test': PyTest},
     package_data={
         'taxi': ['etc/*']
     },
@@ -60,5 +61,6 @@ setup(
         'Development Status :: 5 - Production/Stable',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
     ]
 )

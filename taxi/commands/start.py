@@ -16,12 +16,9 @@ from .base import cli, get_timesheet_collection_for_context
 @click.pass_context
 def start(ctx, alias, f):
     """
-    Usage: start alias
-
     Use it when you start working on the given activity. This will add the
     activity and the current time to your entries file. When you're finished,
     use the stop command.
-
     """
     today = datetime.date.today()
 

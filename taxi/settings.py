@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 from collections import defaultdict
+import copy
 import os
 
 from six.moves import configparser
@@ -11,8 +12,70 @@ from .projects import Project
 from .utils.file import expand_date as file_expand_date
 
 
-class Settings(dict):
-    TAXI_PATH = os.path.expanduser('~/.taxi')
+class StringSetting(object):
+    def __init__(self, default='', choices=None):
+        if default and choices and default not in choices:
+            raise ValueError(
+                "Default value %s not in acceptable choices (%s)" %
+                (default, choices)
+            )
+
+        self.default = default
+        self.choices = choices
+
+    def to_python(self, value):
+        return value
+
+    @property
+    def value(self):
+        if not hasattr(self, '_value'):
+            return self.default
+
+        return self._value
+
+    @value.setter
+    def value(self, value):
+        value = self.to_python(value)
+
+        if self.choices and value not in self.choices:
+            raise ValueError("%s not an acceptable choice")
+
+        self._value = value
+
+
+class ListSetting(StringSetting):
+    def to_python(self, value):
+        value = super(ListSetting, self).to_python(value)
+        return list(filter(None, map(lambda x: x.strip(), value.split(','))))
+
+
+class IntegerSetting(StringSetting):
+    def to_python(self, value):
+        value = super(IntegerSetting, self).to_python(value)
+        return int(value)
+
+
+class IntegerListSetting(ListSetting):
+    def to_python(self, value):
+        return list(map(int, super(IntegerListSetting, self).to_python(value)))
+
+
+class BooleanSetting(StringSetting):
+    VALUES_MAPPING = {
+        True: ['1', 'true'],
+        False: ['0', 'false']
+    }
+
+    def to_python(self, value):
+        if value not in self.VALUES_MAPPING[True] + self.VALUES_MAPPING[False]:
+            raise ValueError(
+                "Value %s is not accepted for this setting." % value
+            )
+
+        return value.lower() in self.VALUES_MAPPING[True]
+
+
+class Settings(object):
     AUTO_ADD_OPTIONS = {
         'NO': 'no',
         'TOP': 'top',
@@ -20,20 +83,24 @@ class Settings(dict):
         'AUTO': 'auto'
     }
 
-    DEFAULTS = {
-        'auto_fill_days': '0,1,2,3,4',
-        'date_format': '%d/%m/%Y',
-        'auto_add': 'auto',
-        'nb_previous_files': '1',
-        'use_colors': '1',
-        'local_aliases': '',
-        'file': '~/zebra/%Y/%m/%d.tks'
+    SETTINGS = {
+        'default': {
+            'auto_fill_days': IntegerListSetting(default=range(0, 5)),
+            'date_format': StringSetting(default='%d/%m/%Y'),
+            'auto_add': StringSetting(default='auto',
+                                      choices=AUTO_ADD_OPTIONS.values()),
+            'nb_previous_files': IntegerSetting(default=1),
+            'file': StringSetting(default='~/zebra/%Y/%m/%d.tks'),
+            'editor': StringSetting(),
+            'regroup_entries': BooleanSetting(default=True),
+        }
     }
 
     def __init__(self, file):
-        self.config = configparser.RawConfigParser()
+        self.config = configparser.RawConfigParser(allow_no_value=True)
         self.filepath = os.path.expanduser(file)
         self._backends_registry = {}
+        self._settings = {}
 
         try:
             with open(self.filepath, 'r') as fp:
@@ -43,30 +110,29 @@ class Settings(dict):
                 "The specified configuration file `%s` doesn't exist" % file
             )
 
-    def get(self, key, section='default', default_value=None):
-        try:
-            return self.config.get(section, key)
-        except configparser.NoOptionError:
-            if default_value is not None:
-                return default_value
+        # Copy the class settings to the instance so we don't set global values
+        # on the class
+        for section, settings in self.SETTINGS.items():
+            self._settings[section] = {}
+            for key, setting in settings.items():
+                self._settings[section][key] = copy.copy(setting)
 
-            if key in self.DEFAULTS:
-                return self.DEFAULTS[key]
+                try:
+                    value = self.config.get(section, key)
+                    self._settings[section][key].value = value
+                except ValueError:
+                    raise ValueError(
+                        "Value %s is not allowed for setting %s:%s" %
+                        (value, section, key)
+                    )
+                except configparser.NoOptionError:
+                    pass
 
-            raise
+    def __getitem__(self, key):
+        return self.get(key)
 
-    def get_auto_fill_days(self):
-        auto_fill_days = self.get('auto_fill_days')
-
-        if not auto_fill_days:
-            return []
-
-        return [int(e.strip()) for e in auto_fill_days.split(',')]
-
-    def get_local_aliases(self):
-        return [alias.strip()
-                for alias in self.get('local_aliases').split(',')
-                if alias.strip()]
+    def get(self, key, section='default'):
+        return self._settings[section][key].value
 
     def add_alias(self, alias, mapping):
         alias_section = get_alias_section_name(mapping.backend, False)
@@ -75,7 +141,7 @@ class Settings(dict):
             self.config.add_section(alias_section)
 
         self.config.set(alias_section, alias,
-                        Project.tuple_to_str(mapping.mapping))
+                        Project.tuple_to_str(mapping.mapping) if mapping.mapping else None)
 
     def remove_aliases(self, aliases):
         for alias, mapping in aliases:
@@ -113,8 +179,9 @@ class Settings(dict):
 
                 if self.config.has_section(backend_aliases_section):
                     for (alias, mapping) in self.config.items(backend_aliases_section):
-                        mapping = Project.str_to_tuple(mapping)
+                        mapping = Project.str_to_tuple(mapping) if mapping is not None else None
                         mapping_obj = Mapping(mapping, backend)
+
                         aliases[alias] = mapping_obj
 
         return aliases
@@ -161,6 +228,35 @@ class Settings(dict):
                 self.config.set('default_shared_aliases', alias, mapping)
 
             self.config.remove_section('shared_wrmap')
+
+    def convert_to_4_1(self):
+        if not self.config.has_option('default', 'local_aliases'):
+            return
+
+        local_aliases = self.config.get('default', 'local_aliases')
+        local_aliases = ListSetting().to_python(local_aliases)
+
+        if not self.config.has_section('backends'):
+            self.config.add_section('backends')
+
+        self.config.set('backends', 'local', 'dummy://')
+
+        if not self.config.has_section('local_aliases'):
+            self.config.add_section('local_aliases')
+
+        for alias in local_aliases:
+            self.config.set('local_aliases', alias, None)
+
+        self.config.remove_option('default', 'local_aliases')
+
+    @property
+    def needed_conversions(self):
+        conversions = []
+
+        if self.config.has_option('default', 'local_aliases'):
+            conversions.append(self.convert_to_4_1)
+
+        return conversions
 
     def get_entries_file_path(self, expand_date=True):
         file_path = os.path.expanduser(self.get('file'))

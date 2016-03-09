@@ -1,9 +1,10 @@
 language: python
 python:
-  - "3.4"
+ - 3.5
 env:
   - TOXENV=py27
   - TOXENV=py34
+  - TOXENV=py35
 install:
   - pip install tox --use-mirrors
 script:

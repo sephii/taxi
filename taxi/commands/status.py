@@ -15,10 +15,7 @@ from .types import DateRange
 @click.pass_context
 def status(ctx, date, f):
     """
-    Usage: status
-
     Shows the summary of what's going to be committed to the server.
-
     """
     try:
         timesheet_collection = get_timesheet_collection_for_context(ctx, f)
@@ -26,5 +23,7 @@ def status(ctx, date, f):
         ctx.obj['view'].err(e)
     else:
         ctx.obj['view'].show_status(
-            timesheet_collection.get_entries(date, regroup=True),
+            timesheet_collection.get_entries(
+                date, regroup=ctx.obj['settings']['regroup_entries']
+            )
         )

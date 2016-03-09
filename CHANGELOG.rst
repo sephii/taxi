@@ -2,7 +2,33 @@
 Changelog
 #########
 
-4.0.2 (2015-14-09)
+4.1.0 (unreleased)
+==================
+
+Added
+-----
+
+* Add configuration option ``regroup_entries`` (#77).
+
+Changed
+-------
+
+* Respect the XDG Base Directory specification
+  (http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html).
+  Thanks @krtek4.
+* Fix help layout for ``alias`` command (#95).
+* Merge the ``search`` and ``add`` commands into the ``project`` command (#90).
+* Make the ``show`` command much more useful by allowing it to explore aliases,
+  project ids and mappings (#87).
+* Add colours to ``status`` command output and improve output presentation.
+
+Removed
+-------
+
+* Remove ``local_aliases`` option, which can be mimicked by using a dummy
+  backend (#85).
+
+4.0.2 (2015-09-14)
 ==================
 
 Changed

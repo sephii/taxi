@@ -1,22 +1,18 @@
-from __future__ import unicode_literals
-
 import click
 
 from .base import cli
+from .project import list_
 
 
-@cli.command(short_help="Search a project by its name.")
+@cli.group(invoke_without_command=True)
 @click.argument('search', nargs=-1)
 @click.pass_context
 def search(ctx, search):
     """
-    Usage: search search_string
-
-    Searches for a project by its name. The letter in the first column
-    indicates the status of the project: [N]ot started, [A]ctive, [F]inished,
-    [C]ancelled.
-
+    Deprecated, use `project list`.
     """
-    projects = ctx.obj['projects_db'].search(search)
-    projects = sorted(projects, key=lambda project: project.name.lower())
-    ctx.obj['view'].search_results(projects)
+    ctx.obj['view'].warn(
+        "Deprecation warning: the `search` command has been superseded by the "
+        "`project list` command and will be removed in the next Taxi version."
+    )
+    ctx.forward(list_)

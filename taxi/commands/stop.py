@@ -16,11 +16,8 @@ from .base import cli, get_timesheet_collection_for_context
 @click.pass_context
 def stop(ctx, description, f):
     """
-    Usage: stop [description]
-
     Use it when you stop working on the current task. You can add a description
     to what you've done.
-
     """
     description = ' '.join(description)
     try:

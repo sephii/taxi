@@ -12,11 +12,8 @@ from .base import cli
 @click.pass_context
 def update(ctx):
     """
-    Usage: update
-
     Synchronizes your project database with the server and updates the shared
     aliases.
-
     """
     ctx.obj['view'].updating_projects_database()
 

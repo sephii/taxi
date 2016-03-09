@@ -8,7 +8,7 @@ class DummyBackend(BaseBackend):
         pass
 
     def push_entry(self, date, entry):
-        print(entry)
+        pass
 
     def get_projects(self):
         return []

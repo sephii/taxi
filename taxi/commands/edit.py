@@ -15,14 +15,11 @@ from .base import cli, get_timesheet_collection_for_context
 @click.pass_context
 def edit(ctx, file_to_edit, previous_file):
     """
-    Usage: edit
-
     Opens your timesheet file in your favourite editor.
 
     The PREVIOUS_FILE argument can be used to specify which nth previous file
     to edit. A value of 1 will edit the previous file, 2 will edit the
     second-previous file, etc.
-
     """
     timesheet_collection = None
     autofill = not bool(file_to_edit) and previous_file == 0
@@ -40,9 +37,9 @@ def edit(ctx, file_to_edit, previous_file):
         else:
             t = timesheet_collection.timesheets[0]
 
-            if (ctx.obj['settings'].get('auto_add') !=
+            if (ctx.obj['settings']['auto_add'] !=
                     Settings.AUTO_ADD_OPTIONS['NO']):
-                auto_fill_days = ctx.obj['settings'].get_auto_fill_days()
+                auto_fill_days = ctx.obj['settings']['auto_fill_days']
                 if auto_fill_days:
                     t.prefill(auto_fill_days, limit=None)
 
@@ -56,7 +53,7 @@ def edit(ctx, file_to_edit, previous_file):
 
     expanded_file_to_edit = list(timesheet_files)[previous_file]
 
-    editor = ctx.obj['settings'].get('editor', default_value='')
+    editor = ctx.obj['settings']['editor']
     edit_kwargs = {
         'filename': expanded_file_to_edit,
         'extension': '.tks'

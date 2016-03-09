@@ -14,12 +14,9 @@ from .base import cli, get_timesheet_collection_for_context
 @click.pass_context
 def autofill(ctx, f):
     """
-    Usage: autofill
-
     Fills your timesheet up to today, for the defined auto_fill_days.
-
     """
-    auto_fill_days = ctx.obj['settings'].get_auto_fill_days()
+    auto_fill_days = ctx.obj['settings']['auto_fill_days']
 
     if not auto_fill_days:
         ctx.obj['view'].view.err("The parameter `auto_fill_days` must be set "

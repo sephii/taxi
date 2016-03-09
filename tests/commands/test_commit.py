@@ -6,7 +6,7 @@ import tempfile
 
 from freezegun import freeze_time
 
-from . import CommandTestCase
+from . import CommandTestCase, override_settings
 
 
 class CommitCommandTestCase(CommandTestCase):
@@ -81,25 +81,21 @@ alias_1 2 foobar
     @freeze_time('2014-01-21')
     def test_commit_previous_file_previous_month(self):
         tmp_entries_dir = tempfile.mkdtemp()
-        config = self.default_config.copy()
-
         os.remove(self.entries_file)
 
         self.entries_file = os.path.join(tmp_entries_dir, '%m_%Y.txt')
-        config['default']['file'] = self.entries_file
-
-        with freeze_time('2014-01-01'):
-            self.write_entries("""01/01/2014
-alias_1 2 january
-""")
-
-        with freeze_time('2014-02-01'):
-            self.write_entries("""01/02/2014
-    alias_1 4 february
+        with self.settings({'default': {'file': self.entries_file}}):
+            with freeze_time('2014-01-01'):
+                self.write_entries("""01/01/2014
+    alias_1 2 january
     """)
 
-            stdout = self.run_command('commit', config_options=config,
-                                      args=['--yes'])
+            with freeze_time('2014-02-01'):
+                self.write_entries("""01/02/2014
+        alias_1 4 february
+        """)
+
+                stdout = self.run_command('commit', args=['--yes'])
         shutil.rmtree(tmp_entries_dir)
 
         self.assertIn('january', stdout)
@@ -108,103 +104,94 @@ alias_1 2 january
     @freeze_time('2014-01-21')
     def test_commit_previous_file_previous_year(self):
         tmp_entries_dir = tempfile.mkdtemp()
-        config = self.default_config.copy()
-
         os.remove(self.entries_file)
 
         self.entries_file = os.path.join(tmp_entries_dir, '%m_%Y.txt')
-        config['default']['file'] = self.entries_file
 
-        with freeze_time('2013-11-01'):
-            self.write_entries("""01/11/2013
-alias_1 2 november
-""")
+        with self.settings({'default': {'file': self.entries_file}}):
+            with freeze_time('2013-11-01'):
+                self.write_entries("""01/11/2013
+    alias_1 2 november
+    """)
 
-        with freeze_time('2013-12-01'):
-            self.write_entries("""01/12/2013
-alias_1 2 december
-""")
+            with freeze_time('2013-12-01'):
+                self.write_entries("""01/12/2013
+    alias_1 2 december
+    """)
 
-        with freeze_time('2014-01-01'):
-            self.write_entries("""01/01/2014
-alias_1 4 january
-""")
+            with freeze_time('2014-01-01'):
+                self.write_entries("""01/01/2014
+    alias_1 4 january
+    """)
 
-            stdout = self.run_command('commit', config_options=config,
-                                      args=['--yes'])
+                stdout = self.run_command('commit', args=['--yes'])
         shutil.rmtree(tmp_entries_dir)
 
         self.assertNotIn('november', stdout)
         self.assertIn('december', stdout)
         self.assertIn('january', stdout)
 
+    @override_settings({'default': {'nb_previous_files': 2}})
     @freeze_time('2014-01-21')
     def test_commit_previous_files_previous_months(self):
         tmp_entries_dir = tempfile.mkdtemp()
-        config = self.default_config.copy()
-        config['default']['nb_previous_files'] = 2
-
         os.remove(self.entries_file)
 
         self.entries_file = os.path.join(tmp_entries_dir, '%m_%Y.txt')
-        config['default']['file'] = self.entries_file
 
-        with freeze_time('2014-01-01'):
-            self.write_entries("""01/01/2014
-alias_1 2 january
-""")
-
-        with freeze_time('2014-02-01'):
-            self.write_entries("""01/02/2014
-    alias_1 3 february
+        with self.settings({'default': {'file': self.entries_file}}):
+            with freeze_time('2014-01-01'):
+                self.write_entries("""01/01/2014
+    alias_1 2 january
     """)
 
-        with freeze_time('2014-03-01'):
-            self.write_entries("""01/03/2014
-alias_1 4 march
-""")
+            with freeze_time('2014-02-01'):
+                self.write_entries("""01/02/2014
+        alias_1 3 february
+        """)
 
-            stdout = self.run_command('commit', config_options=config,
-                                      args=['--yes'])
+            with freeze_time('2014-03-01'):
+                self.write_entries("""01/03/2014
+    alias_1 4 march
+    """)
+
+                stdout = self.run_command('commit', args=['--yes'])
         shutil.rmtree(tmp_entries_dir)
 
         self.assertIn('january', stdout)
         self.assertIn('february', stdout)
         self.assertIn('march', stdout)
 
+    @override_settings({'default': {'nb_previous_files': 2}})
     @freeze_time('2014-01-21')
     def test_commit_previous_file_year_format(self):
         tmp_entries_dir = tempfile.mkdtemp()
-        config = self.default_config.copy()
-        config['default']['nb_previous_files'] = 2
-
         os.remove(self.entries_file)
 
         self.entries_file = os.path.join(tmp_entries_dir, '%Y.txt')
-        config['default']['file'] = self.entries_file
 
-        with freeze_time('2013-01-01'):
-            self.write_entries("""01/01/2013
-    alias_1 1 january 2013
+        with self.settings({'default': {'file': self.entries_file}}):
+            with freeze_time('2013-01-01'):
+                self.write_entries("""01/01/2013
+        alias_1 1 january 2013
+        """)
+
+            with freeze_time('2013-02-01'):
+                self.write_entries("""01/02/2013
+        alias_1 1 february 2013
+        """)
+
+            with freeze_time('2014-01-01'):
+                self.write_entries("""01/01/2014
+    alias_1 1 january 2014
     """)
 
-        with freeze_time('2013-02-01'):
-            self.write_entries("""01/02/2013
-    alias_1 1 february 2013
+            with freeze_time('2014-02-01'):
+                self.write_entries("""01/02/2014
+    alias_1 1 february 2014
     """)
 
-        with freeze_time('2014-01-01'):
-            self.write_entries("""01/01/2014
-alias_1 1 january 2014
-""")
-
-        with freeze_time('2014-02-01'):
-            self.write_entries("""01/02/2014
-alias_1 1 february 2014
-""")
-
-            stdout = self.run_command('commit', config_options=config,
-                                      args=['--yes'])
+                stdout = self.run_command('commit', args=['--yes'])
         shutil.rmtree(tmp_entries_dir)
 
         self.assertIn('january 2013', stdout)
@@ -212,17 +199,15 @@ alias_1 1 february 2014
         self.assertIn('january 2014', stdout)
         self.assertIn('february 2014', stdout)
 
+    @override_settings({'default': {'local_aliases': '_pingpong'}})
     @freeze_time('2014-01-21')
     def test_local_alias(self):
-        config = self.default_config.copy()
-        config['default']['local_aliases'] = '_pingpong'
-
         self.write_entries("""20/01/2014
 _pingpong 0800-0900 Play ping-pong
 """)
 
         stdout = self.run_command('commit')
-        self.assertIn("Total pushed                   0.00", stdout)
+        self.assertLineIn("Total pushed, local  1.00", stdout)
 
     @freeze_time('2014-01-21')
     def test_fix_entries_start_time_without_previous(self):
@@ -338,3 +323,17 @@ alias_1            13:30-16:15    improve existing styles and fix the tests
             entries = f.readlines()
 
         self.assertNotIn('09:30', entries[2])
+
+    @freeze_time('2014-01-21')
+    def test_regroup_entries_setting(self):
+        self.write_entries("""20/01/2014
+alias_1 0800-0900 Play ping-pong
+alias_1 1200-1300 Play ping-pong
+""")
+
+        with self.settings({'default': {'regroup_entries': '0'}}):
+            stdout = self.run_command('commit')
+        self.assertLineIn(
+            "alias_1 (123/456, test)        1.00  Play ping-pong",
+            stdout
+        )

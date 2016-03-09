@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+from collections import defaultdict
 import inspect
 import re
 import six
@@ -14,6 +15,8 @@ from ..projects import Project
 
 
 class BaseUi(object):
+    DURATION_FORMAT = '{:>5.2f}'
+
     def msg(self, message, color=None):
         click.echo(message)
 
@@ -21,6 +24,12 @@ class BaseUi(object):
         self.msg(click.style(
             click.wrap_text("Error: %s" % message, preserve_paragraphs=True),
             fg='red')
+        )
+
+    def warn(self, message):
+        self.msg(click.style(
+            click.wrap_text(message, preserve_paragraphs=False),
+            fg='yellow')
         )
 
     def projects_list(self, projects, numbered=False):
@@ -89,8 +98,6 @@ class BaseUi(object):
             raise CancelException()
 
     def overwrite_alias(self, alias, mapping, retry=True):
-        mapping_name = Project.tuple_to_str(mapping.mapping)
-
         if retry:
             choices = 'y/n/R(etry)'
             default_choice = 'r'
@@ -100,8 +107,13 @@ class BaseUi(object):
             default_choice = 'n'
             choice_regexp = r'^[yn]$'
 
-        s = ("The alias `%s` is already mapped to `%s`.\nDo you want to "
-             "overwrite it [%s]? " % (alias, mapping_name, choices))
+        if mapping.mapping:
+            mapping_name = Project.tuple_to_str(mapping.mapping)
+            s = ("The alias `%s` is already mapped to `%s`.\nDo you want to "
+                 "overwrite it [%s]? " % (alias, mapping_name, choices))
+        else:
+            s = ("The alias `%s` is already mapped locally.\nDo you want to "
+                 "overwrite it [%s]? " % (alias, choices))
 
         overwrite = terminal.select_string(
             s, choice_regexp, re.I, default_choice
@@ -115,29 +127,32 @@ class BaseUi(object):
         return None
 
     def alias_added(self, alias, mapping):
-        mapping_name = Project.tuple_to_str(mapping)
+        if mapping:
+            mapping_name = Project.tuple_to_str(mapping)
+            self.msg("The following alias has been added to your "
+                     "configuration file: %s = %s" % (alias, mapping_name))
+        else:
+            self.msg("The following unmapped alias has been added to your "
+                     "configuration file: %s" % alias)
 
-        self.msg("The following alias has been added to your configuration "
-                 "file: %s = %s" % (alias, mapping_name))
-
-    def _show_mapping(self, alias_mapping, project, alias_first=True):
-        (alias, mapping) = alias_mapping
+    def _show_mapping(self, mapping, project, alias_first=True):
+        (alias, mapping) = mapping
 
         # Handle local aliases
-        if mapping is None:
-            self.msg("%s -> local alias" % alias)
+        if not mapping.is_mapped():
+            self.msg("[%s] %s -> not mapped" % (mapping.backend, alias))
             return
 
-        mapping_name = '%s/%s' % mapping
+        mapping_name = '%s/%s' % mapping.mapping
 
         if not project:
             project_name = ''
         else:
-            if mapping[1] is None:
+            if mapping.mapping[1] is None:
                 project_name = project.name
-                mapping_name = mapping[0]
+                mapping_name = mapping.mapping[0]
             else:
-                activity = project.get_activity(mapping[1])
+                activity = project.get_activity(mapping.mapping[1])
 
                 if activity is None:
                     project_name = '%s, ?' % (project.name)
@@ -145,13 +160,13 @@ class BaseUi(object):
                     project_name = '%s, %s' % (project.name, activity.name)
 
         if alias_first:
-            args = [alias, mapping_name]
+            args = [mapping.backend, alias, mapping_name]
         else:
-            args = [mapping_name, alias]
+            args = [mapping.backend, mapping_name, alias]
 
         args.append(' (%s)' % project_name if project_name else '')
 
-        self.msg("%s -> %s%s" % tuple(args))
+        self.msg("[%s] %s -> %s%s" % tuple(args))
 
     def mapping_detail(self, mapping, project):
         self._show_mapping(mapping, project, False)
@@ -179,54 +194,78 @@ class BaseUi(object):
 
         return click.confirm("\nAre you sure you want to continue?")
 
-    def display_entries_list(self, entries, msg, details=True):
+    def ignored_entries_list(self, entries):
         total = 0
         for entry in entries:
-            if isinstance(entry, tuple):
-                reason = entry[1]
-                entry = entry[0]
-                line = "%s - %s" % (six.text_type(entry), reason)
-            else:
-                line = six.text_type(entry)
-
+            self.msg(self.get_entry_status(entry))
             total += entry.hours
-            if details:
-                self.msg(line)
 
-        self.msg('\n%-29s %5.2f' % (msg, total))
+        self.msg(click.style('\n' + self.columnize([
+            "Total ignored", self.DURATION_FORMAT.format(total)]
+        ), bold=True))
 
-    def pushed_entries_total(self, pushed_entries):
-        self.display_entries_list(pushed_entries, 'Total pushed', False)
+    def failed_entries_list(self, entries):
+        total = 0
+        for entry in entries:
+            self.msg(click.style(
+                self.get_entry_status(entry) + " - " + entry.push_error,
+                fg='red'
+            ))
+            total += entry.hours
 
-    def ignored_entries_list(self, ignored_entries):
-        self.display_entries_list(ignored_entries, 'Total ignored')
-
-    def failed_entries_list(self, failed_entries):
-        self.display_entries_list([
-            (entry, entry.push_error) for entry in failed_entries
-        ], 'Total failed')
+        self.msg(click.style('\n' + self.columnize([
+            "Total failed", self.DURATION_FORMAT.format(total)]
+        ), bold=True, fg='red'))
 
     def get_entry_status(self, entry):
         if entry.is_ignored():
             status = 'ignored'
         elif entry.alias not in aliases_database:
-            status = 'not mapped'
-        elif aliases_database.is_local(entry.alias):
-            status = 'local'
-        elif entry.alias in aliases_database:
-            status = '%s/%s' % aliases_database[entry.alias].mapping
+            status = 'inexistent alias'
+        # alias is in the database
         else:
-            status = ''
+            if not aliases_database[entry.alias].is_mapped():
+                status = ''
+            else:
+                status = '%s/%s' % aliases_database[entry.alias].mapping
+
+        try:
+            status_format = '{status}, {backend}' if status else '{backend}'
+            status = status_format.format(
+                status=status,
+                backend=aliases_database[entry.alias].backend
+            )
+        except (KeyError, AttributeError):
+            pass
 
         if status:
             project_name = '%s (%s)' % (entry.alias, status)
         else:
             project_name = entry.alias
 
-        return '%-30s %-5.2f %s' % (project_name, entry.hours,
-                                    entry.description)
+        duration_format = self.DURATION_FORMAT
+        # Put parentheses around internal aliases since they don't count in the
+        # hours total
+        if (entry.alias in aliases_database and
+                not aliases_database[entry.alias].is_mapped()):
+            duration_format = '(' + duration_format + ')'
+
+        return self.columnize([
+            project_name, duration_format.format(entry.hours),
+            entry.description
+        ])
+
+    def columnize(self, text):
+        for _ in range(len(text), 3):
+            text.append('')
+
+        return '{:<30}{:^7} {}'.format(*text)
 
     def show_status(self, entries_dict):
+        if not list(filter(None, entries_dict.values())):
+            self.msg("No staging changes. Run `taxi edit` to add entries.")
+            return
+
         self.msg('Staging changes :\n')
         entries_list = entries_dict.items()
         entries_list = sorted(entries_list)
@@ -239,28 +278,42 @@ class BaseUi(object):
             subtotal_hours = 0
             # The encoding of date.strftime output depends on the current
             # locale, so we decode it to get a unicode string
-            self.msg('# %s #' % date_utils.unicode_strftime(
-                date, '%A %d %B').capitalize())
-            for entry in entries:
-                self.msg(self.get_entry_status(entry))
+            current_date = date_utils.unicode_strftime(date, '%A %d %B').capitalize()
 
+            self.msg(click.style(
+                '%s\n' % (current_date),
+                bold=True
+            ))
+            for entry in entries:
                 if (not entry.is_ignored() and entry.alias not in
                         aliases_database):
+                    self.msg(click.style(
+                        self.get_entry_status(entry), fg='yellow'
+                    ))
+
                     close_matches = aliases_database.get_close_matches(
                         entry.alias
                     )
                     if close_matches:
-                        self.msg('\tDid you mean one of the following: %s?' %
-                                 ', '.join(close_matches))
+                        self.msg(click.style(
+                            '\tDid you mean one of the following: %s?' %
+                            ', '.join(close_matches), fg='yellow'
+                        ))
+                else:
+                    self.msg(self.get_entry_status(entry))
 
-                if (entry.alias not in aliases_database
-                        or not aliases_database.is_local(entry.alias)):
+                if (entry.alias not in aliases_database or
+                        aliases_database[entry.alias].mapping is not None):
                     subtotal_hours += entry.hours or 0
 
-            self.msg('%-29s %5.2f\n' % ('', subtotal_hours))
+            self.msg(self.columnize([
+                '', self.DURATION_FORMAT.format(subtotal_hours)
+            ]))
             total_hours += subtotal_hours
 
-        self.msg('%-29s %5.2f' % ('Total', total_hours))
+        self.msg("\n" + click.style(self.columnize([
+            "Total", self.DURATION_FORMAT.format(total_hours)
+        ]), bold=True))
         self.msg('\nUse `taxi ci` to commit staging changes to the server')
 
     def pushed_entry(self, entry):
@@ -273,12 +326,21 @@ class BaseUi(object):
             self.msg(self.get_entry_status(entry))
 
     def pushed_entries_summary(self, entries, ignored_entries):
-        pushed_entries = list(filter(lambda e: e.push_error is None, entries))
+        backends_total = defaultdict(int)
+        for entry in entries:
+            if entry.push_error is None:
+                backends_total[aliases_database[entry.alias].backend] += entry.hours
+
         failed_entries = list(
             filter(lambda e: e.push_error is not None, entries)
         )
 
-        self.pushed_entries_total(pushed_entries)
+        self.msg('')
+        for backend_name, total in backends_total.items():
+            self.msg(click.style(self.columnize([
+                "Total pushed, " + backend_name,
+                self.DURATION_FORMAT.format(total)
+            ]), bold=True))
 
         if ignored_entries:
             self.msg(click.style("\nIgnored entries\n",
@@ -295,7 +357,7 @@ class BaseUi(object):
 
     def search_results(self, projects):
         for project in projects:
-            self.msg('%s %s %4s %s' % (
+            self.msg('%s [%s] %4s %s' % (
                 project.get_short_status(), project.backend, project.id,
                 project.name
             ))
@@ -365,3 +427,57 @@ class BaseUi(object):
         if modified_aliases:
             self.msg("\nThe following shared aliases have been updated:\n")
             show_aliases(modified_aliases)
+
+    def show_command_results(self, search, matches, projects_db):
+        def mapping_to_activity_name(mapping):
+            activity = projects_db.mapping_to_project(mapping)
+            if not activity[0] or not activity[1]:
+                activity_str = "a non-existent activity"
+            else:
+                activity_str = '{}, {}'.format(
+                    activity[0].name, activity[1].name
+                )
+
+            return activity_str
+
+        matches_str = []
+
+        for alias in matches['aliases']:
+            if not alias.is_mapped():
+                matches_str.append("a local alias")
+            else:
+                activity_str = mapping_to_activity_name(alias)
+                matches_str.append(
+                    "an alias to {activity} ({mapping}) on the {backend} "
+                    "backend".format(
+                        activity=click.style(activity_str, bold=True),
+                        mapping='%s/%s' % alias.mapping,
+                        backend=click.style(alias.backend, bold=True)
+                    )
+                )
+        for project, activity in matches['projects']:
+            if activity:
+                matches_str.append(
+                    "the activity {activity} of the project {project}".format(
+                        project=click.style(project.name, bold=True),
+                        activity=click.style(activity.name, bold=True)
+                    )
+                )
+            else:
+                matches_str.append("the project {}".format(
+                    click.style(project.name, bold=True)
+                ))
+
+        for mapping, alias in matches['mappings']:
+            activity_str = mapping_to_activity_name(mapping)
+            matches_str.append(
+                "aliased by {alias} on the {backend} backend".format(
+                    alias=click.style(alias, bold=True),
+                    backend=click.style(mapping.backend, bold=True)
+                )
+            )
+
+        self.msg("Your search string %s is %s." % (
+            click.style(search, bold=True),
+            ', '.join(matches_str) if matches_str else "nothing"
+        ))
