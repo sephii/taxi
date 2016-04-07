@@ -1,173 +1,128 @@
 from __future__ import unicode_literals
 
-import os
-import shutil
-import tempfile
+import datetime
 
 from freezegun import freeze_time
 
-from . import override_settings, CommandTestCase
+from .assertions import line_in
+from .conftest import EntriesFileGenerator
 
 
-class StatusCommandTestCase(CommandTestCase):
-    @freeze_time('2014-01-20')
-    def test_status_previous_file(self):
-        tmp_entries_dir = tempfile.mkdtemp()
-        os.remove(self.entries_file)
+@freeze_time('2014-02-20')
+def test_status_previous_file(cli, config, data_dir):
+    config.set('default', 'nb_previous_files', '1')
+    efg = EntriesFileGenerator(data_dir, '%m_%Y.tks')
+    efg.expand(datetime.date(2014, 1, 1)).write(
+        "01/01/2014\nalias_1 1 january"
+    )
+    efg.expand(datetime.date(2014, 2, 1)).write(
+        "01/02/2014\nalias_1 1 february"
+    )
+    efg.patch_config(config)
 
-        self.entries_file = os.path.join(tmp_entries_dir, '%m_%Y.txt')
-        with self.settings({'default': {'file': self.entries_file}}):
-            with freeze_time('2014-01-01'):
-                self.write_entries("""01/01/2014
-    alias_1 1 january
-    """)
+    stdout = cli('status')
 
-            with freeze_time('2014-02-01'):
-                self.write_entries("""01/02/2014
-    alias_1 1 february
-    """)
+    assert 'january' in stdout
+    assert 'february' in stdout
 
-                stdout = self.run_command('status')
-            shutil.rmtree(tmp_entries_dir)
 
-        self.assertIn('january', stdout)
-        self.assertIn('february', stdout)
+@freeze_time('2014-01-20')
+def test_local_alias(cli, config, entries_file):
+    config.set('local_aliases', '_pingpong', '')
 
-    @override_settings({'local_aliases': {'_pingpong': None}})
-    @freeze_time('2014-01-20')
-    def test_local_alias(self):
-        self.write_entries("""20/01/2014
+    entries_file.write("""20/01/2014
 _pingpong 0800-0900 Play ping-pong
 """)
-        stdout = self.run_command('status')
+    stdout = cli('status')
 
-        self.assertLineIn(
-            "_pingpong  (1.00)  Play ping-pong",
-            stdout
-        )
+    assert line_in("_pingpong  ( 1.00)  Play ping-pong", stdout)
 
-    @override_settings({'local_aliases': {
-        '_pingpong': None,
-        '_coffee': None
-    }})
-    @freeze_time('2014-01-20')
-    def test_multiple_local_aliases(self):
-        self.write_entries("""20/01/2014
+
+@freeze_time('2014-01-20')
+def test_multiple_local_aliases(cli, config, entries_file):
+    config.set_dict({'local_aliases': {'_pingpong': '', '_coffee': ''}})
+    entries_file.write("""20/01/2014
 _pingpong 0800-0900 Play ping-pong
 _coffee 0900-1000 Drink some coffee
 """)
 
-        stdout = self.run_command('status')
-        self.assertLineIn(
-            "_pingpong  (1.00)  Play ping-pong",
-            stdout
-        )
-        self.assertLineIn(
-            "_coffee    (1.00)  Drink some coffee",
-            stdout
-        )
+    stdout = cli('status')
+    assert line_in(
+        "_pingpong  ( 1.00)  Play ping-pong",
+        stdout
+    )
+    assert line_in(
+        "_coffee    ( 1.00)  Drink some coffee",
+        stdout
+    )
 
-    @freeze_time('2014-01-20')
-    def test_regrouped_entries(self):
-        self.write_entries("""20/01/2014
+
+@freeze_time('2014-01-20')
+def test_regrouped_entries(cli, entries_file):
+    entries_file.write("""20/01/2014
 alias_1 0800-0900 Play ping-pong
 alias_1 1200-1300 Play ping-pong
 """)
 
-        stdout = self.run_command('status')
-        self.assertLineIn(
-            "alias_1        2.00  Play ping-pong",
-            stdout
-        )
+    stdout = cli('status')
+    assert line_in(
+        "alias_1 2.00  Play ping-pong",
+        stdout
+    )
 
-    @freeze_time('2014-01-20')
-    def test_entries_with_different_flags_are_not_regrouped(self):
-        self.write_entries("""20/01/2014
-? alias_1 0800-0900 Play ping-pong
-alias_1 1200-1300 Play ping-pong
-""")
 
-        stdout = self.run_command('status')
-        self.assertLineIn(
-            "alias_1 1.00 Play ping-pong",
-            stdout
-        )
-
-    @freeze_time('2014-01-20')
-    def test_entries_with_same_flags_are_regrouped(self):
-        self.write_entries("""20/01/2014
-? alias_1 0800-0900 Play ping-pong
-? alias_1 1200-1300 Play ping-pong
-""")
-
-        stdout = self.run_command('status')
-        self.assertLineIn(
-            "alias_1 (ignored) 2.00 Play ping-pong",
-            stdout
-        )
-
-    @freeze_time('2014-01-20')
-    def test_status_ignored_not_mapped(self):
-        self.write_entries("""20/01/2014
+@freeze_time('2014-01-20')
+def test_status_ignored_not_mapped(cli, entries_file):
+    entries_file.write("""20/01/2014
 ? unmapped 0800-0900 Play ping-pong
 """)
 
-        stdout = self.run_command('status')
-        self.assertLineIn(
-            "unmapped (ignored, inexistent alias)             1.00  Play ping-pong",
-            stdout
-        )
+    stdout = cli('status')
+    assert line_in(
+        "unmapped (ignored, inexistent alias) 1.00  Play ping-pong",
+        stdout
+    )
 
-    @override_settings({'default': {'regroup_entries': '0'}})
-    @freeze_time('2014-01-20')
-    def test_regroup_entries_setting(self):
-        self.write_entries("""20/01/2014
+
+@freeze_time('2014-01-20')
+def test_regroup_entries_setting(cli, config, entries_file):
+    config.set('default', 'regroup_entries', '0')
+    entries_file.write("""20/01/2014
 alias_1 0800-0900 Play ping-pong
 alias_1 1200-1300 Play ping-pong
 """)
 
-        stdout = self.run_command('status')
-        self.assertLineIn(
-            "alias_1        1.00  Play ping-pong",
-            stdout
-        )
+    stdout = cli('status')
+    assert line_in(
+        "alias_1        1.00  Play ping-pong",
+        stdout
+    )
 
-    @override_settings({'test_aliases': {
-        'alias_1': '123/456',
-        'alias_2': '456/789',
-    }})
-    @freeze_time('2014-01-20')
-    def test_status_doesnt_show_pushed_entries(self):
-        self.write_entries("""20/01/2014
+
+@freeze_time('2014-01-20')
+def test_status_doesnt_show_pushed_entries(cli, config, entries_file):
+    config.set_dict({
+        'test_aliases': {'alias_1': '123/456', 'alias_2': '456/789'}
+    })
+    entries_file.write("""20/01/2014
 = alias_1 0800-0900 Play ping-pong
 alias_2 1200-1300 Play ping-pong
 """)
 
-        stdout = self.run_command('status')
-        self.assertNotIn('alias_1', stdout)
+    stdout = cli('status')
 
-    @override_settings({'test_aliases': {
-        'alias_1': '123/456',
-        'alias_2': '456/789',
-    }})
-    @freeze_time('2014-01-20')
-    def test_status_pushed_option_shows_pushed_entries(self):
-        self.write_entries("""20/01/2014
+    assert 'alias_1' not in stdout
+
+
+@freeze_time('2014-01-20')
+def test_status_pushed_option_shows_pushed_entries(cli, config, entries_file):
+    config.set_dict({
+        'test_aliases': {'alias_1': '123/456', 'alias_2': '456/789'}
+    })
+    entries_file.write("""20/01/2014
 = alias_1 0800-0900 Play ping-pong
 alias_2 1200-1300 Play ping-pong
 """)
 
-        stdout = self.run_command('status', ['--pushed'])
-        self.assertIn('alias_1 (pushed)', stdout)
-
-    @override_settings({'flags': {
-        'ignored': '~',
-    }})
-    @freeze_time('2014-01-20')
-    def test_customize_flags_uses_customized_flags(self):
-        self.write_entries("""20/01/2014
-~ alias_1 0800-0900 Play ping-pong
-alias_2 1200-1300 Play ping-pong
-""")
-        stdout = self.run_command('status')
-        self.assertLineIn('alias_1 (ignored) 1.00 Play ping-pong', stdout)
+    stdout = cli('status', ['--pushed'])
+    assert 'alias_1' in stdout

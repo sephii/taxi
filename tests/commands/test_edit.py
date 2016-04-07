@@ -1,108 +1,87 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-import os
-import tempfile
+import datetime
 
 from freezegun import freeze_time
 
-from taxi.utils.file import expand_date
-
-from . import CommandTestCase, override_settings
+from .conftest import EntriesFileGenerator
 
 
-class EditCommandTestCase(CommandTestCase):
-    @override_settings({'default': {'auto_fill_days': '0,1,2,3,4,5,6'}})
-    @freeze_time('2014-01-21')
-    def test_autofill_with_specified_file(self):
-        """
-        Edit with specified date should not autofill it.
-        """
-        self.run_command('edit', args=['--file=%s' % self.entries_file])
+def test_autofill_with_specified_file(cli, config, entries_file):
+    """
+    Edit with specified date should not autofill it.
+    """
+    config.set('default', 'auto_fill_days', '0,1,2,3,4,5,6')
+    cli('edit', args=['--file=%s' % str(entries_file)])
 
-        with open(self.entries_file, 'r') as f:
-            self.assertEqual(f.read(), '')
+    assert entries_file.read() == ''
 
-    @freeze_time('2014-01-21')
-    def test_edit_utf8_file(self):
-        """
-        Editing a file that contains accents should not crash.
-        """
-        self.write_entries("""20/01/2014
-alias_1 2 préparation du café pour l'évènement
-""")
-        self.run_command('edit')
 
-    def test_edit_status(self):
-        tmp_entries_dir = tempfile.mkdtemp()
-        os.remove(self.entries_file)
+def test_edit_utf8_file(cli, config, entries_file):
+    """
+    Editing a file that contains accents should not crash.
+    """
+    entries_file.write(
+        "20/01/2014\nalias_1 2 préparation du café pour l'évènement"
+    )
 
-        self.entries_file = os.path.join(tmp_entries_dir, '%m_%Y.txt')
+    cli('edit')
 
-        with self.settings({'default': {'file': self.entries_file}}):
-            with freeze_time('2014-01-21'):
-                self.write_entries("""20/01/2014
-    alias_1 2 hello world
-    """)
 
-            with freeze_time('2014-02-21'):
-                self.write_entries("""20/02/2014
-    alias_1 2 hello world
-    """)
+def test_edit_status(cli, config, data_dir):
+    efg = EntriesFileGenerator(data_dir, '%m_%Y.txt')
+    efg.expand(datetime.date(2014, 1, 21)).write(
+        "20/01/2014\nalias_1 2 hello world"
+    )
+    efg.expand(datetime.date(2014, 2, 21)).write(
+        "20/02/2014\nalias_1 2 hello world"
+    )
+    efg.patch_config(config)
 
-                stdout = self.run_command('edit')
-                self.assertIn('Monday 20 january', stdout)
+    with freeze_time('2014-01-21'):
+        stdout = cli('edit')
 
-    def test_prefill_entries_add_to_bottom(self):
-        tmp_entries_dir = tempfile.mkdtemp()
-        os.remove(self.entries_file)
+    assert 'Monday 20 january' in stdout
 
-        self.entries_file = os.path.join(tmp_entries_dir, '%m_%Y.txt')
 
-        with self.settings({'default': {'file': self.entries_file}}):
-            with freeze_time('2014-01-21'):
-                self.write_entries("""20/01/2014
-    alias_1 2 hello world
+def test_prefill_entries_add_to_bottom(cli, data_dir, config):
+    efg = EntriesFileGenerator(data_dir, '%m_%Y.txt')
+    efg.expand(datetime.date(2014, 1, 21)).write(
+        """20/01/2014
+alias_1 2 hello world
 
-    21/01/2014
-    alias_1 1 foo bar
-    """)
+21/01/2014
+alias_1 1 foo bar""")
+    efg.expand(datetime.date(2014, 2, 21)).write(
+        "20/02/2014\nalias_1 2 hello world"
+    )
+    efg.patch_config(config)
 
-            with freeze_time('2014-02-21'):
-                self.write_entries("""20/02/2014
-    alias_1 2 hello world
-    """)
-                self.run_command('edit')
+    with freeze_time('2014-02-21'):
+        cli('edit')
 
-                with open(expand_date(self.entries_file), 'r') as f:
-                    lines = f.readlines()
+    lines = efg.expand(datetime.date(2014, 2, 21)).readlines()
 
-                self.assertEqual('20/02/2014\n', lines[0])
-                self.assertEqual('21/02/2014\n', lines[3])
+    assert '20/02/2014\n' == lines[0]
+    assert '21/02/2014\n' == lines[3]
 
-    def test_previous_file_doesnt_autofill(self):
-        tmp_entries_dir = tempfile.mkdtemp()
-        os.remove(self.entries_file)
 
-        self.entries_file = os.path.join(tmp_entries_dir, '%m_%Y.txt')
+def test_previous_file_doesnt_autofill(cli, data_dir, config):
+    efg = EntriesFileGenerator(data_dir, '%m_%Y.txt')
+    efg.expand(datetime.date(2014, 1, 21)).write(
+        """20/01/2014
+alias_1 2 hello world
 
-        with self.settings({'default': {'file': self.entries_file}}):
-            with freeze_time('2014-01-21'):
-                self.write_entries("""20/01/2014
-    alias_1 2 hello world
+21/01/2014
+alias_1 1 foo bar""")
+    efg.expand(datetime.date(2014, 2, 21)).write(
+        "20/02/2014\nalias_1 2 hello world"
+    )
+    efg.patch_config(config)
 
-    21/01/2014
-    alias_1 1 foo bar
-    """)
+    cli('edit', args=['1'])
 
-            with freeze_time('2014-02-21'):
-                self.write_entries("""20/02/2014
-    alias_1 2 hello world
-    """)
-                self.run_command('edit', args=['1'])
+    lines = efg.expand(datetime.date(2014, 2, 21)).readlines()
 
-            with freeze_time('2014-01-21'):
-                with open(expand_date(self.entries_file), 'r') as f:
-                    lines = f.readlines()
-
-                self.assertNotIn('21/02/2014\n', lines)
+    assert '21/02/2014\n' not in lines
