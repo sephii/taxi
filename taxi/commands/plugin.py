@@ -1,7 +1,6 @@
 from __future__ import unicode_literals
 
 import json
-from json.decoder import JSONDecodeError
 import subprocess
 import sys
 
@@ -26,7 +25,9 @@ def get_plugin_info(plugin):
 
     try:
         json_resp = json.loads(resp.read().decode())
-    except JSONDecodeError:
+    # Catch ValueError instead of JSONDecodeError which is only available in
+    # Python 3.5+
+    except ValueError:
         raise ValueError(
             "Could not decode JSON info for plugin at {}".format(url)
         )
