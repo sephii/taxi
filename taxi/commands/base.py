@@ -77,54 +77,58 @@ def create_config_file(filename):
                 print("Ok then.")
                 sys.exit(0)
 
-        response = click.confirm(
-            "The configuration file %s does not exist yet.\nDo you want to"
-            " create it now?" % filename, default=True
+        welcome_msg = "Welcome to Taxi!"
+        click.secho(welcome_msg, fg='green', bold=True)
+        click.secho('=' * len(welcome_msg) + '\n', fg='green', bold=True)
+
+        click.echo(click.wrap_text(
+            "It looks like this is the first time you run Taxi. You will need "
+            "a configuration file ({}) in order to proceed. Please answer a "
+            "few questions to create your configuration file.".format(
+                filename
+            )
+        ) + '\n')
+
+        config = resource_string('taxi',
+                                 'etc/taxirc.sample').decode('utf-8')
+        context = {}
+        available_backends = backends_registry._entry_points.keys()
+
+        context['backend'] = click.prompt(
+            "Backend you want to use (choices are %s)" %
+            ', '.join(available_backends),
+            type=click.Choice(available_backends)
+        )
+        context['username'] = click.prompt("Username or token")
+        context['password'] = parse.quote(
+            click.prompt("Password (leave empty if you're using"
+                         " a token)", hide_input=True, default=''),
+            safe=''
+        )
+        # Password can be empty in case of token auth so the ':' separator
+        # is not included in the template config, so we add it if the user
+        # has set a password
+        if context['password']:
+            context['password'] = ':' + context['password']
+
+        context['hostname'] = click.prompt(
+            "Hostname of the backend (eg. timesheets.example.com)",
+            type=Hostname()
         )
 
-        if response:
-            config = resource_string('taxi',
-                                     'etc/taxirc.sample').decode('utf-8')
-            available_backends = backends_registry._entry_points.keys()
-            context = {}
-            context['backend'] = click.prompt(
-                "Backend you want to use (choices are %s)" %
-                ', '.join(available_backends),
-                type=click.Choice(available_backends)
-            )
-            context['username'] = click.prompt("Username or token")
-            context['password'] = parse.quote(
-                click.prompt("Password (leave empty if you're using"
-                             " a token)", hide_input=True, default=''),
-                safe=''
-            )
-            # Password can be empty in case of token auth so the ':' separator
-            # is not included in the template config, so we add it if the user
-            # has set a password
-            if context['password']:
-                context['password'] = ':' + context['password']
+        editor = Editor().get_editor()
+        context['editor'] = click.prompt(
+            "Editor command to edit your timesheets", default=editor
+        )
 
-            context['hostname'] = click.prompt(
-                "Hostname of the backend (eg. timesheets.example.com)",
-                type=Hostname()
-            )
+        templated_config = config.format(**context)
 
-            editor = Editor().get_editor()
-            context['editor'] = click.prompt(
-                "Editor command to edit your timesheets", default=editor
-            )
+        directory = os.path.dirname(filename)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
 
-            templated_config = config.format(**context)
-
-            directory = os.path.dirname(filename)
-            if not os.path.exists(directory):
-                os.makedirs(directory)
-
-            with open(filename, 'w') as f:
-                f.write(templated_config)
-        else:
-            print("Ok then.")
-            sys.exit(1)
+        with open(filename, 'w') as f:
+            f.write(templated_config)
     else:
         settings = Settings(filename)
         conversions = settings.needed_conversions

@@ -26,19 +26,11 @@ You can then get a summary of your timesheet::
 Through the use of backends, Taxi allows you to push your timesheets to
 different systems.
 
-Installation
-============
+Installation & usage
+====================
 
-The easiest way to install Taxi is by using the installation script::
-
-    curl https://raw.githubusercontent.com/sephii/taxi/installer/install.sh | sh
-
-The installer will guide you through the process of getting Taxi installed on
-your system.
-
-Head over to the `documentation
-<http://taxi-timesheets.readthedocs.org/en/master/userguide.html>`_ for a
-complete guide on how to use Taxi.
+Everything is covered in the user documentation available on Read The Docs:
+https://taxi-timesheets.readthedocs.org/en/master/userguide.html
 
 .. _supported_backends:
 

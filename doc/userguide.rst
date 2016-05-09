@@ -4,17 +4,17 @@ User guide
 Installation
 ------------
 
-Taxi runs on either Python 2.7, 3.4 and 3.5. It might run on older versions as
-well but it's only tested against the latest Python 2 and 3 versions. To
-install it, you can use the install script::
+Taxi runs on Python 2.7, 3.4 and 3.5. The easiest way to install it is by using
+the install script::
 
     curl https://raw.githubusercontent.com/sephii/taxi/stable/install.sh | sh
 
-The install script will take care of asking you a few questions and getting
-Taxi installed on your system.
+The installer will guide you through the process of getting Taxi installed on
+your system.
 
 .. note::
-    If you don't like piping into sh, you can also install it directly from PyPI::
+    If you don't like piping into sh, you can also install it directly from
+    PyPI::
 
         pip install taxi
 
@@ -22,67 +22,122 @@ Taxi installed on your system.
     to be able to push your entries and retrieve projects and activities. For a
     list of available backends, refer to the :ref:`supported_backends` list.
 
-Getting started
----------------
+First steps with Taxi
+---------------------
 
-Your first step will probably to get the list of projects from the backend.
-This will allow you to search through your projects and, if your backend
-supports this, get some shared aliases you can use without further
-configuration::
+Once Taxi is installed, you'll probably want to fetch the projects list from
+your backend::
 
     taxi update
 
-If this is the first time you run Taxi, you'll be asked a few questions to
-create the configuration file.
+Since this is the first time you run Taxi, you'll get asked a few questions::
 
-If your backend supports shared aliases, you can now see the list of available
-aliases with the ``alias`` command::
+    Welcome to Taxi!
+    ================
 
-    taxi alias
+    It looks like this is the first time you run Taxi. You will need a
+    configuration file (~/.taxirc) to proceed. Please answer a few questions to
+    create your configuration file.
 
-You can now start writing your timesheets. Taxi uses regular text files to keep
-track of the time you record. The default location of your timesheets is
-``~/zebra/%Y/%m.tks``, where ``%Y`` and ``%m`` are replaced by the current year
-and current month. You'll find more information about this in the
-:ref:`config` section.
+    Backend you want to use (choices are dummy, zebra): zebra
+    Username or token: b4b8123f4addb27ad0eb0b2b0a0ae81730af96b8
+    Password (leave empty if you're using a token) []: 
+    Editor command to edit your timesheets [vim]: 
+    Hostname of the backend (eg. timesheets.example.com): zebra.example.com
 
-While you could open your timesheet file directly with your editor, Taxi makes
-your life easier with the ``edit`` command, which will open the current
-timesheet in your favourite editor. Not only it will determine the correct file
-to open according to the current date, but it will also automatically fill it
-with date markers. All there is to do now is write your entries. For example,
-let's say I played ping-pong from 9 to 10:30, and then I worked on Taxi from
-10:30 to 12:00::
+Taxi is now ready to use! Let's start by recording the time we spent installing
+Taxi::
 
-    23/02/2015
+    taxi edit
 
-    pingpong 09:00-10:30 Play ping-pong
-    taxi     10:30-12:00 Write documentation
+.. note::
 
-Now if you close your editor you should see something like that::
+    If you didn't choose the correct editor when running Taxi for the first
+    time you might get into an editor called `vim` at this point. To exit it,
+    type `:q!`. Then to manually set the editor Taxi should use, open your Taxi
+    configuration file (by default `~/.config/taxi/taxirc`), and change the
+    value of the `editor` setting to the editor you want. If you're using
+    Linux, you might put `gedit`. If you're using OS X, you might put `open
+    -a TextEdit`.
+
+Your editor will pop up and you'll see the current date has been automatically
+added for you. Let's add an entry so your file looks something like that::
+
+    09/05/2016
+
+    intro 10:15-10:30 Install Taxi
+
+An entry consists of 3 parts:
+
+* An alias (`intro`)
+* A duration (`10:15-10:30`)
+* A description (`Install Taxi`)
+
+Aliases allow you to map meaningful names to activity ids. At that point
+you'll probably don't really know what alias to use, so let's just try that for
+now and we'll see what Taxi has to say about it.
+
+Save the file and close your editor. You should see Taxi displaying a summary
+of what you did::
 
     Staging changes :
 
-    # Monday 23 february #
-    pingpong (not mapped)          1.50  Play ping-pong
-            Did you mean one of the following: _inno, _internal, _migration?
-    taxi (2185/1369)               1.50  Write documentation
-                                   3.00
+    Monday 09 may
 
-    Total                          3.00
+    intro (inexistent alias)        0.25  Install Taxi
+        Did you mean one of the following: _internal, _infra, _interview?
+                                    0.25
+
+    Total                           0.25
 
     Use `taxi ci` to commit staging changes to the server
 
-If you don't see that, you're probably using an editor that runs in the
-background. In that case, running ``taxi status`` will show you the same
-output. You can see that each alias is displayed along with its mapping. If the
-alias you entered is not mapped, you'll get a suggestion of close matches.
+.. note::
 
-Once you're done with your editing, it's time to push it. For this, use the
-``commit`` command. This command will push your entries to the backends, and
-mark them as pushed so that they're ignored the next time you'll run the
-``commit`` command. You'll notice the ping-pong entry wasn't pushed; since it's
-not mapped to any alias it was ignored during the push phase.
+    Depending on the editor you're using you might not see anything happening
+    when you close the file and you might need to run `taxi status` to get this
+    output.
+
+Whoops! It looks like the alias we used doesn't exist. Taxi tried to help us by
+suggesting similar matches among available aliases, and actually `_internal`
+looks like the correct alias to use. We could have searched for aliases that
+look like `internal` with the following command: ``taxi alias list internal``.
+
+.. note::
+    This alias `_internal` exists because we ran `taxi update` before, which
+    synchronized the aliases database from the remote backend. You can also use
+    custom aliases that will not be shared with the remote backend. Refer to
+    the `alias` command help by running ``taxi alias --help``.
+
+Let's edit our file once again and fix that::
+
+    taxi edit
+
+Replace the `intro` alias with `_internal`::
+
+    09/05/2016
+
+    _internal 10:15-10:30 Install Taxi
+
+Close your editor and run `taxi status` if needed and check the output::
+
+    Staging changes :
+
+    Monday 09 may
+
+    _internal (7/16, liip)          0.25  Install Taxi
+                                    0.25
+
+    Total                           0.25
+
+    Use `taxi ci` to commit staging changes to the server
+
+You can now see the `_internal` alias has been recognized as mapped to project
+id 7, activity id 16 on the `liip` backend. If you're satisfied with that, you
+can now push this to the remote server (`ci` is a shorthand for `commit`, which
+is equivalent)::
+
+    taxi ci
 
 Ignored entries
 ~~~~~~~~~~~~~~~
@@ -101,7 +156,7 @@ The output becomes::
 
     Staging changes :
 
-    # Monday 23 february #
+    Monday 23 february
     pingpong (ignored)             1.50  Play ping-pong
                                    1.50
 
@@ -136,13 +191,14 @@ Local aliases
 Some people like to timesheet everything they do: lunch, ping-pong games, going
 to the restroom... anyway, if you're that kind of people you probably don't
 want these entries to be pushed. To achieve that, start by adding a dummy
-backend to your ``.taxirc`` file::
+backend to your configuration file (by default `~/.config/taxi/taxirc` or
+`~/.taxirc`)::
 
     [backends]
     local = dummy://
 
 Then to add a local alias, either add it in the corresponding section in your
-``.taxirc`` file::
+configuration file::
 
     [local_aliases]
     _pingpong
@@ -199,6 +255,9 @@ being ignored. Each part of the range should have the format ``HH:mm``, or
 Backends
 --------
 
+.. note::
+    The `plugin` command is available starting from Taxi 4.2.
+
 Backends are provided through Taxi plugins. To install (or upgrade) a plugin,
 use the `plugin install` command::
 
@@ -211,6 +270,14 @@ You can also see which plugins are installed with `plugin list`::
 
     $> taxi plugin list
     zebra (1.2.0)
+
+.. note::
+
+    This is only valid if you installed Taxi with the install script, that
+    transparently deals with installing Taxi in an isolated environment. If you
+    installed it differently (eg. by using a Debian package or by using pip),
+    either install the corresponding Debian package for the backend you want to
+    use or use pip (eg. ``pip install taxi-zebra``).
 
 Configuration
 ~~~~~~~~~~~~~
@@ -320,7 +387,7 @@ If set to false, similar entries (ie. entries on the same date that are on the
 same alias and have the same description) won't be regrouped.
 
 .. note::
-    This setting is available since Taxi 4.1
+    This setting is available starting from Taxi 4.1
 
 nb_previous_files
 ~~~~~~~~~~~~~~~~~
