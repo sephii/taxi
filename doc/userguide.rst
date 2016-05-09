@@ -8,7 +8,7 @@ Taxi runs on either Python 2.7, 3.4 and 3.5. It might run on older versions as
 well but it's only tested against the latest Python 2 and 3 versions. To
 install it, you can use the install script::
 
-    curl https://github.com/sephii/taxi/blob/stable/install.sh | sh
+    curl https://raw.githubusercontent.com/sephii/taxi/stable/install.sh | sh
 
 The install script will take care of asking you a few questions and getting
 Taxi installed on your system.
@@ -202,7 +202,7 @@ Backends
 Backends are provided through Taxi plugins. To install (or upgrade) a plugin,
 use the `plugin install` command::
 
-    taxi plugin install taxi-zebra
+    taxi plugin install zebra
 
 This will fetch and install the backend plugin. Once installed, you'll still
 need to tell Taxi to use it. This is explained in the next section.
@@ -210,7 +210,7 @@ need to tell Taxi to use it. This is explained in the next section.
 You can also see which plugins are installed with `plugin list`::
 
     $> taxi plugin list
-    taxi-zebra (1.2.0)
+    zebra (1.2.0)
 
 Configuration
 ~~~~~~~~~~~~~

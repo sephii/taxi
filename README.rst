@@ -31,7 +31,7 @@ Installation
 
 The easiest way to install Taxi is by using the installation script::
 
-    curl https://github.com/sephii/taxi/blob/stable/install.sh | sh
+    curl https://raw.githubusercontent.com/sephii/taxi/installer/install.sh | sh
 
 The installer will guide you through the process of getting Taxi installed on
 your system.

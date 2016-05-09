@@ -193,8 +193,8 @@ if 1:
 
         print('')
         if get_confirmation("Do you plan to use Taxi with Zebra?"):
-            Popen([os.path.join(lib_dir, 'bin', 'pip'), 'install',
-                  'taxi-zebra']).wait()
+            Popen([os.path.join(lib_dir, 'bin', 'taxi'), 'plugin', 'install',
+                  'zebra']).wait()
 
         print('')
         print("Taxi has been installed successfully! You can now run 'taxi"
