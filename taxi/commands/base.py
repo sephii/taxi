@@ -104,15 +104,16 @@ def create_config_file(filename):
             if context['password']:
                 context['password'] = ':' + context['password']
 
+            context['hostname'] = click.prompt(
+                "Hostname of the backend (eg. timesheets.example.com)",
+                type=Hostname()
+            )
+
             editor = Editor().get_editor()
             context['editor'] = click.prompt(
                 "Editor command to edit your timesheets", default=editor
             )
 
-            context['hostname'] = click.prompt(
-                "Hostname of the backend (eg. timesheets.example.com)",
-                type=Hostname()
-            )
             templated_config = config.format(**context)
 
             directory = os.path.dirname(filename)
