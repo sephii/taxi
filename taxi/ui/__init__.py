@@ -42,10 +42,10 @@ def echo_success(message):
 class BaseUi(object):
     DURATION_FORMAT = '{:>5.2f}'
 
-    def echo(self, message):
+    def msg(self, message):
         echo(message)
 
-    def error(self, message):
+    def err(self, message):
         echo_error(message)
 
     def warn(self, message):
