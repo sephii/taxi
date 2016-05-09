@@ -185,8 +185,8 @@ You can also chain them::
     taxi          -12:00 Write documentation
     internal      -13:00 Debug coffee machine
 
-Local aliases
-~~~~~~~~~~~~~
+Internal aliases
+~~~~~~~~~~~~~~~~
 
 Some people like to timesheet everything they do: lunch, ping-pong games, going
 to the restroom... anyway, if you're that kind of people you probably don't
@@ -195,19 +195,19 @@ backend to your configuration file (by default `~/.config/taxi/taxirc` or
 `~/.taxirc`)::
 
     [backends]
-    local = dummy://
+    internal = dummy://
 
-Then to add a local alias, either add it in the corresponding section in your
-configuration file::
+Then to add an internal alias, either add it in the corresponding section in
+your configuration file::
 
-    [local_aliases]
+    [internal_aliases]
     _pingpong
     _lunch
     _shit
 
 Or use the ``alias`` command::
 
-    taxi alias add -b local _pingpong ""
+    taxi alias add -b internal _pingpong ""
 
 Getting help
 ~~~~~~~~~~~~
