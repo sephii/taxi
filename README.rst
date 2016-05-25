@@ -23,34 +23,14 @@ You can then get a summary of your timesheet::
 
     Use `taxi ci` to commit staging changes to the server
 
-Installation
-============
+Through the use of backends, Taxi allows you to push your timesheets to
+different systems.
 
-The easiest way to install Taxi is by using ``pip``. This will fetch the latest
-stable version and install it on your system::
+Installation & usage
+====================
 
-    sudo pip install taxi
-
-You'll mostly want to install a backend as well. Backends allow you to push
-your timesheets to a remote location. The list of available backends can be
-found below in :ref:`supported_backends`.
-
-That's it! You should now be able to run ``taxi``. Head over to the
-`documentation <http://taxi-timesheets.readthedocs.org/en/master/userguide.html>`_ for a complete guide
-on how to use Taxi.
-
-Upgrading to 4.0
-================
-
-Starting with Taxi 4, backends are shipped separately from Taxi itself. This
-allows you to plug Taxi on whatever backend you're using, or even allows you to
-use multiple backends in parallel.
-
-The default backend Taxi used in previous versions is the Zebra backend. Since
-it is now shipped as a separate module, you'll need to install it as well if
-you're ugrading from a previous version of Taxi::
-
-    sudo pip install taxi-zebra
+Everything is covered in the user documentation available on Read The Docs:
+https://taxi-timesheets.readthedocs.org/en/master/userguide.html
 
 .. _supported_backends:
 

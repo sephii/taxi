@@ -14,23 +14,42 @@ from ..exceptions import CancelException
 from ..projects import Project
 
 
+def echo(message):
+    click.echo(message)
+
+
+def echo_error(message):
+    echo(click.style(
+        click.wrap_text("Error: %s" % message, preserve_paragraphs=True),
+        fg='red')
+    )
+
+
+def echo_warning(message):
+    echo(click.style(
+        click.wrap_text(message, preserve_paragraphs=True),
+        fg='yellow')
+    )
+
+
+def echo_success(message):
+    echo(click.style(
+        click.wrap_text(message, preserve_paragraphs=True),
+        fg='green')
+    )
+
+
 class BaseUi(object):
     DURATION_FORMAT = '{:>5.2f}'
 
-    def msg(self, message, color=None):
-        click.echo(message)
+    def msg(self, message):
+        echo(message)
 
     def err(self, message):
-        self.msg(click.style(
-            click.wrap_text("Error: %s" % message, preserve_paragraphs=True),
-            fg='red')
-        )
+        echo_error(message)
 
     def warn(self, message):
-        self.msg(click.style(
-            click.wrap_text(message, preserve_paragraphs=False),
-            fg='yellow')
-        )
+        echo_warning(message)
 
     def projects_list(self, projects, numbered=False):
         for (key, project) in enumerate(projects):
