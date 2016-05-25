@@ -22,7 +22,7 @@ auto_add = auto
 
 # Your editor command will be deducted from your EDITOR env var but if you want
 # to use a custom command just for taxi you can set it here
-# editor = vim +
+editor = {editor}
 
 # If auto_fill_days is set, the edit command will add all the dates that are not
 # present in your entries file until the current date if they match any day
@@ -38,7 +38,7 @@ auto_add = auto
 
 [backends]
 # You'll need taxi-zebra to be able to use this
-default = {backend}://{username}:{password}@{hostname}
+default = {backend}://{username}{password}@{hostname}
 internal = dummy:///
 
 # This section contains your project name <-> id mapping. The format is:
