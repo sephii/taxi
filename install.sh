@@ -147,7 +147,7 @@ if 1:
             pass
         Popen([sys.executable, './virtualenv.py', lib_dir], cwd=t).wait()
         Popen([os.path.join(lib_dir, 'bin', 'pip'),
-           'install', '--upgrade', 'https://github.com/sephii/taxi/archive/installer.zip']).wait()
+           'install', '--upgrade', 'taxi']).wait()
         os.symlink(os.path.join(lib_dir, 'bin', 'taxi'),
                    os.path.join(bin_dir, 'taxi'))
 
