@@ -10,7 +10,10 @@ import six
 from ..aliases import aliases_database
 from ..backends import PushEntriesFailed
 from ..backends.registry import backends_registry
-from .base import cli, get_timesheet_collection_for_context, AliasedCommand
+from .base import (
+    cli, get_timesheet_collection_for_context, populate_backends,
+    AliasedCommand
+)
 from .types import DateRange
 
 
@@ -32,6 +35,8 @@ def commit(ctx, f, force_yes, date, not_today):
     single date (eg. 20.01.2014), as a range (eg. 20.01.2014-22.01.2014), or as
     a range with one of the dates omitted (eg. -22.01.2014).
     """
+    populate_backends(ctx.obj['settings'].get_backends())
+
     timesheet_collection = get_timesheet_collection_for_context(ctx, f)
 
     if not_today:
