@@ -13,6 +13,15 @@ The installer will guide you through the process of getting Taxi installed on
 your system.
 
 .. note::
+    If you get the following error::
+
+        Error: None of the items in $PATH are writable. Run with sudo or add a $PATH item that you have access to.
+
+    You can just re-run the command prefixed with sudo::
+
+        curl https://raw.githubusercontent.com/sephii/taxi/master/install.sh | sudo sh
+
+.. note::
     If you don't like piping into sh, you can also install it directly from
     PyPI::
 
