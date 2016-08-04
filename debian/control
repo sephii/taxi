@@ -2,8 +2,6 @@ Source: taxi
 Section: comm
 Priority: extra
 Maintainer: Didier Raboud <didier.raboud@liip.ch>
-Uploaders:
- Gilles Meier <gilles.meier@liip.ch>
 Build-Depends:
  debhelper (>= 9),
  bash-completion,
