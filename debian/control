@@ -13,7 +13,7 @@ Build-Depends:
  python3-pytest,
  python3-setuptools,
  python3-six (>= 1.9.0)
-Standards-Version: 3.9.7
+Standards-Version: 3.9.8
 Homepage: https://github.com/sephii/taxi
 Vcs-Git: git://github.com/sephii/taxi.git
 Vcs-Browser: https://github.com/sephii/taxi
