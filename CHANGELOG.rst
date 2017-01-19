@@ -2,6 +2,14 @@
 Changelog
 #########
 
+Unreleased (xxx-xx-xx)
+======================
+
+Changed
+-------
+
+* Fix installation script on OS X when Python 3 is available (#104).
+
 4.2.0 (2016-05-25)
 ==================
 

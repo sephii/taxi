@@ -29,7 +29,11 @@ different systems.
 Installation & usage
 ====================
 
-Everything is covered in the user documentation available on Read The Docs:
+The easiest way to install Taxi is by using the install script::
+
+    curl https://raw.githubusercontent.com/sephii/taxi/master/install.sh | sh
+
+Everything else is covered in the user documentation available on Read The Docs:
 https://taxi-timesheets.readthedocs.org/en/master/userguide.html
 
 .. _supported_backends:
