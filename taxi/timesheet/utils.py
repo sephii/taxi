@@ -7,13 +7,11 @@ import six
 from . import Timesheet, TimesheetCollection, TimesheetFile
 from .entry import EntriesCollection
 from .parser import ParseError
-from ..settings import Settings
 from ..utils import file as file_utils
 from ..utils.structures import OrderedSet
 
 
-def get_timesheet_collection(unparsed_file, nb_previous_files, date_format,
-                             auto_add):
+def get_timesheet_collection(unparsed_file, nb_previous_files, parser):
     timesheet_collection = TimesheetCollection()
 
     timesheet_files = get_files(unparsed_file, nb_previous_files)
@@ -28,8 +26,8 @@ def get_timesheet_collection(unparsed_file, nb_previous_files, date_format,
         try:
             t = Timesheet(
                 EntriesCollection(
+                    parser,
                     timesheet_contents,
-                    date_format
                 ),
                 timesheet_file
             )
@@ -37,28 +35,21 @@ def get_timesheet_collection(unparsed_file, nb_previous_files, date_format,
             e.file = file_path
             raise
 
-        # Force new entries direction if necessary
-        if (auto_add in [Settings.AUTO_ADD_OPTIONS['TOP'],
-                         Settings.AUTO_ADD_OPTIONS['BOTTOM']]):
-            t.entries.add_date_to_bottom = (
-                auto_add == Settings.AUTO_ADD_OPTIONS['BOTTOM']
-            )
-
         timesheet_collection.timesheets.append(t)
 
     # Fix `add_date_to_bottom` attribute of timesheet entries based on
     # previous timesheets. When a new timesheet is started it won't have
     # any direction defined, so we take the one from the previous
     # timesheet, if any
-    previous_timesheet = None
-    for timesheet in reversed(timesheet_collection.timesheets):
-        if (timesheet.entries.add_date_to_bottom is None and
-                previous_timesheet and
-                previous_timesheet.entries.add_date_to_bottom is not None):
-            timesheet.entries.add_date_to_bottom = (
-                previous_timesheet.entries.add_date_to_bottom
-            )
-        previous_timesheet = timesheet
+    if parser.add_date_to_bottom is None:
+        previous_timesheet = None
+        for timesheet in reversed(timesheet_collection.timesheets):
+            if previous_timesheet:
+                previous_timesheet_top_down = previous_timesheet.entries.is_top_down()
+
+                if previous_timesheet_top_down is not None:
+                    timesheet.entries.parser.add_date_to_bottom = previous_timesheet_top_down
+            previous_timesheet = timesheet
 
     return timesheet_collection
 

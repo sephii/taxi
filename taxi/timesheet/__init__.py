@@ -9,12 +9,13 @@ import six
 
 from ..aliases import aliases_database
 from ..utils import date as date_utils
-from .entry import AggregatedTimesheetEntry, EntriesCollection, TimesheetEntry
+from .entry import AggregatedTimesheetEntry, EntriesCollection
+from .parser import EntryLine, TimesheetParser
 
 
 class Timesheet(object):
     def __init__(self, entries=None, file=None):
-        self.entries = entries if entries is not None else EntriesCollection()
+        self.entries = entries if entries is not None else EntriesCollection(TimesheetParser())
         self.file = file
 
     def get_filtered_entries(self, date=None, filter_callback=None,
@@ -63,7 +64,7 @@ class Timesheet(object):
 
                         # The entry could already have been replaced by an
                         # AggregatedEntry if there's more than 2 occurences
-                        if isinstance(existing_entry, TimesheetEntry):
+                        if isinstance(existing_entry, EntryLine):
                             # Create the AggregatedEntry, put the first
                             # occurence of Entry in it and the current one
                             aggregated_entry = AggregatedTimesheetEntry()
@@ -91,11 +92,14 @@ class Timesheet(object):
         return filtered_entries
 
     def get_entries(self, date=None, exclude_ignored=False,
-                    exclude_unmapped=False, regroup=False):
+                    exclude_unmapped=False, exclude_pushed=False,
+                    regroup=False):
         def entry_filter(entry):
-            return (not (exclude_ignored and entry.is_ignored())
+            return (not (exclude_ignored and entry.ignored)
                     and (not exclude_unmapped
-                         or entry.alias in aliases_database))
+                         or entry.alias in aliases_database)
+                    and (not exclude_pushed
+                         or not entry.pushed))
 
         return self.get_filtered_entries(date, entry_filter, regroup)
 
@@ -120,7 +124,7 @@ class Timesheet(object):
         return non_workday_entries
 
     def is_entry_ignored(self, entry):
-        return entry.is_ignored() or entry.alias not in aliases_database
+        return entry.ignored or entry.alias not in aliases_database
 
     def continue_entry(self, date, end_time, description=None):
         try:
@@ -184,6 +188,9 @@ class TimesheetCollection:
     """
     def __init__(self):
         self.timesheets = []
+
+    def __repr__(self):
+        return '<TimesheetCollection: %s>' % (self.timesheets.__repr__())
 
     def _timesheets_callback(self, callback):
         """

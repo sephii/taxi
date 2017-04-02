@@ -73,5 +73,5 @@ def edit(ctx, file_to_edit, previous_file):
         ctx.obj['view'].err(e)
     else:
         ctx.obj['view'].show_status(
-            timesheet_collection.get_entries(regroup=True),
+            timesheet_collection.get_entries(regroup=True, exclude_pushed=True)
         )

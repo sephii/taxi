@@ -12,7 +12,7 @@ class StartCommandTestCase(CommandTestCase):
         self.run_command('start', ['alias_1'])
 
         with open(self.entries_file, 'r') as f:
-            self.assertEqual(f.read(), expected)
+            self.assertEqual([line.strip() for line in f.readlines()], expected.splitlines())
 
     @freeze_time('2014-01-20')
     def test_date_present_entry_present(self):

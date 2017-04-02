@@ -15,6 +15,7 @@ from ..backends.registry import backends_registry
 from ..projects import ProjectsDb
 from ..settings import Settings
 from ..timesheet.utils import get_timesheet_collection
+from ..timesheet.parser import TimesheetParser
 from ..ui.tty import TtyUi
 from .. import __version__
 
@@ -30,11 +31,16 @@ def get_timesheet_collection_for_context(ctx, entries_file=None):
     if not entries_file:
         entries_file = ctx.obj['settings'].get_entries_file_path(False)
 
+    parser = TimesheetParser(
+        date_format=ctx.obj['settings']['date_format'],
+        add_date_to_bottom=ctx.obj['settings'].get_add_to_bottom(),
+        flags_repr=ctx.obj['settings'].get_flags(),
+    )
+
     return get_timesheet_collection(
         entries_file,
         ctx.obj['settings']['nb_previous_files'],
-        ctx.obj['settings']['date_format'],
-        ctx.obj['settings']['auto_add']
+        parser,
     )
 
 
@@ -227,6 +233,7 @@ def cli(ctx, config, taxi_dir):
         os.makedirs(taxi_dir)
 
     populate_aliases(settings.get_aliases())
+    populate_backends(settings.get_backends())
 
     ctx.obj = {}
     ctx.obj['settings'] = settings

@@ -11,44 +11,6 @@ from . import CommandTestCase, override_settings
 
 class CommitCommandTestCase(CommandTestCase):
     @freeze_time('2014-01-21')
-    def test_fix_entries_start_time(self):
-        self.write_entries("""21/01/2014
-fail     0745-0830  Repair coffee machine
-alias_1 -0900 Play ping-pong
-alias_1 -0915 Check coffee machine uptime
-fail    -1145 Make printer work
-fail   1300-1400 Printer is down again
-""")
-        self.run_command('commit')
-
-        with open(self.entries_file, 'r') as entries:
-            lines = entries.readlines()
-
-        self.assertEqual(lines[4], 'fail    0915-1145 Make printer work\n')
-
-    @freeze_time('2014-01-21')
-    def test_fix_ignored_entries_start_time(self):
-        self.write_entries("""21/01/2014
-alias_1     0745-0830  Repair coffee machine
-alias_1 -0900 Play ping-pong
-ignored_alias -0915 Check coffee machine uptime
-ignored_alias -1000 Check coffee machine uptime
-""")
-        self.run_command('commit')
-
-        with open(self.entries_file, 'r') as entries:
-            lines = entries.readlines()
-
-        self.assertEqual(
-            lines[3],
-            'ignored_alias 0900-0915 Check coffee machine uptime\n'
-        )
-        self.assertEqual(
-            lines[4],
-            'ignored_alias -1000 Check coffee machine uptime\n'
-        )
-
-    @freeze_time('2014-01-21')
     def test_commit_date(self):
         self.write_entries("""21/01/2014
 alias_1 2 foobar
@@ -309,22 +271,6 @@ alias_1 1 Play ping-pong
         self.assertTrue(dates[2].endswith('20 January'))
 
     @freeze_time('2014-01-21')
-    def test_dont_fix_start_time_on_commented_entries(self):
-        self.write_entries("""
-21/01/2014
-alias_1            09:00-09:30    Daily
-alias_1                 -10:00    Blabla
-alias_1                 -11:30    improve existing styles
-alias_1                 -12:15    investigate broken tests
-alias_1            13:30-16:15    improve existing styles and fix the tests
-""")
-        self.run_command('commit')
-        with open(self.entries_file, 'r') as f:
-            entries = f.readlines()
-
-        self.assertNotIn('09:30', entries[2])
-
-    @freeze_time('2014-01-21')
     def test_regroup_entries_setting(self):
         self.write_entries("""20/01/2014
 alias_1 0800-0900 Play ping-pong
@@ -334,6 +280,6 @@ alias_1 1200-1300 Play ping-pong
         with self.settings({'default': {'regroup_entries': '0'}}):
             stdout = self.run_command('commit')
         self.assertLineIn(
-            "alias_1 (123/456, test)        1.00  Play ping-pong",
+            "alias_1        1.00  Play ping-pong",
             stdout
         )

@@ -122,7 +122,6 @@ class CommandTestCase(TestCase):
             "Line `%s` not found in `%s`" % (line, content)
         )
 
-
     def settings(self, *args, **kwargs):
         """
         Context manager to temporarily override the settings:
@@ -171,10 +170,7 @@ class CommandTestCase(TestCase):
         args.insert(0, '--config=%s' % self.config_file)
 
         runner = CliRunner()
-        result = runner.invoke(cli, args, input=input, standalone_mode=False)
-
-        if result.exception:
-            raise result.exception
+        result = runner.invoke(cli, args, input=input, catch_exceptions=False)
 
         return result.output
 

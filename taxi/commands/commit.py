@@ -48,9 +48,7 @@ def commit(ctx, f, force_yes, date, not_today):
             date = (date[0], yesterday)
 
     if not date and not force_yes:
-        non_workday_entries = (
-            timesheet_collection.get_non_current_workday_entries()
-        )
+        non_workday_entries = timesheet_collection.get_non_current_workday_entries()
 
         if non_workday_entries:
             if not ctx.obj['view'].confirm_commit_entries(non_workday_entries):
@@ -126,21 +124,13 @@ def comment_timesheets_entries(timesheet_collection, date):
         for (entries_date, entries) in pushed_entries.items():
             for entry in entries:
                 if hasattr(entry, 'push_error') and entry.push_error is None:
-                    entry.commented = True
-
-                entry.fix_start_time()
-
-        # Also fix start time for ignored entries. Since they won't get
-        # pushed, there's a chance their previous sibling gets commented
-        for (entries_date,
-             entries) in timesheet.get_ignored_entries(date).items():
-            for entry in entries:
-                entry.fix_start_time()
+                    entry.pushed = True
 
         timesheet.file.write(timesheet.entries)
 
 
 def get_entries_to_push(timesheet, date, regroup=True):
     return timesheet.get_entries(
-        date, exclude_ignored=True, exclude_unmapped=True, regroup=regroup
+        date, exclude_ignored=True, exclude_unmapped=True, regroup=regroup,
+        exclude_pushed=True
     )

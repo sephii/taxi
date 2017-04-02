@@ -4,8 +4,7 @@ import datetime
 
 import click
 
-from ..timesheet.entry import TimesheetEntry
-from ..timesheet.parser import ParseError
+from ..timesheet.parser import EntryLine, ParseError
 from .base import cli, get_timesheet_collection_for_context
 
 
@@ -41,6 +40,6 @@ def start(ctx, alias, f):
         new_entry_start_time = datetime.datetime.now()
 
     duration = (new_entry_start_time, None)
-    e = TimesheetEntry(alias, duration, '?')
+    e = EntryLine(alias, duration, '?')
     t.entries[today].append(e)
     t.file.write(t.entries)
