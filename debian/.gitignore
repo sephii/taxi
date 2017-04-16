@@ -1,0 +1,7 @@
+files
+taxi.1
+taxi.debhelper.log
+taxi.postinst.debhelper
+taxi.prerm.debhelper
+taxi.substvars
+taxi/
