@@ -79,9 +79,10 @@ class TimesheetParser(object):
     """
     # Regular expression to match entry lines. This will capture the following groups: flags, spacing1, alias,
     # spacing2, time, start_time, end_time, duration, spacing3, description. Spacings are captured so that indentation
-    # can be preserved when reformatting lines
-    ENTRY_LINE_REGEXP = re.compile(
-        r"^(?:(?P<flags>.+?)(?P<spacing1>\s+))?"
+    # can be preserved when reformatting lines. This regexp needs to be "formatted" using the % notation, setting the
+    # `flags_repr` value to the list of accepted flags
+    ENTRY_LINE_REGEXP = (
+        r"^(?:(?P<flags>[%(flags_repr)s]+?)(?P<spacing1>\s+))?"
         r"(?P<alias>[?\w_-]+)(?P<spacing2>\s+)"
         r"(?P<time>(?:(?P<start_time>(?:\d{1,2}):?(?:\d{1,2}))?-(?P<end_time>(?:(?:\d{1,2}):?(?:\d{1,2}))|\?))|"
         r"(?P<duration>\d+(?:\.\d+)?))(?P<spacing3>\s+)"
@@ -136,6 +137,7 @@ class TimesheetParser(object):
         self.flags_repr = flags_repr or self.ENTRY_FLAGS_REPR
         self.add_date_to_bottom = add_date_to_bottom
         self.date_format = date_format
+        self.entry_line_regexp = self.ENTRY_LINE_REGEXP % {'flags_repr': re.escape(''.join(self.flags_repr.values()))}
 
     def flags_to_text(self, flags):
         """
@@ -236,7 +238,7 @@ class TimesheetParser(object):
         Try to parse the given text line and extract and entry. Return an :class:`~taxi.timesheet.lines.EntryLine`
         object if parsing is successful, otherwise raise :class:`ParseError`.
         """
-        split_line = re.match(self.ENTRY_LINE_REGEXP, text)
+        split_line = re.match(self.entry_line_regexp, text)
 
         if not split_line:
             raise ParseError("Line must have an alias, a duration and a description")
@@ -271,7 +273,8 @@ class TimesheetParser(object):
         if split_line.group('flags'):
             try:
                 flags = self.extract_flags_from_text(split_line.group('flags'))
-            # extract_flags_from_text will raise `KeyError` if one of the flags is not recognized
+            # extract_flags_from_text will raise `KeyError` if one of the flags is not recognized. This should never
+            # happen though as the list of accepted flags is bundled in self.entry_line_regexp
             except KeyError as e:
                 raise ParseError(*e.args)
         else:

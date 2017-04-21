@@ -265,3 +265,29 @@ def test_trim_trims_to_top_and_bottom():
         empty_line,
     ]
     assert trim(entries) == [date_line, empty_line, date_line]
+
+
+def test_parse_entry_with_digits_in_description():
+    contents = """01.01.13
+
+foobar 0900-1000 Sprint 1 review
+"""
+
+    lines = TimesheetParser().parse_text(contents)
+
+    assert lines[2].alias == 'foobar'
+    assert lines[2].duration == (datetime.time(9), datetime.time(10))
+    assert lines[2].description == 'Sprint 1 review'
+
+
+def test_parse_entry_with_description_starting_with_digits():
+    contents = """01.01.13
+
+foobar 0900-1000 1 hour of review
+"""
+
+    lines = TimesheetParser().parse_text(contents)
+
+    assert lines[2].alias == 'foobar'
+    assert lines[2].duration == (datetime.time(9), datetime.time(10))
+    assert lines[2].description == '1 hour of review'
