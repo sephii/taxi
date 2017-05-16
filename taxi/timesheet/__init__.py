@@ -103,9 +103,9 @@ class Timesheet(object):
 
         return self.get_filtered_entries(date, entry_filter, regroup)
 
-    def get_ignored_entries(self, date=None):
+    def get_ignored_entries(self, date=None, exclude_pushed=True):
         def entry_filter(entry):
-            return self.is_entry_ignored(entry)
+            return self.is_entry_ignored(entry) and not (exclude_pushed and entry.pushed)
 
         return self.get_filtered_entries(date, entry_filter)
 
