@@ -409,3 +409,15 @@ when starting a new month.
 
 This option only makes sense if you're using date placeholders in
 :ref:`config_file`.
+
+Flags characters customization
+------------------------------
+
+By default Taxi uses the `=` character for pushed entries and `?` for ignored entries. You can customize them in the
+`[flags]` section of the configuration file. Note that using `#` as a flag character will make any flagged entry
+interpreted as a comment and won't be parsed by Taxi. Example of using custom characters for the `ignored` and `pushed`
+flags::
+
+    [flags]
+    ignored = !
+    pushed = @
