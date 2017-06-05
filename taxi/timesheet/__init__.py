@@ -329,6 +329,10 @@ class TimesheetCollection:
 
 
 class TimesheetFile(object):
+    """
+    Read and write entries to file objects. A timesheet file has a `file_path` attribute that represents the location
+    to the timesheet on disk.
+    """
     def __init__(self, file_path):
         self.file_path = file_path
 
