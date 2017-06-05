@@ -253,6 +253,9 @@ class TimesheetCollection:
     def __repr__(self):
         return '<TimesheetCollection: %s>' % (self.timesheets.__repr__())
 
+    def __getitem__(self, key):
+        return self.timesheets[key]
+
     def _timesheets_callback(self, callback):
         """
         Call a method on all the timesheets, aggregate the return values in a
