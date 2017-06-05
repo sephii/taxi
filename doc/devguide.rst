@@ -220,7 +220,7 @@ against it. If you want to limit the tests to a certain Python version, run::
 This will only run the tests on Python 2.7. When developing it's useful to only
 run certain tests, for this, use the following command::
 
-    tox -- -a tests/commands/test_alias.py::AliasCommandTestCase::test_alias_list
+    tox -- --addopts tests/commands/test_alias.py::AliasCommandTestCase::test_alias_list
 
 You can also leave out ``::test_alias_list`` to run all tests in the
 ``AliasCommandTestCase``, or leave out ``::AliasCommandTestCase`` as well if
