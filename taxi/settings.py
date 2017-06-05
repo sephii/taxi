@@ -84,7 +84,7 @@ class Settings(object):
     }
 
     SETTINGS = {
-        'default': {
+        'taxi': {
             'auto_fill_days': IntegerListSetting(default=range(0, 5)),
             'date_format': StringSetting(default='%d/%m/%Y'),
             'auto_add': StringSetting(default='auto',
@@ -134,7 +134,7 @@ class Settings(object):
     def __getitem__(self, key):
         return self.get(key)
 
-    def get(self, key, section='default'):
+    def get(self, key, section='taxi'):
         return self._settings[section][key].value
 
     def add_alias(self, alias, mapping):
@@ -252,12 +252,31 @@ class Settings(object):
 
         self.config.remove_option('default', 'local_aliases')
 
+    def convert_to_4_3(self):
+        if not self.config.has_section('default'):
+            return
+
+        defaults = self.config.items('default')
+
+        try:
+            self.config.add_section('taxi')
+        except configparser.DuplicateSectionError:
+            pass
+
+        for key, value in defaults:
+            self.config.set('taxi', key, value)
+
+        self.config.remove_section('default')
+
     @property
     def needed_conversions(self):
         conversions = []
 
         if self.config.has_option('default', 'local_aliases'):
             conversions.append(self.convert_to_4_1)
+
+        if self.config.has_section('default'):
+            conversions.append(self.convert_to_4_3)
 
         return conversions
 

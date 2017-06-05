@@ -81,7 +81,7 @@ def test_commit_previous_file_previous_year(cli, data_dir, config):
 
 @freeze_time('2014-01-21')
 def test_commit_previous_files_previous_months(cli, data_dir, config):
-    config.set('default', 'nb_previous_files', '2')
+    config.set('taxi', 'nb_previous_files', '2')
 
     efg = EntriesFileGenerator(data_dir, '%m_%Y.tks')
     efg.expand(datetime.date(2013, 11, 1)).write(
@@ -104,7 +104,7 @@ def test_commit_previous_files_previous_months(cli, data_dir, config):
 
 @freeze_time('2014-01-21')
 def test_commit_previous_file_year_format(cli, data_dir, config):
-    config.set('default', 'nb_previous_files', '2')
+    config.set('taxi', 'nb_previous_files', '2')
 
     efg = EntriesFileGenerator(data_dir, '%Y.tks')
     efg.expand(datetime.date(2013, 1, 1)).write(
@@ -247,7 +247,7 @@ alias_1 1 Play ping-pong
 
 @freeze_time('2014-01-21')
 def test_regroup_entries_setting(cli, config, entries_file):
-    config.set('default', 'regroup_entries', '0')
+    config.set('taxi', 'regroup_entries', '0')
     entries_file.write("""20/01/2014
 alias_1 0800-0900 Play ping-pong
 alias_1 1200-1300 Play ping-pong

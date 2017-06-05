@@ -6,7 +6,7 @@ from freezegun import freeze_time
 @freeze_time('2012-02-20')
 def test_autofill_bottom(cli, config, entries_file):
     config.set_dict({
-        'default': {
+        'taxi': {
             'auto_fill_days': '1',
             'auto_add': 'bottom'
         }
@@ -24,7 +24,7 @@ def test_autofill_bottom(cli, config, entries_file):
 @freeze_time('2012-02-20')
 def test_autofill_top(cli, config, entries_file):
     config.set_dict({
-        'default': {
+        'taxi': {
             'auto_fill_days': '1',
             'auto_add': 'top'
         }
@@ -42,7 +42,7 @@ def test_autofill_top(cli, config, entries_file):
 @freeze_time('2012-02-20')
 def test_autofill_existing_entries(cli, config, entries_file):
     config.set_dict({
-        'default': {
+        'taxi': {
             'auto_fill_days': '1',
             'auto_add': 'top'
         }

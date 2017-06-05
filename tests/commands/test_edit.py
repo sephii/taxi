@@ -12,7 +12,7 @@ def test_autofill_with_specified_file(cli, config, entries_file):
     """
     Edit with specified date should not autofill it.
     """
-    config.set('default', 'auto_fill_days', '0,1,2,3,4,5,6')
+    config.set('taxi', 'auto_fill_days', '0,1,2,3,4,5,6')
     cli('edit', args=['--file=%s' % str(entries_file)])
 
     assert entries_file.read() == ''
@@ -22,8 +22,9 @@ def test_edit_utf8_file(cli, config, entries_file):
     """
     Editing a file that contains accents should not crash.
     """
-    entries_file.write(
-        "20/01/2014\nalias_1 2 préparation du café pour l'évènement"
+    # I wish I could just `entries_file.write()` without encoding anything but... Python 2
+    entries_file.write_binary(
+        "20/01/2014\nalias_1 2 préparation du café pour l'évènement".encode('utf-8')
     )
 
     cli('edit')

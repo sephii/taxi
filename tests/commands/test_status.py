@@ -10,7 +10,7 @@ from .conftest import EntriesFileGenerator
 
 @freeze_time('2014-02-20')
 def test_status_previous_file(cli, config, data_dir):
-    config.set('default', 'nb_previous_files', '1')
+    config.set('taxi', 'nb_previous_files', '1')
     efg = EntriesFileGenerator(data_dir, '%m_%Y.tks')
     efg.expand(datetime.date(2014, 1, 1)).write(
         "01/01/2014\nalias_1 1 january"
@@ -86,7 +86,7 @@ def test_status_ignored_not_mapped(cli, entries_file):
 
 @freeze_time('2014-01-20')
 def test_regroup_entries_setting(cli, config, entries_file):
-    config.set('default', 'regroup_entries', '0')
+    config.set('taxi', 'regroup_entries', '0')
     entries_file.write("""20/01/2014
 alias_1 0800-0900 Play ping-pong
 alias_1 1200-1300 Play ping-pong

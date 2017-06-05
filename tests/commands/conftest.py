@@ -44,7 +44,7 @@ class TestBackendEntryPoint(object):
 
 class ConfigFile:
     DEFAULT_CONFIG = {
-        'default': {
+        'taxi': {
             'editor': '/bin/touch'
         },
         'backends': {
@@ -71,10 +71,10 @@ class ConfigFile:
         self._sync = True
 
     def set(self, section, attr, value):
-        if section not in self.config:
-            self.config[section] = {}
+        if not self.config.has_section(section):
+            self.config.add_section(section)
 
-        self.config[section][attr] = value
+        self.config.set(section, attr, value)
 
         if self._sync:
             self.save()
@@ -104,8 +104,7 @@ class EntriesFileGenerator(py.path.local):
         self.tmpdir = tmpdir
 
     def patch_config(self, config):
-        config.set('default', 'file',
-                   os.path.join(str(self.tmpdir), self.pattern))
+        config.set('taxi', 'file', os.path.join(str(self.tmpdir), self.pattern))
 
     def expand(self, date):
         return self.tmpdir.join(expand_date(self.pattern, date))
@@ -114,7 +113,7 @@ class EntriesFileGenerator(py.path.local):
 @pytest.fixture
 def config(tmpdir):
     config_file = ConfigFile(str(tmpdir.join('config.ini')))
-    config_file.set('default', 'file', str(tmpdir.join('entries.tks')))
+    config_file.set('taxi', 'file', str(tmpdir.join('entries.tks')))
 
     return config_file
 
@@ -127,7 +126,7 @@ def data_dir(tmpdir):
 @pytest.fixture
 def entries_file(tmpdir, config):
     new_entries_file = tmpdir.join('foo.tks')
-    config.set('default', 'file', str(new_entries_file))
+    config.set('taxi', 'file', str(new_entries_file))
 
     return new_entries_file
 
@@ -144,13 +143,10 @@ def cli(config, data_dir):
 
         runner = CliRunner()
         result = runner.invoke(
-            taxi_cli, args, input=input, standalone_mode=False
+            taxi_cli, args, input=input, standalone_mode=False, catch_exceptions=False
         )
 
-        if result.exception:
-            raise result.exception
-        else:
-            return result.output
+        return result.output
 
     return inner
 
