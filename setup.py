@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from setuptools import find_packages, setup
-from taxi import __version__
 
+from taxi import __version__
 
 tests_require = [
     'freezegun>=0.2.8',

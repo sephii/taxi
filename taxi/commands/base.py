@@ -1,24 +1,23 @@
 from __future__ import unicode_literals
 
 import os
-from pkg_resources import resource_string
 import sys
 
 import click
-from click._termui_impl import Editor
+import pkg_resources
 import six
 from appdirs import AppDirs
+from click._termui_impl import Editor
 
-from .types import ExpandedPath, Hostname
+from .. import __version__
 from ..aliases import aliases_database
 from ..backends.registry import backends_registry
 from ..projects import ProjectsDb
 from ..settings import Settings
-from ..timesheet.utils import get_timesheet_collection
 from ..timesheet.parser import TimesheetParser
+from ..timesheet.utils import get_timesheet_collection
 from ..ui.tty import TtyUi
-from .. import __version__
-
+from .types import ExpandedPath, Hostname
 
 xdg_dirs = AppDirs("taxi", "sephii")
 
@@ -95,8 +94,7 @@ def create_config_file(filename):
             )
         ) + '\n')
 
-        config = resource_string('taxi',
-                                 'etc/taxirc.sample').decode('utf-8')
+        config = pkg_resources.resource_string('taxi', 'etc/taxirc.sample').decode('utf-8')
         context = {}
         available_backends = backends_registry._entry_points.keys()
 
