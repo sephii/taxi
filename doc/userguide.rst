@@ -322,7 +322,7 @@ fetched with the ``update`` command.
     On Python 3::
 
         >>> from urllib import parse
-        >>> parse.quote('my_password, safe='')
+        >>> parse.quote('my_password', safe='')
 
 .. _config:
 
