@@ -4,7 +4,7 @@ import click
 import six
 
 from ..aliases import Mapping
-from ..backends.registry import backends_registry
+from ..plugins import plugins_registry
 from .base import cli, populate_backends
 
 
@@ -22,7 +22,7 @@ def update(ctx):
     projects = []
 
     for backend_name, backend_uri in ctx.obj['settings'].get_backends():
-        backend = backends_registry[backend_name]
+        backend = plugins_registry.get_backend(backend_name)
         backend_projects = backend.get_projects()
 
         for project in backend_projects:

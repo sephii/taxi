@@ -13,7 +13,7 @@ from unittest import TestCase
 from click.testing import CliRunner
 
 from taxi.backends import BaseBackend, PushEntryFailed, PushEntriesFailed
-from taxi.backends.registry import backends_registry
+from taxi.plugins import plugins_registry
 from taxi.commands.base import cli
 from taxi.projects import ProjectsDb
 from taxi.utils.file import expand_date
@@ -57,14 +57,16 @@ class CommandTestCase(TestCase):
         _, self.entries_file = tempfile.mkstemp()
         self.taxi_dir = tempfile.mkdtemp()
         # Keep the original entry points to restore them in tearDown
-        self.backends_original_entry_points = backends_registry._entry_points
+        self.plugins_original_entry_points = plugins_registry._entry_points
 
         # Hot swap the entry points from the backends registry with our own
         # test backend. This avoids having to register the test backend in the
         # setup.py file
-        backends_registry._entry_points = {
-            'test': TestBackendEntryPoint(),
-            'dummy': TestBackendEntryPoint(),
+        plugins_registry._entry_points = {
+            'taxi.backends': {
+                'test': TestBackendEntryPoint(),
+                'dummy': TestBackendEntryPoint(),
+            }
         }
 
         # Create an empty projects db file
@@ -95,7 +97,7 @@ class CommandTestCase(TestCase):
         }, existing_settings)
 
     def tearDown(self):
-        backends_registry._entry_points = self.backends_original_entry_points
+        plugins_registry._entry_points = self.plugins_original_entry_points
         entries_file = expand_date(self.entries_file)
 
         os.remove(self.config_file)

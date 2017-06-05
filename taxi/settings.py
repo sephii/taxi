@@ -103,7 +103,6 @@ class Settings(object):
     def __init__(self, file):
         self.config = configparser.RawConfigParser(allow_no_value=True)
         self.filepath = os.path.expanduser(file)
-        self._backends_registry = {}
         self._settings = {}
 
         try:

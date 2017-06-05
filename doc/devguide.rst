@@ -12,6 +12,8 @@ easy to do.
 As an example, we'll build a simple backend that sends the timesheets it
 receives by mail. We'll call it ``taxi_mail``.
 
+.. _registering-the-backend:
+
 Registering the backend
 ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -133,6 +135,51 @@ report only certain entries as failed in ``post_push_entries``, raise a
 `entry: error` dictionary.
 
 We now have a fully working backend that can be used to push entries!
+
+Creating custom commands
+------------------------
+
+Taxi will load any module defined in the ``taxi.commands`` entry point. Let's create a ``current`` command that displays
+the path to the current timesheet. First, let's create the command (in ``taxi_current/commands.py``)::
+
+    import click
+
+    from taxi.commands.base import cli
+
+    @cli.command()
+    @click.pass_context
+    def current(ctx):
+        timesheet_path = ctx.obj['settings'].get_entries_file_path(expand_date=True)
+        click.echo("Current timesheet path is " + timesheet_path)
+
+The ``cli.command`` part allows us to create a Taxi subcommand. For more information on how to use Click, refer to the
+`official Click documentation <http://click.pocoo.org/5/>`_. Also feel free to check the source code of the existing
+commands that can give a good base to start from.
+
+As with custom backend creation, your package should also have a ``setup.py`` file. The commands module should be
+registered in the ``taxi.commands`` entry point (in the ``setup.py`` file)::
+
+    #!/usr/bin/env python
+    from setuptools import find_packages, setup
+
+    setup(
+        name='taxi_current',
+        version='1.0',
+        packages=find_packages(),
+        description='Show current timesheet',
+        author='Me',
+        author_email='me@example.com',
+        url='https://github.com/me/taxi-current',
+        license='wtfpl',
+        entry_points={
+            'taxi.commands': 'current = taxi_current.commands'
+        }
+    )
+
+That's it! If you install your custom plugin (eg. with ``./setup.py install`` or by using ``./setup.py develop`` as
+explained in the :ref:`development-environment` section, you will now be able to type ``taxi current``!
+
+.. _development-environment:
 
 Getting a development environment
 ---------------------------------

@@ -12,7 +12,7 @@ class BaseBackend(object):
     All Taxi backends should inherit from the :class:`BaseBackend` class.
     Backends are usually constructed from a URL in the form
     `<backend_name>://<username>:<password>@<hostname>:<port><path>?<options>`.
-    The :class:`~taxi.backends.registry.BackendRegistry` takes care of the
+    The :class:`~taxi.plugins.PluginsRegistry` takes care of the
     parsing and the instanciation of the backend objects. The `options`
     parameter is a dictionary constructed from the backend URL querystring.
     """

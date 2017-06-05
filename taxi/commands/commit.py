@@ -9,7 +9,7 @@ import six
 
 from ..aliases import aliases_database
 from ..backends import PushEntriesFailed
-from ..backends.registry import backends_registry
+from ..plugins import plugins_registry
 from .base import (
     cli, get_timesheet_collection_for_context, populate_backends,
     AliasedCommand
@@ -68,7 +68,7 @@ def commit(ctx, f, force_yes, date, not_today):
             for (entries_date, entries) in entries_to_push.items():
                 for entry in entries:
                     backend_name = aliases_database[entry.alias].backend
-                    backend = backends_registry[backend_name]
+                    backend = plugins_registry.get_backend(backend_name)
                     backends_entries[backend].append(entry)
 
                     try:

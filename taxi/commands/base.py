@@ -11,7 +11,7 @@ from click._termui_impl import Editor
 
 from .. import __version__
 from ..aliases import aliases_database
-from ..backends.registry import backends_registry
+from ..plugins import plugins_registry
 from ..projects import ProjectsDb
 from ..settings import Settings
 from ..timesheet.parser import TimesheetParser
@@ -27,6 +27,11 @@ click.disable_unicode_literals_warning = True
 
 
 def get_timesheet_collection_for_context(ctx, entries_file=None):
+    """
+    Return a :class:`~taxi.timesheet.TimesheetCollection` object with the current timesheet(s). Since this depends on
+    the settings (to get the entries files path, the number of previous files, etc) this uses the settings object from
+    the current command context. If `entries_file` is set, this forces the path of the file to be used.
+    """
     if not entries_file:
         entries_file = ctx.obj['settings'].get_entries_file_path(False)
 
@@ -49,7 +54,7 @@ def populate_aliases(aliases):
 
 
 def populate_backends(backends):
-    backends_registry.populate(dict(backends))
+    plugins_registry.populate_backends(dict(backends))
 
 
 def create_config_file(filename):
@@ -96,7 +101,7 @@ def create_config_file(filename):
 
         config = pkg_resources.resource_string('taxi', 'etc/taxirc.sample').decode('utf-8')
         context = {}
-        available_backends = backends_registry._entry_points.keys()
+        available_backends = plugins_registry.get_available_backends()
 
         context['backend'] = click.prompt(
             "Backend you want to use (choices are %s)" %
@@ -237,3 +242,7 @@ def cli(ctx, config, taxi_dir):
     ctx.obj['settings'] = settings
     ctx.obj['view'] = TtyUi()
     ctx.obj['projects_db'] = ProjectsDb(os.path.expanduser(taxi_dir))
+
+
+# This can't be called from inside a command because Click will already have built its commands list
+plugins_registry.register_commands()

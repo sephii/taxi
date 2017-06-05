@@ -7,16 +7,16 @@ Backends
 .. automodule:: taxi.backends
     :members:
 
-Backends registry
-~~~~~~~~~~~~~~~~~
+Plugins
+~~~~~~~
 
-.. automodule:: taxi.backends.registry
+.. automodule:: taxi.plugins
     :members:
 
 Exceptions
 ~~~~~~~~~~
 
-.. autoclass:: taxi.backends.registry.BackendNotFoundError
+.. autoclass:: taxi.plugins.BackendNotFoundError
 
 Timesheets
 ----------
