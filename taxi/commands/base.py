@@ -14,7 +14,7 @@ from ..aliases import aliases_database
 from ..plugins import plugins_registry
 from ..projects import ProjectsDb
 from ..settings import Settings
-from ..timesheet import TimesheetParser, get_timesheet_collection
+from ..timesheet import TimesheetCollection, TimesheetParser
 from ..ui.tty import TtyUi
 from .types import ExpandedPath, Hostname
 
@@ -40,11 +40,7 @@ def get_timesheet_collection_for_context(ctx, entries_file=None):
         flags_repr=ctx.obj['settings'].get_flags(),
     )
 
-    return get_timesheet_collection(
-        entries_file,
-        ctx.obj['settings']['nb_previous_files'],
-        parser,
-    )
+    return TimesheetCollection.load(entries_file, ctx.obj['settings']['nb_previous_files'], parser)
 
 
 def populate_aliases(aliases):

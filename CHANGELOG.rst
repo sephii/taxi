@@ -9,6 +9,7 @@ Added
 -----
 
 * Add support for flags: pushed lines are no longer commented.
+* Add previously used aliases as hints to new timesheets.
 
 Changed
 -------

@@ -509,6 +509,10 @@ class EntriesCollection(collections.defaultdict):
 
         return filtered_entries
 
+    def append_text(self, lines):
+        textlines = [TextLine(line) for line in lines]
+        self.lines += textlines
+
 
 class EntriesList(list):
     """

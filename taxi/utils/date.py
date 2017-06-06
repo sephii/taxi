@@ -28,3 +28,21 @@ def unicode_strftime(date, format):
             formatted_date = formatted_date.decode(locale_encoding)
 
     return formatted_date
+
+
+def months_ago(date, nb_months=1):
+    """
+    Return the given `date` with `nb_months` substracted from it.
+    """
+    nb_years = nb_months // 12
+    nb_months = nb_months % 12
+
+    month_diff = date.month - nb_months
+
+    if month_diff > 0:
+        new_month = month_diff
+    else:
+        new_month = 12 + month_diff
+        nb_years += 1
+
+    return date.replace(day=1, month=new_month, year=date.year - nb_years)

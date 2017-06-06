@@ -3,12 +3,14 @@ from __future__ import unicode_literals
 import codecs
 import datetime
 import os
+from collections import defaultdict
 from functools import reduce
 
 import six
 
 from ..exceptions import NoActivityInProgressError, ParseError
 from ..utils import file as file_utils
+from ..utils.date import months_ago
 from ..utils.structures import OrderedSet
 from .entry import EntriesCollection
 from .parser import TimesheetParser
@@ -47,7 +49,7 @@ class Timesheet(object):
         return '\n'.join(self.entries.to_lines())
 
     @classmethod
-    def load(cls, file_path, parser=None):
+    def load(cls, file_path, parser=None, initial=''):
         """
         Load the timesheet file located in `file_path`. If `parser` is not set,
         :class:`~taxi.timesheet.parser.TimesheetParser` will be used. If the file doesn't exist, an empty timesheet
@@ -61,7 +63,10 @@ class Timesheet(object):
             with codecs.open(file_path, 'r', 'utf-8') as timesheet_file:
                 contents = timesheet_file.read()
         except IOError:
-            contents = ''
+            if callable(initial):
+                contents = initial()
+            else:
+                contents = initial
 
         entries = EntriesCollection(parser, contents)
 
@@ -146,6 +151,20 @@ class Timesheet(object):
 
             cur_date = cur_date + datetime.timedelta(days=1)
 
+    def get_popular_aliases(self, limit=5):
+        """
+        Return a list of 2-tuples `(alias, usage_count)`, sorted by `usage_count` of aliases used in this timesheet.
+        """
+        aliases_count = defaultdict(int)
+
+        for entries_list in self.entries.values():
+            for entry in entries_list:
+                aliases_count[entry.alias] += 1
+
+        sorted_aliases_count = sorted(aliases_count.items(), key=lambda item: item[1], reverse=True)
+
+        return sorted_aliases_count[:limit]
+
 
 class TimesheetCollection:
     """
@@ -161,6 +180,18 @@ class TimesheetCollection:
     def __getitem__(self, key):
         return self.timesheets[key]
 
+    def __iter__(self):
+        return self.timesheets.__iter__()
+
+    def __getattr__(self, name):
+        """
+        Proxy all methods not defined here to the timesheets.
+        """
+        if hasattr(Timesheet, name):
+            return self._timesheets_callback(name)
+        else:
+            raise AttributeError(name)
+
     def _timesheets_callback(self, callback):
         """
         Call a method on all the timesheets, aggregate the return values in a
@@ -169,7 +200,7 @@ class TimesheetCollection:
         def call(*args, **kwargs):
             return_values = []
 
-            for timesheet in self.timesheets:
+            for timesheet in self:
                 attr = getattr(timesheet, callback)
 
                 if callable(attr):
@@ -183,6 +214,95 @@ class TimesheetCollection:
 
         return call
 
+    @classmethod
+    def load(cls, file_pattern, nb_previous_files=1, parser=None):
+        """
+        Load a collection of timesheet from the given `file_pattern`. `file_pattern` is a path to a timesheet file that
+        will be expanded with :func:`datetime.date.strftime` and the current date. `nb_previous_files` is the number of
+        other timesheets to load, depending on `file_pattern` this will result in either the timesheet from the
+        previous month or from the previous year to be loaded. If `parser` is not set, a default
+        :class:`taxi.timesheet.parser.TimesheetParser` will be used.
+        """
+        if not parser:
+            parser = TimesheetParser()
+
+        timesheet_files = cls.get_files(file_pattern, nb_previous_files)
+        timesheet_collection = cls()
+
+        for file_path in timesheet_files:
+            try:
+                timesheet = Timesheet.load(
+                    file_path, parser=parser, initial=lambda: timesheet_collection.get_new_timesheets_contents()
+                )
+            except ParseError as e:
+                e.file = file_path
+                raise
+
+            timesheet_collection.timesheets.append(timesheet)
+
+        # Fix `add_date_to_bottom` attribute of timesheet entries based on
+        # previous timesheets. When a new timesheet is started it won't have
+        # any direction defined, so we take the one from the previous
+        # timesheet, if any
+        if parser.add_date_to_bottom is None:
+            previous_timesheet = None
+            for timesheet in timesheet_collection.timesheets:
+                if previous_timesheet:
+                    previous_timesheet_top_down = previous_timesheet.entries.is_top_down()
+
+                    if previous_timesheet_top_down is not None:
+                        timesheet.entries.parser.add_date_to_bottom = previous_timesheet_top_down
+                previous_timesheet = timesheet
+
+        return timesheet_collection
+
+    @classmethod
+    def get_files(cls, file_pattern, nb_previous_files, from_date=None):
+        """
+        Return an :class:`~taxi.utils.structures.OrderedSet` of file paths expanded from `filename`, with a maximum of
+        `nb_previous_files`. See :func:`taxi.utils.file.expand_date` for more information about filename expansion. If
+        `from_date` is set, it will be used as a starting date instead of the current date.
+        """
+        date_units = ['m', 'Y']
+        smallest_unit = None
+
+        if not from_date:
+            from_date = datetime.date.today()
+
+        for date_unit in date_units:
+            if ('%' + date_unit) in file_pattern:
+                smallest_unit = date_unit
+                break
+
+        if smallest_unit is None:
+            return OrderedSet([file_pattern])
+
+        files = OrderedSet()
+
+        for i in range(nb_previous_files, -1, -1):
+            if smallest_unit == 'm':
+                file_date = months_ago(from_date, i)
+            elif smallest_unit == 'Y':
+                file_date = from_date.replace(day=1, year=from_date.year - i)
+
+            files.add(file_utils.expand_date(file_pattern, file_date))
+
+        return files
+
+    def get_new_timesheets_contents(self):
+        """
+        Return the initial text to be inserted in new timesheets.
+        """
+        popular_aliases = self.get_popular_aliases()
+        template = ['# Recently used aliases:']
+
+        if popular_aliases:
+            contents = '\n'.join(template + ['# ' + entry for entry, usage in popular_aliases])
+        else:
+            contents = ''
+
+        return contents
+
     @property
     def entries(self):
         """
@@ -194,77 +314,34 @@ class TimesheetCollection:
         return reduce(lambda x, y: x + y, entries_list)
 
     def get_hours(self, **kwargs):
+        """
+        Return the total hours of all the timesheet in this collection.
+        """
         return sum(self._timesheets_callback('get_hours')(**kwargs))
 
-    def __getattr__(self, name):
+    def get_popular_aliases(self, *args, **kwargs):
         """
-        Proxy all methods not defined here to the timesheets.
+        Return the aggregated results of :meth:`Timesheet.get_popular_aliases`.
         """
-        if hasattr(Timesheet, name):
-            return self._timesheets_callback(name)
-        else:
-            raise AttributeError(name)
+        aliases_count_total = defaultdict(int)
+        aliases_counts = self._timesheets_callback('get_popular_aliases')(*args, **kwargs)
 
+        for aliases_count in aliases_counts:
+            for alias, count in aliases_count:
+                aliases_count_total[alias] += count
 
-def get_timesheet_collection(file_pattern, nb_previous_files, parser):
-    timesheet_collection = TimesheetCollection()
-    timesheet_files = get_files(file_pattern, nb_previous_files)
+        sorted_aliases_count_total = sorted(aliases_count_total.items(), key=lambda item: item[1], reverse=True)
 
-    for file_path in timesheet_files:
-        try:
-            timesheet = Timesheet.load(file_path, parser=parser)
-        except ParseError as e:
-            e.file = file_path
-            raise
+        return sorted_aliases_count_total
 
-        timesheet_collection.timesheets.append(timesheet)
+    def latest(self):
+        """
+        Return the latest timesheet (ie. the most recent one) of this collection.
+        """
+        return self[-1]
 
-    # Fix `add_date_to_bottom` attribute of timesheet entries based on
-    # previous timesheets. When a new timesheet is started it won't have
-    # any direction defined, so we take the one from the previous
-    # timesheet, if any
-    if parser.add_date_to_bottom is None:
-        previous_timesheet = None
-        for timesheet in reversed(timesheet_collection.timesheets):
-            if previous_timesheet:
-                previous_timesheet_top_down = previous_timesheet.entries.is_top_down()
-
-                if previous_timesheet_top_down is not None:
-                    timesheet.entries.parser.add_date_to_bottom = previous_timesheet_top_down
-            previous_timesheet = timesheet
-
-    return timesheet_collection
-
-
-def get_files(file_pattern, nb_previous_files, from_date=None):
-    date_units = ['m', 'Y']
-    smallest_unit = None
-
-    if not from_date:
-        from_date = datetime.date.today()
-
-    for date in date_units:
-        if '%%%s' % date in file_pattern:
-            smallest_unit = date
-            break
-
-    if smallest_unit is None:
-        return OrderedSet([file_pattern])
-
-    files = OrderedSet()
-    file_date = from_date
-    for i in six.moves.xrange(0, nb_previous_files + 1):
-        files.add(file_utils.expand_date(file_pattern, file_date))
-
-        if smallest_unit == 'm':
-            if file_date.month == 1:
-                file_date = file_date.replace(day=1,
-                                              month=12,
-                                              year=file_date.year - 1)
-            else:
-                file_date = file_date.replace(day=1,
-                                              month=file_date.month - 1)
-        elif smallest_unit == 'Y':
-            file_date = file_date.replace(day=1, year=file_date.year - 1)
-
-    return files
+    def earliest(self):
+        """
+        Return the earliest timesheet (ie. the oldest one) of this collection.
+        """
+        return self[0]

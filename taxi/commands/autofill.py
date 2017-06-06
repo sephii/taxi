@@ -30,7 +30,7 @@ def autofill(ctx, f):
     timesheet_collection = get_timesheet_collection_for_context(
         ctx, f
     )
-    t = timesheet_collection.timesheets[0]
+    t = timesheet_collection.latest()
     t.prefill(auto_fill_days, last_date)
     t.save()
 

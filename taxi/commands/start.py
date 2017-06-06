@@ -28,7 +28,7 @@ def start(ctx, alias, f):
         ctx.obj['view'].err(e)
         return
 
-    t = timesheet_collection.timesheets[0]
+    t = timesheet_collection.latest()
 
     # If there's a previous entry on the same date, check if we can use its
     # end time as a start time for the newly started entry

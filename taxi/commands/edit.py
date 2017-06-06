@@ -4,7 +4,7 @@ import click
 
 from ..exceptions import ParseError
 from ..settings import Settings
-from ..timesheet import get_files
+from ..timesheet import TimesheetCollection
 from .base import cli, get_timesheet_collection_for_context
 
 
@@ -35,10 +35,9 @@ def edit(ctx, file_to_edit, previous_file):
         except ParseError:
             pass
         else:
-            t = timesheet_collection.timesheets[0]
+            t = timesheet_collection.latest()
 
-            if (ctx.obj['settings']['auto_add'] !=
-                    Settings.AUTO_ADD_OPTIONS['NO']):
+            if ctx.obj['settings']['auto_add'] != Settings.AUTO_ADD_OPTIONS['NO']:
                 auto_fill_days = ctx.obj['settings']['auto_fill_days']
                 if auto_fill_days:
                     t.prefill(auto_fill_days, limit=None)
@@ -46,10 +45,9 @@ def edit(ctx, file_to_edit, previous_file):
                 t.save()
 
     # Get the path to the file we should open in the editor
-    timesheet_files = get_files(file_to_edit, previous_file)
+    timesheet_files = list(reversed(TimesheetCollection.get_files(file_to_edit, previous_file)))
     if previous_file >= len(timesheet_files):
-        ctx.fail("Couldn't find the requested previous file for `%s`." %
-                 file_to_edit)
+        ctx.fail("Couldn't find the requested previous file for `%s`." % file_to_edit)
 
     expanded_file_to_edit = list(timesheet_files)[previous_file]
 

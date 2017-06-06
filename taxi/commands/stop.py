@@ -21,7 +21,7 @@ def stop(ctx, description, f):
     description = ' '.join(description)
     try:
         timesheet_collection = get_timesheet_collection_for_context(ctx, f)
-        current_timesheet = timesheet_collection.timesheets[0]
+        current_timesheet = timesheet_collection.latest()
         current_timesheet.continue_entry(
             datetime.date.today(),
             datetime.datetime.now().time(),

@@ -86,3 +86,22 @@ alias_1 1 foo bar""")
     lines = efg.expand(datetime.date(2014, 2, 21)).readlines()
 
     assert '21/02/2014\n' not in lines
+
+
+def test_autofill_adds_initial_data(cli, data_dir, config):
+    efg = EntriesFileGenerator(data_dir, '%m_%Y.txt')
+    efg.expand(datetime.date(2014, 1, 21)).write(
+        """20/01/2014
+= alias_1 2 hello world
+= alias_2 1 hello world
+= alias_2 1 hello world
+""")
+    efg.patch_config(config)
+
+    with freeze_time('2014-02-01'):
+        cli('edit')
+
+    with open(str(efg.expand(datetime.date(2014, 2, 1))), 'r') as fp:
+        new_file_contents = fp.readlines()
+
+    assert new_file_contents == ['# Recently used aliases:\n', '# alias_2\n', '# alias_1\n']
