@@ -1,6 +1,6 @@
 import datetime
 
-from taxi.timesheet.parser import EntryLine
+from taxi.timesheet import Entry
 
 from . import create_timesheet
 
@@ -23,7 +23,7 @@ bar      -11:00 foobar"""
 
     t = create_timesheet(contents, True)
     t.entries[datetime.date(2012, 9, 29)].append(
-        EntryLine('foo', (datetime.time(15, 0), None), 'bar')
+        Entry('foo', (datetime.time(15, 0), None), 'bar')
     )
     lines = t.entries.to_lines()
     assert lines == ['10.10.2012', 'foo 09:00-10:00 baz',
@@ -39,7 +39,7 @@ bar 0900-1000 bar
 foo 1 bar"""
 
     t = create_timesheet(contents)
-    entries = t.get_entries(datetime.date(2013, 4, 1))
+    entries = t.entries.filter(date=datetime.date(2013, 4, 1))
 
     for entry in list(entries.values())[0]:
         entry.pushed = True

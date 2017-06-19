@@ -32,6 +32,6 @@ def autofill(ctx, f):
     )
     t = timesheet_collection.timesheets[0]
     t.prefill(auto_fill_days, last_date)
-    t.file.write(t.entries)
+    t.save()
 
     ctx.obj['view'].msg("Your entries file has been filled.")

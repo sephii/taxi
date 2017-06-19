@@ -2,8 +2,7 @@ from __future__ import unicode_literals
 
 import datetime
 
-from taxi.timesheet.parser import EntryLine, TimesheetParser
-from taxi.timesheet.entry import EntriesCollection
+from taxi.timesheet import EntriesCollection, Entry, TimesheetParser
 
 
 def test_entries_collection_from_string():
@@ -20,7 +19,7 @@ def test_add_entry_to_entries_collection():
         TimesheetParser(), "20.01.2014\n_internal 0800-0900 Fix coffee machine"
     )
     entries_collection[datetime.date(2014, 1, 20)].append(
-        EntryLine('taxi', 4, 'Work a bit')
+        Entry('taxi', 4, 'Work a bit')
     )
 
     assert len(entries_collection[datetime.date(2014, 1, 20)]) == 2
@@ -34,6 +33,7 @@ def test_edit_entry_description():
 
     assert entries_collection.parser.to_text(entries_collection.lines[-1]) == "_internal 0800-0900 Fix printer"
 
+
 def test_edit_entry_duration():
     entries_collection = EntriesCollection(
         TimesheetParser(), "20.01.2014\n_internal 0800-0900 Fix coffee machine"
@@ -41,6 +41,7 @@ def test_edit_entry_duration():
     entries_collection[datetime.date(2014, 1, 20)][0].duration = 5
 
     assert entries_collection.parser.to_text(entries_collection.lines[-1]) == "_internal 5         Fix coffee machine"
+
 
 def test_edit_entry_alias():
     entries_collection = EntriesCollection(
@@ -110,7 +111,7 @@ def test_insert_to_bottom():
 _internal 0800-0900 Fix coffee machine""")
 
     entries_date = datetime.date(2014, 1, 21)
-    entry_line = EntryLine('taxi', 4, 'Work a bit')
+    entry_line = Entry('taxi', 4, 'Work a bit')
     entries_collection[entries_date].append(entry_line)
 
     assert entries_collection.parser.to_text(entries_collection.lines[-3]) == "21.01.2014"
@@ -124,7 +125,7 @@ def test_insert_to_top():
 _internal 0800-0900 Fix coffee machine""")
 
     entries_date = datetime.date(2014, 1, 21)
-    entry_line = EntryLine('taxi', 4, 'Work a bit')
+    entry_line = Entry('taxi', 4, 'Work a bit')
     entries_collection[entries_date].append(entry_line)
 
     assert entries_collection.parser.to_text(entries_collection.lines[0]) == "21.01.2014"

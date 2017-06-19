@@ -3,10 +3,11 @@ import re
 
 import six
 
-from taxi.exceptions import TaxiException
-from taxi.utils import date as date_utils
-
-from .lines import DateLine, EntryLine, TextLine
+from ..exceptions import ParseError
+from ..utils import date as date_utils
+from .entry import Entry
+from .lines import DateLine, TextLine
+from .utils import is_top_down, trim
 
 
 def create_time_from_text(text):
@@ -23,54 +24,6 @@ def create_time_from_text(text):
     hours = int(text[0:2] if len(text) > 3 else text[0])
 
     return datetime.time(hours, minutes)
-
-
-def is_top_down(lines):
-    """
-    Return `True` if dates in the given lines go in an ascending order, or `False` if they go in a descending order. If
-    no order can be determined, return `None`. The given `lines` must be a list of lines, ie.
-    :class:`~taxi.timesheet.lines.TextLine`, :class:`taxi.timesheet.lines.EntryLine` or
-    :class:`~taxi.timesheet.lines.DateLine`.
-    """
-    date_lines = [
-        line for line in lines if isinstance(line, DateLine)
-    ]
-
-    if len(date_lines) < 2 or date_lines[0].date == date_lines[1].date:
-        return None
-    else:
-        return date_lines[1].date > date_lines[0].date
-
-
-def trim(lines):
-    """
-    Remove lines at the start and at the end of the given `lines` that are :class:`~taxi.timesheet.lines.TextLine`
-    instances and don't have any text.
-    """
-    trim_top = None
-    trim_bottom = None
-    _lines = lines[:]
-
-    for (lineno, line) in enumerate(_lines):
-        if type(line) == TextLine and not line.text.strip():
-            trim_top = lineno
-        else:
-            break
-
-    for (lineno, line) in enumerate(reversed(_lines)):
-        if type(line) == TextLine and not line.text.strip():
-            trim_bottom = lineno
-        else:
-            break
-
-    if trim_top is not None:
-        _lines = _lines[trim_top + 1:]
-
-    if trim_bottom is not None:
-        trim_bottom = len(_lines) - trim_bottom - 1
-        _lines = _lines[:trim_bottom]
-
-    return _lines
 
 
 class TimesheetParser(object):
@@ -110,21 +63,21 @@ class TimesheetParser(object):
     ENTRY_DURATION_FORMAT = '%H:%M'
     # Default representation of flags
     ENTRY_FLAGS_REPR = {
-        EntryLine.FLAG_IGNORED: '?',
-        EntryLine.FLAG_PUSHED: '=',
+        Entry.FLAG_IGNORED: '?',
+        Entry.FLAG_PUSHED: '=',
     }
     # Methods to call to transform a line instance to its textual representation. These methods will take a single
     # argument, the instance of the line to be transformed
     ENTRY_TRANSFORMERS = {
         DateLine: 'date_line_to_text',
         TextLine: 'text_line_to_text',
-        EntryLine: 'entry_line_to_text',
+        Entry: 'entry_line_to_text',
     }
 
     def __init__(self, flags_repr=None, add_date_to_bottom=None, date_format='%d.%m.%Y'):
         """
         If `flags_repr` is set, it must be a :class:`dict` where keys are supported flags from
-        :class:`~taxi.timesheet.lines.EntryLine` and the values are a single characters that are unique among all the
+        :class:`~taxi.timesheet.lines.Entry` and the values are a single characters that are unique among all the
         flags.
 
         If `add_date_to_bottom` is set, it will define whether new dates should be added to the bottom (`True`) or to
@@ -179,8 +132,8 @@ class TimesheetParser(object):
         """
         # Changing the date in a dateline is not supported yet, but if it gets implemented someday this will need to be
         # changed
-        if date_line.text is not None:
-            return date_line.text
+        if date_line._text is not None:
+            return date_line._text
         else:
             return date_utils.unicode_strftime(date_line.date, self.date_format)
 
@@ -192,7 +145,7 @@ class TimesheetParser(object):
 
     def entry_line_to_text(self, entry):
         """
-        Return the textual representation of an :class:`~taxi.timesheet.lines.EntryLine` instance. This method is a bit
+        Return the textual representation of an :class:`~taxi.timesheet.lines.Entry` instance. This method is a bit
         convoluted since we don't want to completely mess up the original formatting of the entry.
         """
         line = []
@@ -235,8 +188,8 @@ class TimesheetParser(object):
 
     def create_entry_line_from_text(self, text):
         """
-        Try to parse the given text line and extract and entry. Return an :class:`~taxi.timesheet.lines.EntryLine`
-        object if parsing is successful, otherwise raise :class:`ParseError`.
+        Try to parse the given text line and extract and entry. Return an :class:`~taxi.timesheet.lines.Entry`
+        object if parsing is successful, otherwise raise :exc:`~taxi.exceptions.ParseError`.
         """
         split_line = re.match(self.entry_line_regexp, text)
 
@@ -290,7 +243,7 @@ class TimesheetParser(object):
             split_line.group('description'),
         )
 
-        entry_line = EntryLine(alias, duration, description, flags=flags, text=line)
+        entry_line = Entry(alias, duration, description, flags=flags, text=line)
 
         return entry_line
 
@@ -327,7 +280,7 @@ class TimesheetParser(object):
     def extract_flags_from_text(self, text):
         """
         Extract the flags from the given text and return a :class:`set` of flag values. See
-        :class:`~taxi.timesheet.lines.EntryLine` for a list of existing flags.
+        :class:`~taxi.timesheet.lines.Entry` for a list of existing flags.
         """
         flags = set()
         reversed_flags_repr = {v: k for k, v in self.flags_repr.items()}
@@ -342,8 +295,8 @@ class TimesheetParser(object):
     def parse_text(self, text):
         """
         Parse the given text and return a list of :class:`~taxi.timesheet.lines.DateLine`,
-        :class:`~taxi.timesheet.lines.EntryLine`, and :class:`~taxi.timesheet.lines.TextLine` objects. If there's an
-        error during parsing, a :exc:`ParseError` will be raised.
+        :class:`~taxi.timesheet.lines.Entry`, and :class:`~taxi.timesheet.lines.TextLine` objects. If there's an
+        error during parsing, a :exc:`taxi.exceptions.ParseError` will be raised.
         """
         text = text.strip()
         lines = text.splitlines()
@@ -356,7 +309,7 @@ class TimesheetParser(object):
 
                 if isinstance(parsed_line, DateLine):
                     encountered_date = True
-                elif isinstance(parsed_line, EntryLine) and not encountered_date:
+                elif isinstance(parsed_line, Entry) and not encountered_date:
                     raise ParseError("Entries must be defined inside a date section")
             except ParseError as e:
                 # Update exception with some more information
@@ -371,9 +324,10 @@ class TimesheetParser(object):
     def parse_line(self, text):
         """
         Parse the given `text` and return either a :class:`~taxi.timesheet.lines.DateLine`, an
-        :class:`~taxi.timesheet.lines.EntryLine`, or a :class:`~taxi.timesheet.lines.TextLine`, or raise
-        :exc:`ParseError` if the line can't be parser. See the transformation methods :meth:`create_date_from_text` and
-        :meth:`create_entry_line_from_text` for details about the format the line is expected to have.
+        :class:`~taxi.timesheet.lines.Entry`, or a :class:`~taxi.timesheet.lines.TextLine`, or raise
+        :exc:`taxi.exceptions.ParseError` if the line can't be parser. See the transformation methods
+        :meth:`create_date_from_text` and :meth:`create_entry_line_from_text` for details about the format the line is
+        expected to have.
         """
         text = text.strip().replace('\t', ' ' * 4)
 
@@ -412,32 +366,3 @@ class TimesheetParser(object):
             _lines.insert(0, DateLine(date))
 
         return trim(_lines)
-
-
-@six.python_2_unicode_compatible
-class ParseError(TaxiException):
-    def __init__(self, message, line=None, line_number=None):
-        self.line = line
-        self.message = message
-        self.line_number = line_number
-        self.file = None
-
-    def __str__(self):
-        if self.line_number is not None and self.file:
-            msg = "Parse error in {file} at line {line}: {msg}.".format(
-                file=self.file,
-                line=self.line_number,
-                msg=self.message
-            )
-        elif self.line_number is not None:
-            msg = "Parse error at line {line}: {msg}.".format(
-                line=self.line_number,
-                msg=self.message
-            )
-        else:
-            msg = self.message
-
-        if self.line:
-            msg += " The line causing the error was:\n\n%s" % self.line
-
-        return msg

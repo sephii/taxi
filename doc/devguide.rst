@@ -1,6 +1,99 @@
 Developer guide
 ===============
 
+Timesheets and entries
+----------------------
+
+The :class:`~taxi.timesheet.lines.Entry` class is the base of Taxi. An entry is the record of an activity for a certain
+period of time. It consists of an activity, a time span, and a description::
+
+    >>> from taxi.timesheet import Entry
+    >>> my_entry = Entry('_internal', 1, 'Play ping-pong')
+
+Entries duration can be expressed either as a fixed duration, in hours (eg. 0.5 for half an hour), or as time spans.
+Time span notation works with 2-items tuples, like so: `(start_time, end_time)`. In the following example, the entry
+starts at 9:30 and ends at 10, thus having a duration of half an hour::
+
+    >>> from datetime import time
+    >>> my_entry = Entry('_internal', (time(9, 30), time(10)), 'Play ping-ping')
+    >>> my_entry.hours
+    0.5
+
+`end_time` can be left blank, in that case the entry will be considered as being "in progress". This is useful in
+certain situations, for example the `start` command uses this feature to start an entry which can then be "stopped"
+with the `stop` commands (which detects the last in-progress activity and sets its end time).
+
+.. code::
+
+    >>> my_entry = Entry('_internal', (time(9), None), 'Play ping-pong')
+    >>> my_entry.hours
+    0
+    >>> my_entry.in_progress
+    True
+
+Now we know how to create entries, we can put them together in timesheets, which is a collection of entries and dates.
+You might have noticed entries don't have an associated date: that's because the link between dates and entries is in
+the timesheet itself. Let's create a timesheet::
+
+    >>> from datetime import date
+    >>> from taxi.timesheet import Timesheet
+    >>> timesheet = Timesheet()
+    >>> timesheet.entries
+    {}
+
+Now we have a timesheet, we can start adding entries to it::
+
+    >>> timesheet.entries.add(date(2017, 6, 7), my_entry)
+    >>> timesheet.entries
+    {datetime.date(2017, 6, 7): [<Entry: "_internal 0 Play ping-pong">]}
+
+You can dump the timesheet contents by casting it to a string::
+
+    >>> str(timesheet)
+    '07.06.2017\n\n_internal 09:00-? Play ping-pong'
+
+Entries also have flags: `pushed` and `ignored`. Ignored and pushed entries will be excluded from the commit process::
+
+    >>> my_entry = Entry('_internal', 1, 'Play ping-pong')
+    >>> my_entry.ignored = True
+    >>> timesheet = Timesheet()
+    >>> timesheet.entries.add(date(2017, 6, 7), my_entry)
+    >>> str(timesheet)
+    '07.06.2017\n\n? _internal 1 Play ping-pong'
+
+Loading and saving timesheets
+-----------------------------
+
+Use the `load` method to create a timesheet from a file::
+
+    >>> timesheet = Timesheet.load('/tmp/timesheet.tks')
+    >>> timesheet.entries.add(date(2017, 6, 7), Entry('_internal', 1, 'Play ping-pong'))
+    >>> timesheet.save()
+
+You can also save the timesheet to a different file from the file it was loaded from::
+
+    >>> timesheet.save('/tmp/new_timesheet.tks')
+
+Timesheet collections
+---------------------
+
+Dealing with multiple timesheets is achieved through the :class:`taxi.timesheet.TimesheetCollection` class. This is
+useful if you want to run operations on multiple timesheets in a single command. The `TimesheetCollection` class
+proxies all calls to the associated timesheets and aggregates the results. The following example illustrates how the
+`entries` attribute from a timesheet collection can be used to transparently access entries from all associated
+timesheets::
+
+    >>> from taxi.timesheet import TimesheetCollection
+    >>> timesheets = [Timesheet(), Timesheet()]
+    >>> timesheets[0].entries.add(date(2017, 6, 8), Entry('_internal', 1, 'Play ping-pong'))
+    >>> timesheets[1].entries.add(date(2017, 7, 8), Entry('_internal', 1, 'Play ping-pong'))
+    >>> timesheet_collection = TimesheetCollection(timesheets)
+    >>> timesheet_collection.entries
+    {datetime.date(2017, 6, 8): [<Entry: ...>], datetime.date(2017, 7, 8): [<Entry: ...>]}
+    >>> timesheet_collection.get_hours()
+    2
+
+
 Creating a backend
 ------------------
 

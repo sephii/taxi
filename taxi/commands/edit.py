@@ -2,9 +2,9 @@ from __future__ import unicode_literals
 
 import click
 
+from ..exceptions import ParseError
 from ..settings import Settings
-from ..timesheet.parser import ParseError
-from ..timesheet.utils import get_files
+from ..timesheet import get_files
 from .base import cli, get_timesheet_collection_for_context
 
 
@@ -43,7 +43,7 @@ def edit(ctx, file_to_edit, previous_file):
                 if auto_fill_days:
                     t.prefill(auto_fill_days, limit=None)
 
-                t.file.write(t.entries)
+                t.save()
 
     # Get the path to the file we should open in the editor
     timesheet_files = get_files(file_to_edit, previous_file)
@@ -73,5 +73,5 @@ def edit(ctx, file_to_edit, previous_file):
         ctx.obj['view'].err(e)
     else:
         ctx.obj['view'].show_status(
-            timesheet_collection.get_entries(regroup=True, exclude_pushed=True)
+            timesheet_collection.entries.filter(regroup=True, pushed=False)
         )

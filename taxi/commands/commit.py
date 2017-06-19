@@ -48,7 +48,7 @@ def commit(ctx, f, force_yes, date, not_today):
             date = (date[0], yesterday)
 
     if not date and not force_yes:
-        non_workday_entries = timesheet_collection.get_non_current_workday_entries()
+        non_workday_entries = timesheet_collection.entries.filter(ignored=False, pushed=False, current_workday=False)
 
         if non_workday_entries:
             if not ctx.obj['view'].confirm_commit_entries(non_workday_entries):
@@ -91,7 +91,7 @@ def commit(ctx, f, force_yes, date, not_today):
     finally:
         comment_timesheets_entries(timesheet_collection, date)
 
-    ignored_entries = timesheet_collection.get_ignored_entries(date)
+    ignored_entries = timesheet_collection.entries.filter(date=date, ignored=True, unmapped=False, pushed=False)
     ignored_entries_list = []
     for (entries_date, entries) in six.iteritems(ignored_entries):
         ignored_entries_list.extend(entries)
@@ -126,11 +126,8 @@ def comment_timesheets_entries(timesheet_collection, date):
                 if hasattr(entry, 'push_error') and entry.push_error is None:
                     entry.pushed = True
 
-        timesheet.file.write(timesheet.entries)
+        timesheet.save()
 
 
 def get_entries_to_push(timesheet, date, regroup=True):
-    return timesheet.get_entries(
-        date, exclude_ignored=True, exclude_unmapped=True, regroup=regroup,
-        exclude_pushed=True
-    )
+    return timesheet.entries.filter(date, regroup=regroup, ignored=False, unmapped=False, pushed=False)

@@ -6,25 +6,25 @@ from . import create_timesheet
 def test_get_entries_excluding_unmapped_excludes_unmapped():
     contents = "10.10.2012\nbaz 2 Foo"
     t = create_timesheet(contents)
-    assert len(list(t.get_entries(exclude_unmapped=True).values())[0]) == 0
+    assert len(t.entries.filter(unmapped=False)) == 0
 
 
 def test_get_entries_excluding_unmapped_includes_mapped():
     contents = "10.10.2012\nfoo 2 Foo"
     t = create_timesheet(contents)
-    assert len(list(t.get_entries(exclude_unmapped=True).values())[0]) == 1
+    assert len(t.entries.filter(unmapped=False)) == 1
 
 
 def test_get_entries_excluding_ignored_excludes_ignored():
     contents = "10.10.2012\n? foo 2 Foo"
     t = create_timesheet(contents)
-    assert len(list(t.get_entries(exclude_ignored=True).values())[0]) == 0
+    assert len(t.entries.filter(ignored=False)) == 0
 
 
 def test_get_entries_excluding_ignored_includes_non_ignored():
     contents = "10.10.2012\nfoo 2 Foo"
     t = create_timesheet(contents)
-    assert len(list(t.get_entries(exclude_ignored=True).values())[0]) == 1
+    assert len(list(t.entries.filter(ignored=False).values())[0]) == 1
 
 
 def test_get_entries_excluding_pushed_excludes_pushed():
@@ -34,6 +34,6 @@ foo 2 bar
 foo 1 bar"""
     entries = EntriesCollection(TimesheetParser(), contents)
     timesheet = Timesheet(entries)
-    timesheet_entries = timesheet.get_entries(exclude_pushed=True)
+    timesheet_entries = timesheet.entries.filter(pushed=False)
 
     assert len(list(timesheet_entries.values())[0]) == 2

@@ -1,6 +1,6 @@
 import datetime
 
-from taxi.timesheet.utils import get_files
+from taxi.timesheet import get_files
 
 
 def test_get_files_m_returns_previous_files():

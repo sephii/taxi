@@ -9,7 +9,7 @@ foo 2 bar
 bar 2 bar"""
 
     t = create_timesheet(contents)
-    entries = list(t.get_entries(regroup=True).values())[0]
+    entries = list(t.entries.filter(regroup=True).values())[0]
     assert len(entries) == 2
 
 
@@ -19,7 +19,7 @@ foo 2 bar
 foo 2 baz"""
 
     t = create_timesheet(contents)
-    entries = list(t.get_entries(regroup=True).values())[0]
+    entries = list(t.entries.filter(regroup=True).values())[0]
     assert len(entries) == 2
 
 
@@ -30,7 +30,7 @@ foo 3 bar
 bar 1 barz"""
 
     t = create_timesheet(contents)
-    entries = list(t.get_entries(regroup=True).values())[0]
+    entries = list(t.entries.filter(regroup=True).values())[0]
     assert len(entries) == 2
 
 
@@ -40,7 +40,7 @@ foo 2 bar
 foo 3 bar"""
 
     t = create_timesheet(contents)
-    entries = list(t.get_entries(regroup=True).values())[0]
+    entries = list(t.entries.filter(regroup=True).values())[0]
     assert entries[0].hours == 5
 
 
@@ -50,7 +50,7 @@ foo 2 bar
 foo 0900-1000 bar"""
 
     t = create_timesheet(contents)
-    entries = list(t.get_entries(regroup=True).values())[0]
+    entries = list(t.entries.filter(regroup=True).values())[0]
     assert entries[0].hours == 3
 
 
@@ -60,7 +60,7 @@ foo 2 bar
 ? foo 3 test"""
 
     t = create_timesheet(contents)
-    entries = list(t.get_entries(regroup=True).values())[0]
+    entries = list(t.entries.filter(regroup=True).values())[0]
     assert len(entries) == 2
 
 
@@ -71,7 +71,7 @@ foo 0800-0900 bar
 bar -1000 bar
 foo -1100 bar"""
     t = create_timesheet(contents)
-    entries = t.get_entries(regroup=True)[datetime.date(2013, 4, 1)]
+    entries = t.entries.filter(regroup=True)[datetime.date(2013, 4, 1)]
     assert len(entries) == 2
     assert entries[0].hours == 4
 
@@ -82,7 +82,7 @@ foo 2 bar
 bar 0900-1000 bar
 foo 1 bar"""
     t = create_timesheet(contents)
-    entries = t.get_entries(regroup=True)[datetime.date(2013, 4, 1)]
+    entries = t.entries.filter(regroup=True)[datetime.date(2013, 4, 1)]
     for entry in entries:
         entry.pushed = True
     lines = t.entries.to_lines()

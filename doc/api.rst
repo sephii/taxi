@@ -21,7 +21,7 @@ Exceptions
 Timesheets
 ----------
 
-.. automodule:: taxi.timesheet
+.. automodule:: taxi.timesheet.timesheet
     :members:
 
 .. automodule:: taxi.timesheet.entry
@@ -30,8 +30,8 @@ Timesheets
 .. automodule:: taxi.timesheet.flags
     :members:
 
-Timesheet entities
-~~~~~~~~~~~~~~~~~~
+Timesheet lines
+~~~~~~~~~~~~~~~
 
 .. automodule:: taxi.timesheet.lines
     :members:
@@ -47,4 +47,4 @@ Timesheet parsing
 Exceptions
 ~~~~~~~~~~
 
-.. autoclass:: taxi.timesheet.parser.ParseError
+.. autoclass:: taxi.exceptions.ParseError

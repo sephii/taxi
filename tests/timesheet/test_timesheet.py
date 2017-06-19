@@ -5,9 +5,7 @@ import datetime
 
 from freezegun import freeze_time
 
-from taxi.timesheet import Timesheet
-from taxi.timesheet.entry import EntriesCollection
-from taxi.timesheet.parser import EntryLine, TimesheetParser
+from taxi.timesheet import EntriesCollection, Entry, Timesheet, TimesheetParser
 
 from . import create_timesheet
 
@@ -62,7 +60,7 @@ def test_entry_with_undefined_alias_can_be_added():
 foo 0900-1000 baz"""
 
     t = create_timesheet(contents)
-    e = EntryLine('baz', (datetime.time(10, 0), None), 'baz')
+    e = Entry('baz', (datetime.time(10, 0), None), 'baz')
     t.entries[datetime.date(2012, 10, 10)].append(e)
 
     lines = t.entries.to_lines()
@@ -87,7 +85,7 @@ def test_get_entries():
     entries = EntriesCollection(TimesheetParser(), """10.10.2014\nfoo 2 bar\n11.10.2014\nfoo 1 bar""")
 
     timesheet = Timesheet(entries)
-    assert len(timesheet.get_entries(datetime.date(2014, 10, 10))) == 1
+    assert len(timesheet.entries.filter(date=datetime.date(2014, 10, 10))) == 1
 
 
 @freeze_time('2014-01-02')
@@ -95,7 +93,7 @@ def test_current_workday_entries():
     entries = EntriesCollection(TimesheetParser(), """01.01.2014\nfoo 2 bar""")
 
     timesheet = Timesheet(entries)
-    assert len(timesheet.get_non_current_workday_entries()) == 0
+    assert len(timesheet.entries.filter(current_workday=False)) == 0
 
 
 @freeze_time('2014-01-03')
@@ -103,11 +101,4 @@ def test_non_current_workday_entries():
     entries = EntriesCollection(TimesheetParser(), """01.01.2014\nfoo 2 bar""")
 
     timesheet = Timesheet(entries)
-    assert len(timesheet.get_non_current_workday_entries()) == 1
-
-
-def test_non_current_workday_entries_ignored():
-    entries = EntriesCollection(TimesheetParser(), """04.01.2014\n? foo 2 bar""")
-
-    timesheet = Timesheet(entries)
-    assert len(timesheet.get_non_current_workday_entries()) == 0
+    assert len(timesheet.entries.filter(current_workday=False)) == 1

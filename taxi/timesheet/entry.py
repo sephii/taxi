@@ -1,10 +1,16 @@
 from __future__ import unicode_literals
 
 import collections
+import copy
+import datetime
 
 import six
 
-from .parser import DateLine, EntryLine, TextLine, is_top_down, trim
+from ..aliases import aliases_database
+from ..utils import date as date_utils
+from .flags import FlaggableMixin
+from .lines import DateLine, TextLine
+from .utils import is_top_down, trim
 
 
 def synchronized(func):
@@ -17,6 +23,204 @@ def synchronized(func):
             return func(*args)
 
     return wrapper
+
+
+class Entry(FlaggableMixin):
+    """
+    The Entry is a line representing a timesheet entry, with an alias, a
+    duration, a description and some potential flags.
+    """
+    FLAG_IGNORED = 'ignored'
+    FLAG_PUSHED = 'pushed'
+
+    def __init__(self, alias, duration, description, flags=None, text=None):
+        """
+        `flags` must be a :class:`set` of flags (either :attr:`FLAG_IGNORED` or :attr:`FLAG_PUSHED`).
+
+        If `text` is set, it will be used as a base by the parser, with any necessary modification depending on the
+        attributes that have been set on the :class:`Entry`. `text` must be a tuple in the following form::
+
+            (flags, space1, alias, space2, duration, space3, description)
+
+        Where `space1`, `space2` and `space3` are just spacing characters (this is used to preserve the number of
+        whitespaces when regenerating the line). For the values of `flags`, `alias`, `duration` and `description`,
+        refer to the :class:`~taxi.timesheet.parser.TimesheetParser` class.
+
+        """
+        super(Entry, self).__init__()
+
+        self._text = text
+        self.alias = alias
+        self.duration = duration
+        self.description = description
+        self.previous_entry = None
+
+        # Flags *must* be changed through the dedicated methods, or we won't notice it and we won't be able to reflect
+        # the change when outputting the line as text
+        if flags is not None:
+            self._flags = copy.copy(flags)
+
+        # This must come last in the initialization as any attribute set after this one will be recorded in
+        # `_changed_attrs`
+        self._changed_attrs = set()
+
+    def __repr__(self):
+        return '<Entry: "%s">' % self.__str__()
+
+    def __str__(self):
+        return "{alias} {time} {description}".format(alias=self.alias, time=self.hours, description=self.description)
+
+    def __setattr__(self, attr, value):
+        """
+        Set the given `attr` to the given `value` and memorize this attribute
+        has changed so we can regenerate it when outputting text.
+        """
+        if hasattr(self, '_changed_attrs') and attr != '_changed_attrs':
+            self._changed_attrs.add(attr)
+
+        super(Entry, self).__setattr__(attr, value)
+
+    @property
+    def hours(self):
+        """
+        Return the number of hours this entry has lasted. If the duration is a tuple with a start and an end time,
+        the difference between the two times will be calculated. If the duration is a number, it will be returned
+        as-is.
+        """
+        if not isinstance(self.duration, tuple):
+            return self.duration
+
+        if self.duration[1] is None:
+            return 0
+
+        time_start = self.get_start_time()
+
+        # This can happen if the previous entry has a non-tuple duration
+        # and the current entry has a tuple duration without a start time
+        if time_start is None:
+            return 0
+
+        now = datetime.datetime.now()
+        time_start = now.replace(
+            hour=time_start.hour,
+            minute=time_start.minute, second=0
+        )
+        time_end = now.replace(
+            hour=self.duration[1].hour,
+            minute=self.duration[1].minute, second=0
+        )
+        total_time = time_end - time_start
+        total_hours = total_time.seconds / 3600.0
+
+        return total_hours
+
+    @property
+    def in_progress(self):
+        return isinstance(self.duration, tuple) and self.duration[1] is None
+
+    @property
+    def mapped(self):
+        return self.alias in aliases_database
+
+    def get_start_time(self):
+        """
+        Return the start time of the entry as a :class:`datetime.time` object.
+        If the start time is `None`, the end time of the previous entry will be
+        returned instead. If the current entry doesn't have a duration in the
+        form of a tuple, if there's no previous entry or if the previous entry
+        has no end time, the value `None` will be returned.
+        """
+        if not isinstance(self.duration, tuple):
+            return None
+
+        if self.duration[0] is not None:
+            return self.duration[0]
+        else:
+            if (self.previous_entry and
+                    isinstance(self.previous_entry.duration, tuple) and
+                    self.previous_entry.duration[1] is not None):
+                return self.previous_entry.duration[1]
+
+        return None
+
+    @property
+    def hash(self):
+        """
+        Return a value that's used to uniquely identify an entry in a date so we can regroup all entries that share the
+        same hash.
+        """
+        return u''.join([
+            self.alias,
+            self.description,
+            str(self.ignored),
+            str(self.flags),
+        ])
+
+    def add_flag(self, flag):
+        """
+        Add flag to the flags and memorize this attribute has changed so we can
+        regenerate it when outputting text.
+        """
+        super(Entry, self).add_flag(flag)
+        self._changed_attrs.add('flags')
+
+    def remove_flag(self, flag):
+        """
+        Remove flag to the flags and memorize this attribute has changed so we
+        can regenerate it when outputting text.
+        """
+        super(Entry, self).remove_flag(flag)
+        self._changed_attrs.add('flags')
+
+    @property
+    def flags(self):
+        """
+        Return a copy of the flags. The reason why we return a copy and not the
+        original flags is that we don't want it to be altered because we need
+        to keep the synchronisation with the text lines. To change a flag, use
+        :meth:`add_flag` or :meth:`remove_flag` or use shortcut properties such
+        as :attr:`ignored` or :attr:`pushed`.
+        """
+        return copy.copy(self._flags)
+
+    @property
+    def pushed(self):
+        """
+        Return True if the object has the :attr:`FLAG_PUSHED` flag set.
+        """
+        return self.has_flag(self.FLAG_PUSHED)
+
+    @pushed.setter
+    def pushed(self, value):
+        """
+        Set the ignored flag if the `value` it is set to evaluates to True,
+        remove it otherwise.
+        """
+        self._add_or_remove_flag(self.FLAG_PUSHED, value)
+
+    @property
+    def ignored(self):
+        """
+        Return True if this entry is supposed to be ignored, False otherwise. A
+        line can be ignored for several reasons:
+
+            * It has the ignored flag set
+            * Its duration is zero
+            * Its description is `?`
+            * Its alias ends with a `?`
+        """
+        return (
+            self.has_flag(self.FLAG_IGNORED) or self.hours == 0 or
+            self.description == '?' or self.alias[-1] == '?'
+        )
+
+    @ignored.setter
+    def ignored(self, value):
+        """
+        Set the ignored flag if the `value` it is set to evaluates to True,
+        remove it otherwise.
+        """
+        self._add_or_remove_flag(self.FLAG_IGNORED, value)
 
 
 class EntriesCollection(collections.defaultdict):
@@ -51,7 +255,7 @@ class EntriesCollection(collections.defaultdict):
                 self.synchronized = True
 
     def __repr__(self):
-        return '<EntriesCollection: %s>' % super(EntriesCollection, self).__repr__()
+        return dict(self.items()).__repr__()
 
     def __missing__(self, key):
         """
@@ -97,6 +301,16 @@ class EntriesCollection(collections.defaultdict):
             for entry in value:
                 self.add_entry(entry)
 
+    def __add__(self, other):
+        new_collection = EntriesCollection(parser=self.parser)
+
+        for entries_collection in (self, other):
+            for entry_date, entries in entries_collection.items():
+                for entry in entries:
+                    new_collection.add(entry_date, entry)
+
+        return new_collection
+
     def is_top_down(self):
         return is_top_down(self.lines)
 
@@ -106,27 +320,27 @@ class EntriesCollection(collections.defaultdict):
         Add the given entry to the textual representation.
         """
         in_date = False
-        insert_at = None
+        insert_at = 0
 
         for (lineno, line) in enumerate(self.lines):
             # Search for the date of the entry
             if isinstance(line, DateLine) and line.date == date:
                 in_date = True
-                # Insert here if there is no existing EntryLine for this date
+                # Insert here if there is no existing Entry for this date
                 insert_at = lineno
                 continue
 
             if in_date:
-                if isinstance(line, EntryLine):
+                if isinstance(line, Entry):
                     insert_at = lineno
                 elif isinstance(line, DateLine):
                     break
 
         self.lines.insert(insert_at + 1, entry)
 
-        # If there's no other EntryLine in the current date, add a blank line
+        # If there's no other Entry in the current date, add a blank line
         # between the date and the entry
-        if not isinstance(self.lines[insert_at], EntryLine):
+        if not isinstance(self.lines[insert_at], Entry):
             self.lines.insert(insert_at + 1, TextLine(''))
 
     def delete_entry(self, entry):
@@ -142,8 +356,11 @@ class EntriesCollection(collections.defaultdict):
         """
         self.lines = trim([
             line for line in self.lines
-            if not isinstance(line, EntryLine) or line not in entries
+            if not isinstance(line, Entry) or line not in entries
         ])
+
+    def add(self, date, entry):
+        self[date].append(entry)
 
     @synchronized
     def delete_date(self, date):
@@ -178,7 +395,7 @@ class EntriesCollection(collections.defaultdict):
             if isinstance(line, DateLine):
                 current_date = line.date
                 self[current_date] = self.default_factory(self, line.date)
-            elif isinstance(line, EntryLine):
+            elif isinstance(line, Entry):
                 if len(self[current_date]) > 0:
                     line.previous_entry = self[current_date][-1]
                     self[current_date][-1].next_entry = line
@@ -192,6 +409,106 @@ class EntriesCollection(collections.defaultdict):
         """
         return [self.parser.to_text(line) for line in self.lines]
 
+    def filter(self, date=None, regroup=False, ignored=None, pushed=None, unmapped=None, current_workday=None):
+        """
+        Return the entries as a dict of {:class:`datetime.date`: :class:`~taxi.timesheet.lines.Entry`}
+        items.
+
+        `date` can either be a single :class:`datetime.date` object to filter only entries from the given date,
+        or a tuple of :class:`datetime.date` objects representing `(from, to)`. `filter_callback` is a function that,
+        given a :class:`~taxi.timesheet.lines.Entry` object, should return True to include that line, or False to
+        exclude it. If `regroup` is set to True, similar entries (ie. having the same
+        :meth:`~taxi.timesheet.lines.Entry.hash`) will be regrouped intro a single
+        :class:`~taxi.timesheet.entry.AggregatedTimesheetEntry`.
+        """
+        def entry_filter(entry_date, entry):
+            if ignored is not None and entry.ignored != ignored:
+                return False
+
+            if pushed is not None and entry.pushed != pushed:
+                return False
+
+            if unmapped is not None and entry.mapped == unmapped:
+                return False
+
+            if current_workday is not None:
+                today = datetime.date.today()
+                yesterday = date_utils.get_previous_working_day(today)
+                is_current_workday = entry_date in (today, yesterday) and entry_date.strftime('%w') not in [6, 0]
+
+                if current_workday != is_current_workday:
+                    return False
+
+            return True
+
+        # Date can either be a single date (only 1 day) or a tuple for a
+        # date range
+        if date is not None and not isinstance(date, tuple):
+            date = (date, date)
+
+        filtered_entries = collections.defaultdict(list)
+
+        for (entries_date, entries) in six.iteritems(self):
+            if (date is not None and (
+                    (date[0] is not None and entries_date < date[0])
+                    or (date[1] is not None and entries_date > date[1]))):
+                continue
+
+            entries_for_date = []
+
+            if regroup:
+                # This is a mapping between entries hashes and their
+                # position in the entries_for_date list
+                aggregated_entries = {}
+                id = 0
+
+                for entry in entries:
+                    if not entry_filter(entries_date, entry):
+                        continue
+
+                    # Common case: the entry is not yet referenced in the
+                    # aggregated_entries dict
+                    if entry.hash not in aggregated_entries:
+                        # In that case, put it normally in the entries_for_date
+                        # list. It will get replaced by an AggregatedEntry
+                        # later if necessary
+                        entries_for_date.append(entry)
+                        aggregated_entries[entry.hash] = id
+                        id += 1
+                    else:
+                        # Get the first occurence of the entry in the
+                        # entries_for_date list
+                        existing_entry = entries_for_date[
+                            aggregated_entries[entry.hash]
+                        ]
+
+                        # The entry could already have been replaced by an
+                        # AggregatedEntry if there's more than 2 occurences
+                        if isinstance(existing_entry, Entry):
+                            # Create the AggregatedEntry, put the first
+                            # occurence of Entry in it and the current one
+                            aggregated_entry = AggregatedTimesheetEntry()
+                            aggregated_entry.entries.append(existing_entry)
+                            aggregated_entry.entries.append(entry)
+                            entries_for_date[
+                                aggregated_entries[entry.hash]
+                            ] = aggregated_entry
+                        else:
+                            # The entry we found is already an
+                            # AggregatedEntry, let's just append the
+                            # current entry to it
+                            aggregated_entry = existing_entry
+                            aggregated_entry.entries.append(entry)
+            else:
+                entries_for_date = [
+                    entry for entry in entries if entry_filter(entries_date, entry)
+                ]
+
+            if entries_for_date:
+                filtered_entries[entries_date].extend(entries_for_date)
+
+        return filtered_entries
+
 
 class EntriesList(list):
     """
@@ -203,9 +520,6 @@ class EntriesList(list):
 
         self.entries_collection = entries_collection
         self.date = date
-
-    def __repr__(self):
-        return '<EntriesList: %s>' % super(EntriesList, self).__repr__()
 
     def __delitem__(self, key):
         """

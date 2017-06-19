@@ -14,8 +14,7 @@ from ..aliases import aliases_database
 from ..plugins import plugins_registry
 from ..projects import ProjectsDb
 from ..settings import Settings
-from ..timesheet.parser import TimesheetParser
-from ..timesheet.utils import get_timesheet_collection
+from ..timesheet import TimesheetParser, get_timesheet_collection
 from ..ui.tty import TtyUi
 from .types import ExpandedPath, Hostname
 

@@ -4,8 +4,9 @@ import datetime
 
 import pytest
 
-from taxi.timesheet.parser import (DateLine, EntryLine, ParseError, TextLine, TimesheetParser, create_time_from_text,
-                                   trim)
+from taxi.exceptions import ParseError
+from taxi.timesheet import DateLine, Entry, TextLine
+from taxi.timesheet.parser import TimesheetParser, create_time_from_text, trim
 
 
 def test_extract_date_dot_separator():
@@ -117,7 +118,7 @@ bar 10:00-? ?
     assert lines[0].date == datetime.date(2013, 1, 1)
     assert isinstance(lines[1], TextLine)
     assert lines[1].text == ''
-    assert isinstance(lines[2], EntryLine)
+    assert isinstance(lines[2], Entry)
     assert lines[2].alias == 'foobar'
     assert lines[2].duration == (datetime.time(9, 0), datetime.time(10, 0))
     assert lines[2].description == 'baz'
@@ -128,9 +129,9 @@ bar 10:00-? ?
     assert lines[4].description == 'bar'
     assert isinstance(lines[6], DateLine)
     assert lines[6].date == datetime.date(2013, 9, 23)
-    assert isinstance(lines[7], EntryLine)
+    assert isinstance(lines[7], Entry)
     assert lines[7].duration == (datetime.time(10, 0), None)
-    assert isinstance(lines[8], EntryLine)
+    assert isinstance(lines[8], Entry)
     assert lines[8].alias == 'foo'
     assert lines[8].ignored
 
@@ -158,14 +159,14 @@ foobar 0900-1000 baz
 
 
 def test_detect_formatting_no_alias_padding():
-    line = EntryLine(
+    line = Entry(
         'foobar', 4, 'description',
     )
     assert TimesheetParser().entry_line_to_text(line) == 'foobar 4 description'
 
 
 def test_detect_formatting_padded_alias():
-    line = EntryLine(
+    line = Entry(
         'foobar', 4, 'description',
         text=('', '', 'foobar', '   ', '4', ' ', 'description')
     )
@@ -173,7 +174,7 @@ def test_detect_formatting_padded_alias():
 
 
 def test_detect_formatting_no_time_padding():
-    line = EntryLine(
+    line = Entry(
         'foobar', (datetime.time(15, 0), datetime.time(16, 0)), 'description',
         text=('', '', 'foobar', ' ', '1500-1600', ' ', 'description')
     )
@@ -181,7 +182,7 @@ def test_detect_formatting_no_time_padding():
 
 
 def test_detect_formatting_padded_time():
-    line = EntryLine(
+    line = Entry(
         'foobar', (datetime.time(15, 0), datetime.time(16, 0)), 'description',
         text=('', '', 'foobar', ' ', '1500-1600', '   ', 'description')
     )
@@ -189,7 +190,7 @@ def test_detect_formatting_padded_time():
 
 
 def test_detect_formatting_padded_time_and_alias():
-    line = EntryLine(
+    line = Entry(
         'foobar', (datetime.time(15, 0), datetime.time(16, 0)), 'description',
         text=('', '', 'foobar', '   ', '1500-1600', '   ', 'description')
     )
@@ -231,7 +232,7 @@ def test_inexistent_flag_raises_parse_error():
 
 def test_entry_with_flag_keeps_flag():
     t = TimesheetParser().create_entry_line_from_text('= foo 09:00-10:15 Description')
-    assert EntryLine.FLAG_PUSHED in t.flags
+    assert Entry.FLAG_PUSHED in t.flags
 
 
 def test_trim_trims_to_top():

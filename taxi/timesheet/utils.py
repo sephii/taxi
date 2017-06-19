@@ -1,88 +1,49 @@
 from __future__ import unicode_literals
 
-import datetime
 
-import six
+def is_top_down(lines):
+    """
+    Return `True` if dates in the given lines go in an ascending order, or `False` if they go in a descending order. If
+    no order can be determined, return `None`. The given `lines` must be a list of lines, ie.
+    :class:`~taxi.timesheet.lines.TextLine`, :class:`taxi.timesheet.lines.Entry` or
+    :class:`~taxi.timesheet.lines.DateLine`.
+    """
+    date_lines = [
+        line for line in lines if hasattr(line, 'is_date_line') and line.is_date_line
+    ]
 
-from . import Timesheet, TimesheetCollection, TimesheetFile
-from .entry import EntriesCollection
-from .parser import ParseError
-from ..utils import file as file_utils
-from ..utils.structures import OrderedSet
-
-
-def get_timesheet_collection(unparsed_file, nb_previous_files, parser):
-    timesheet_collection = TimesheetCollection()
-
-    timesheet_files = get_files(unparsed_file, nb_previous_files)
-
-    for file_path in timesheet_files:
-        timesheet_file = TimesheetFile(file_path)
-        try:
-            timesheet_contents = timesheet_file.read()
-        except IOError:
-            timesheet_contents = ''
-
-        try:
-            t = Timesheet(
-                EntriesCollection(
-                    parser,
-                    timesheet_contents,
-                ),
-                timesheet_file
-            )
-        except ParseError as e:
-            e.file = file_path
-            raise
-
-        timesheet_collection.timesheets.append(t)
-
-    # Fix `add_date_to_bottom` attribute of timesheet entries based on
-    # previous timesheets. When a new timesheet is started it won't have
-    # any direction defined, so we take the one from the previous
-    # timesheet, if any
-    if parser.add_date_to_bottom is None:
-        previous_timesheet = None
-        for timesheet in reversed(timesheet_collection.timesheets):
-            if previous_timesheet:
-                previous_timesheet_top_down = previous_timesheet.entries.is_top_down()
-
-                if previous_timesheet_top_down is not None:
-                    timesheet.entries.parser.add_date_to_bottom = previous_timesheet_top_down
-            previous_timesheet = timesheet
-
-    return timesheet_collection
+    if len(date_lines) < 2 or date_lines[0].date == date_lines[1].date:
+        return None
+    else:
+        return date_lines[1].date > date_lines[0].date
 
 
-def get_files(filename, nb_previous_files, from_date=None):
-    date_units = ['m', 'Y']
-    smallest_unit = None
+def trim(lines):
+    """
+    Remove lines at the start and at the end of the given `lines` that are :class:`~taxi.timesheet.lines.TextLine`
+    instances and don't have any text.
+    """
+    trim_top = None
+    trim_bottom = None
+    _lines = lines[:]
 
-    if not from_date:
-        from_date = datetime.date.today()
-
-    for date in date_units:
-        if '%%%s' % date in filename:
-            smallest_unit = date
+    for (lineno, line) in enumerate(_lines):
+        if hasattr(line, 'is_text_line') and line.is_text_line and not line.text.strip():
+            trim_top = lineno
+        else:
             break
 
-    if smallest_unit is None:
-        return OrderedSet([filename])
+    for (lineno, line) in enumerate(reversed(_lines)):
+        if hasattr(line, 'is_text_line') and line.is_text_line and not line.text.strip():
+            trim_bottom = lineno
+        else:
+            break
 
-    files = OrderedSet()
-    file_date = from_date
-    for i in six.moves.xrange(0, nb_previous_files + 1):
-        files.add(file_utils.expand_date(filename, file_date))
+    if trim_top is not None:
+        _lines = _lines[trim_top + 1:]
 
-        if smallest_unit == 'm':
-            if file_date.month == 1:
-                file_date = file_date.replace(day=1,
-                                              month=12,
-                                              year=file_date.year - 1)
-            else:
-                file_date = file_date.replace(day=1,
-                                              month=file_date.month - 1)
-        elif smallest_unit == 'Y':
-            file_date = file_date.replace(day=1, year=file_date.year - 1)
+    if trim_bottom is not None:
+        trim_bottom = len(_lines) - trim_bottom - 1
+        _lines = _lines[:trim_bottom]
 
-    return files
+    return _lines

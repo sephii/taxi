@@ -5,7 +5,8 @@ import datetime
 import unittest
 
 from freezegun import freeze_time
-from taxi.timesheet.parser import EntryLine
+
+from taxi.timesheet import Entry
 
 from . import create_timesheet
 
@@ -15,13 +16,13 @@ class AddEntryTestCase(unittest.TestCase):
         t = create_timesheet('')
         today = datetime.date.today()
 
-        entry = EntryLine('foo', 2, 'bar')
+        entry = Entry('foo', 2, 'bar')
         t.entries[today].append(entry)
 
-        entries = t.get_entries()
+        entries = t.entries
         self.assertEquals(len(entries), 1)
         self.assertIn(today, entries)
-        self.assertIsInstance(entries[today][0], EntryLine)
+        self.assertIsInstance(entries[today][0], Entry)
         self.assertEquals(entries[today][0].alias, 'foo')
         self.assertEquals(entries[today][0].duration, 2)
 
@@ -30,7 +31,7 @@ class AddEntryTestCase(unittest.TestCase):
         t = create_timesheet('')
         now = datetime.datetime.now()
 
-        entry = EntryLine('foo', (now.time(), None), 'bar')
+        entry = Entry('foo', (now.time(), None), 'bar')
         t.entries[now.date()].append(entry)
 
         lines = t.entries.to_lines()
@@ -42,11 +43,11 @@ foo 09:00-10:00 baz"""
 
         t = create_timesheet(contents)
         t.entries.parser.add_date_to_bottom = True
-        e = EntryLine('bar', 2, 'baz')
+        e = Entry('bar', 2, 'baz')
         t.entries[datetime.date(2012, 10, 10)].append(e)
-        e = EntryLine('bar', 2, 'baz')
+        e = Entry('bar', 2, 'baz')
         t.entries[datetime.date(2012, 10, 20)].append(e)
-        entries = t.get_entries()
+        entries = t.entries
         self.assertEquals(len(entries), 2)
         self.assertIn(datetime.date(2012, 10, 10), entries)
         self.assertIn(datetime.date(2012, 10, 20), entries)
@@ -57,7 +58,7 @@ foo 09:00-10:00 baz"""
                                          'bar 2 baz', '', '20.10.2012', '',
                                          'bar 2 baz'])
 
-        e = EntryLine('bar', 2, 'baz')
+        e = Entry('bar', 2, 'baz')
         t.entries.parser.add_date_to_bottom = False
         t.entries[datetime.date(2012, 10, 25)].append(e)
 
@@ -70,7 +71,7 @@ foo 09:00-10:00 baz"""
         contents = """10.10.2012
 """
         t = create_timesheet(contents)
-        e = EntryLine('bar', 2, 'baz')
+        e = Entry('bar', 2, 'baz')
         t.entries[datetime.date(2012, 10, 10)].append(e)
 
         self.assertEquals(t.entries.to_lines(), [

@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 
 import click
 
-from ..timesheet.parser import ParseError
+from ..exceptions import ParseError
 from .base import cli, get_timesheet_collection_for_context
 from .types import DateRange
 
@@ -24,8 +24,8 @@ def status(ctx, date, f, pushed):
         ctx.obj['view'].err(e)
     else:
         ctx.obj['view'].show_status(
-            timesheet_collection.get_entries(
+            timesheet_collection.entries.filter(
                 date, regroup=ctx.obj['settings']['regroup_entries'],
-                exclude_pushed=not pushed
+                pushed=pushed
             )
         )

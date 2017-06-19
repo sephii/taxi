@@ -64,4 +64,4 @@ def test_add_ignored_flag_to_alias_makes_to_lines_output_question_mark():
 def test_entry_with_zero_duration_is_ignored():
     contents = "10.10.2012\nfoo 0 Foo"
     t = create_timesheet(contents)
-    assert list(t.get_entries().values())[0][0].ignored
+    assert list(t.entries.values())[0][0].ignored
