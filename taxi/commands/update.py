@@ -36,12 +36,11 @@ def update(ctx):
     shared_aliases = {}
     backends_to_clear = set()
     for project in projects:
-        if project.is_active():
-            for alias, activity_id in six.iteritems(project.aliases):
-                mapping = Mapping(mapping=(project.id, activity_id),
-                                  backend=project.backend)
-                shared_aliases[alias] = mapping
-                backends_to_clear.add(project.backend)
+        for alias, activity_id in six.iteritems(project.aliases):
+            mapping = Mapping(mapping=(project.id, activity_id),
+                              backend=project.backend)
+            shared_aliases[alias] = mapping
+            backends_to_clear.add(project.backend)
 
     for backend in backends_to_clear:
         ctx.obj['settings'].clear_shared_aliases(backend)

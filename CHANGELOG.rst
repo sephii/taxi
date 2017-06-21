@@ -19,6 +19,7 @@ Changed
 * Fix installation script on OS X when Python 3 is available (#104).
 * Default configuration section renamed from `[default]` to `[taxi]`.
 * Remove deprecated `search` and `add` commands.
+* Make `update` command fetch closed projects as well (#103).
 
 4.2.0 (2016-05-25)
 ==================
