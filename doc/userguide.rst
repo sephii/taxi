@@ -375,6 +375,12 @@ You can also see which plugins are installed with `plugin list`::
 Configuration
 ~~~~~~~~~~~~~
 
+The configuration file uses the `XDG user directories <https://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html>`_ specification. This means the location is the following:
+
+    * Linux: ``~/.local/share/taxi/.taxirc``
+    * OS X: ``~/Library/Application Support/taxi/.taxirc``
+    * Windows: ``C:\Documents and Settings\<User>\Application Data\Local Settings\sephii\taxi\.taxirc``
+
 The configuration file has a section named ``backends`` that allows you to
 define the active backends and the credentials you want to use. The syntax of
 the backends part is::

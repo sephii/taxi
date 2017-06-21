@@ -12,6 +12,7 @@ Added
 * Add previously used aliases as hints to new timesheets.
 * Add `--today`, `--since` and `--until` support for `status` and `commit` commands.
 * Add `--used` option to `alias list` command (#89).
+* Add note about config file location to the user documentation (#106).
 
 Changed
 -------
