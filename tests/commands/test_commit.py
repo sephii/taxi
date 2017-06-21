@@ -16,7 +16,7 @@ alias_1 2 foobar
 20/01/2014
 alias_1 1 previous day entry
 """)
-    stdout = cli('commit', ['--date=21.01.2014'])
+    stdout = cli('commit', args=['--since=21.01.2014', '--until=21.01.2014'])
     assert 'previous day entry' not in stdout
 
     stdout = cli('commit')
@@ -186,7 +186,7 @@ alias_1     1  Repair coffee machine
 alias_1     2  Repair coffee machine
 """)
     stdout = cli('commit', args=[
-        '--not-today', '--date=19.01.2014-21.01.2014']
+        '--not-today', '--since=19.01.2014', '--until=21.01.2014']
     )
 
     assert 'coffee' not in stdout
@@ -201,7 +201,7 @@ alias_1 2 Play ping-pong
 alias_1     1  Repair coffee machine
 alias_1     2  Repair coffee machine
 """)
-    stdout = cli('commit', args=['--date=yesterday'])
+    stdout = cli('commit', args=['--until=yesterday'])
 
     assert 'coffee' not in stdout
 

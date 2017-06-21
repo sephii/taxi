@@ -126,3 +126,61 @@ alias_2 1200-1300 Play ping-pong
 
     stdout = cli('status', ['--pushed'])
     assert 'alias_1' in stdout
+
+
+def test_since_and_until_parameters_limit_dates_to_boundaries(cli, entries_file):
+    entries_file.write("""20/01/2014
+alias_1 1 Invisible entry
+
+21/01/2014
+alias_1 1 Visible entry
+
+22/01/2014
+alias_1 1 Visible entry
+
+23/01/2014
+alias_1 1 Invisible entry
+""")
+    stdout = cli('status', ['--since=21.01.2014', '--until=22.01.2014'])
+
+    assert 'Invisible entry' not in stdout
+
+
+@freeze_time('2014-01-21')
+def test_today_only_shows_todays_entries(cli, entries_file):
+    entries_file.write("""20/01/2014
+alias_1 1 Invisible entry
+
+21/01/2014
+alias_1 1 Visible entry
+
+22/01/2014
+alias_1 1 Invisible entry
+
+23/01/2014
+alias_1 1 Invisible entry
+""")
+    stdout = cli('status', ['--today'])
+
+    assert 'Invisible entry' not in stdout
+    assert 'Visible entry' in stdout
+
+
+@freeze_time('2014-01-21')
+def test_not_today_excludes_todays_entries(cli, entries_file):
+    entries_file.write("""20/01/2014
+alias_1 1 Visible entry
+
+21/01/2014
+alias_1 1 Invisible entry
+
+22/01/2014
+alias_1 1 Visible entry
+
+23/01/2014
+alias_1 1 Visible entry
+""")
+    stdout = cli('status', ['--not-today'])
+
+    assert 'Invisible entry' not in stdout
+    assert 'Visible entry' in stdout

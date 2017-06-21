@@ -1,5 +1,7 @@
 from __future__ import unicode_literals
 
+import datetime
+import functools
 import os
 import sys
 
@@ -16,7 +18,7 @@ from ..projects import ProjectsDb
 from ..settings import Settings
 from ..timesheet import TimesheetCollection, TimesheetParser
 from ..ui.tty import TtyUi
-from .types import ExpandedPath, Hostname
+from .types import Date, ExpandedPath, Hostname
 
 xdg_dirs = AppDirs("taxi", "sephii")
 
@@ -184,6 +186,42 @@ class AliasedGroup(click.Group):
         ctx.fail('Too many matches: %s' % ', '.join(sorted(matches)))
 
         return None
+
+
+def date_options(func):
+    """
+    Decorator to add support for `--today/--not-today`, `--from` and `--to` options to the given command. The
+    calculated date is then passed as a parameter named `date`.
+    """
+    @click.option(
+        '--until', type=Date(), help="Only show entries until the given date."
+    )
+    @click.option(
+        '--since', type=Date(), help="Only show entries starting at the given date.",
+    )
+    @click.option(
+        '--today/--not-today', default=None, help="Only include today's entries (same as --since=today --until=today)"
+        " or ignore today's entries (same as --until=yesterday)"
+    )
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        since, until, today = kwargs.pop('since'), kwargs.pop('until'), kwargs.pop('today')
+
+        if today is not None:
+            if today:
+                date = datetime.date.today()
+            else:
+                date = (None, datetime.date.today() - datetime.timedelta(days=1))
+        elif since is not None or until is not None:
+            date = (since, until)
+        else:
+            date = None
+
+        kwargs['date'] = date
+
+        return func(*args, **kwargs)
+
+    return wrapper
 
 
 def print_version(ctx, param, value):

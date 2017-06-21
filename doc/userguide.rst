@@ -148,6 +148,67 @@ is equivalent)::
 
     taxi ci
 
+Filtering entries
+~~~~~~~~~~~~~~~~~
+
+The `status` and `commit` options support the `--since`, `--until` and `--today/--not-today` options that allow you to
+specify which entries should be included in the command. For example let's say you entered entries for yesterday and
+today (Wednesday 21 june)::
+
+    $> taxi status
+    Staging changes :
+
+    Tuesday 20 june
+
+    _internal                       0.25  Install Taxi
+                                    0.25
+    Wednesday 21 june
+
+    _internal                       1.00  First steps with Taxi
+                                    1.00
+
+    Total                           1.25
+
+    Use `taxi ci` to commit staging changes to the server
+
+And you only want to commit yesterday's entry. You can use the `--not-today` option that will ignore today's entries.
+Since you can use this option both with the `status` and `commit` command, you can review what you're about to commit
+with the `status` command::
+
+    $> taxi status --not-today
+    Staging changes :
+
+    Tuesday 20 june
+
+    _internal                       0.25  Install Taxi
+                                    0.25
+
+    Total                           0.25
+
+    Use `taxi ci` to commit staging changes to the server
+
+If you wanted to only include today's entries, you could use the `--since` option. Both `--since` and `--until` support
+the following notations:
+
+    * Relative: 5 days ago, 2 weeks ago, 1 month ago, 1 year ago, today, yesterday
+    * Absolute: 21.05.2017
+
+Back to our entries, let's filter yesterday's entry::
+
+    $> taxi status --since=today
+    Staging changes :
+
+    Wednesday 21 june
+
+    _internal                       1.00  First steps with Taxi
+                                    1.00
+
+    Total                           1.00
+
+    Use `taxi ci` to commit staging changes to the server
+
+In fact, the `--today` option is just a shortcut for `--since=today --until=today`.
+
 Ignored entries
 ~~~~~~~~~~~~~~~
 

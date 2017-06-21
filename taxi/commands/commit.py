@@ -10,26 +10,18 @@ import six
 from ..aliases import aliases_database
 from ..backends import PushEntriesFailed
 from ..plugins import plugins_registry
-from .base import (
-    cli, get_timesheet_collection_for_context, populate_backends,
-    AliasedCommand
-)
-from .types import DateRange
+from .base import AliasedCommand, cli, date_options, get_timesheet_collection_for_context, populate_backends
 
 
-@cli.command(cls=AliasedCommand, aliases=['ci'],
-             short_help="Commit entries to the backend.")
+@cli.command(cls=AliasedCommand, aliases=['ci'], short_help="Commit entries to the backend.")
 @click.option('-f', '--file', 'f',
               type=click.Path(exists=True, dir_okay=False),
               help="Path to the file to commit.")
 @click.option('-y', '--yes', 'force_yes', is_flag=True,
               help="Don't ask confirmation.")
-@click.option('-d', '--date', type=DateRange(),
-              help="Only process entries of the given date.")
-@click.option('--not-today', is_flag=True,
-              help="Ignore today's entries (same as --date=-yesterday)")
+@date_options
 @click.pass_context
-def commit(ctx, f, force_yes, date, not_today):
+def commit(ctx, f, force_yes, date):
     """
     Commits your work to the server. The [date] option can be used either as a
     single date (eg. 20.01.2014), as a range (eg. 20.01.2014-22.01.2014), or as
@@ -38,14 +30,6 @@ def commit(ctx, f, force_yes, date, not_today):
     populate_backends(ctx.obj['settings'].get_backends())
 
     timesheet_collection = get_timesheet_collection_for_context(ctx, f)
-
-    if not_today:
-        yesterday = datetime.date.today() - datetime.timedelta(days=1)
-
-        if not date:
-            date = (None, yesterday)
-        else:
-            date = (date[0], yesterday)
 
     if not date and not force_yes:
         non_workday_entries = timesheet_collection.entries.filter(ignored=False, pushed=False, current_workday=False)
