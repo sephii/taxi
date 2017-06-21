@@ -6,22 +6,45 @@ Backends
 
 .. automodule:: taxi.backends
     :members:
-    :undoc-members:
+
+Plugins
+~~~~~~~
+
+.. automodule:: taxi.plugins
+    :members:
+
+Exceptions
+~~~~~~~~~~
+
+.. autoclass:: taxi.plugins.BackendNotFoundError
 
 Timesheets
 ----------
 
-.. automodule:: taxi.timesheet
+.. automodule:: taxi.timesheet.timesheet
     :members:
-    :undoc-members:
 
 .. automodule:: taxi.timesheet.entry
     :members:
-    :undoc-members:
 
-Projects
---------
+.. automodule:: taxi.timesheet.flags
+    :members:
 
-.. automodule:: taxi.projects
+Timesheet lines
+~~~~~~~~~~~~~~~
+
+.. automodule:: taxi.timesheet.lines
     :members:
     :undoc-members:
+
+Timesheet parsing
+~~~~~~~~~~~~~~~~~
+
+.. automodule:: taxi.timesheet.parser
+    :members:
+    :undoc-members:
+
+Exceptions
+~~~~~~~~~~
+
+.. autoclass:: taxi.exceptions.ParseError

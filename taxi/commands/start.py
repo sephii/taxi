@@ -4,8 +4,8 @@ import datetime
 
 import click
 
-from ..timesheet.entry import TimesheetEntry
-from ..timesheet.parser import ParseError
+from ..exceptions import ParseError
+from ..timesheet import Entry
 from .base import cli, get_timesheet_collection_for_context
 
 
@@ -28,11 +28,11 @@ def start(ctx, alias, f):
         ctx.obj['view'].err(e)
         return
 
-    t = timesheet_collection.timesheets[0]
+    t = timesheet_collection.latest()
 
     # If there's a previous entry on the same date, check if we can use its
     # end time as a start time for the newly started entry
-    today_entries = t.get_entries(today)
+    today_entries = t.entries.filter(date=today)
     if(today in today_entries and today_entries[today]
             and isinstance(today_entries[today][-1].duration, tuple)
             and today_entries[today][-1].duration[1] is not None):
@@ -41,6 +41,6 @@ def start(ctx, alias, f):
         new_entry_start_time = datetime.datetime.now()
 
     duration = (new_entry_start_time, None)
-    e = TimesheetEntry(alias, duration, '?')
+    e = Entry(alias, duration, '?')
     t.entries[today].append(e)
-    t.file.write(t.entries)
+    t.save()

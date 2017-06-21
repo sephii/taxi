@@ -10,7 +10,7 @@ from six.moves.urllib import request
 from six.moves.urllib.error import HTTPError
 
 from .base import cli
-from ..backends.registry import backends_registry
+from ..plugins import plugins_registry
 from ..ui import echo_error, echo_success
 
 
@@ -98,7 +98,7 @@ def list_(ctx):
     """
     Lists installed plugins.
     """
-    plugins = get_installed_plugins()
+    plugins = plugins_registry.get_plugins()
 
     click.echo("\n".join(
         ["%s (%s)" % p for p in plugins.items()]

@@ -1,8 +1,4 @@
-from . import CommandTestCase, override_settings
-
-
-class UpdateCommandTestCase(CommandTestCase):
-    @override_settings({'local_aliases': {'_local1': None}})
-    def test_update_doesnt_clean_local_aliases(self):
-        stdout = self.run_command('update')
-        self.assertNotIn('_local1', stdout)
+def test_update_doesnt_clean_local_aliases(cli, config):
+    config.set('local_aliases', '_local1', '')
+    stdout = cli('update')
+    assert '_local1' not in stdout

@@ -2,68 +2,57 @@ from __future__ import unicode_literals
 
 from freezegun import freeze_time
 
-from . import CommandTestCase, override_settings
+
+@freeze_time('2012-02-20')
+def test_autofill_bottom(cli, config, entries_file):
+    config.set_dict({
+        'taxi': {
+            'auto_fill_days': '1',
+            'auto_add': 'bottom'
+        }
+    })
+
+    cli('autofill')
+    entries_file_contents = entries_file.readlines()
+
+    assert entries_file_contents == [
+        "07/02/2012\n", "\n", "14/02/2012\n", "\n", "21/02/2012\n", "\n",
+        "28/02/2012\n"
+    ]
 
 
-class AutofillCommandTestCase(CommandTestCase):
-    """
-    Tests for the `autofill` command.
-    """
-    def run_autofill_command(self):
-        self.run_command('autofill')
+@freeze_time('2012-02-20')
+def test_autofill_top(cli, config, entries_file):
+    config.set_dict({
+        'taxi': {
+            'auto_fill_days': '1',
+            'auto_add': 'top'
+        }
+    })
 
-    @override_settings({'default': {
-        'auto_fill_days': '1',
-        'auto_add': 'bottom'
-    }})
-    @freeze_time('2012-02-20')
-    def test_autofill_bottom(self):
-        self.run_autofill_command()
-        entries_file_contents = self.read_entries()
+    cli('autofill')
+    entries_file_contents = entries_file.readlines()
 
-        self.assertEqual(entries_file_contents, """07/02/2012
+    assert entries_file_contents == [
+        "28/02/2012\n", "\n", "21/02/2012\n", "\n", "14/02/2012\n", "\n",
+        "07/02/2012\n"
+    ]
 
-14/02/2012
 
-21/02/2012
+@freeze_time('2012-02-20')
+def test_autofill_existing_entries(cli, config, entries_file):
+    config.set_dict({
+        'taxi': {
+            'auto_fill_days': '1',
+            'auto_add': 'top'
+        }
+    })
 
-28/02/2012
-""")
+    entries_file.write("15/02/2012\n\n07/02/2012")
+    cli('autofill')
+    entries_file_contents = entries_file.readlines()
 
-    @override_settings({'default': {
-        'auto_fill_days': '1',
-        'auto_add': 'top'
-    }})
-    @freeze_time('2012-02-20')
-    def test_autofill_top(self):
-        self.run_autofill_command()
-        entries_file_contents = self.read_entries()
-
-        self.assertEqual(entries_file_contents, """28/02/2012
-
-21/02/2012
-
-14/02/2012
-
-07/02/2012
-""")
-
-    @override_settings({'default': {
-        'auto_fill_days': '1',
-        'auto_add': 'top'
-    }})
-    @freeze_time('2012-02-20')
-    def test_autofill_existing_entries(self):
-        self.write_entries("15/02/2012\n\n07/02/2012")
-
-        self.run_autofill_command()
-        entries_file_contents = self.read_entries()
-
-        self.assertEqual(entries_file_contents, """28/02/2012
-
-21/02/2012
-
-15/02/2012
-
-07/02/2012
-""")
+    assert entries_file_contents == [
+        "28/02/2012\n", "\n", "21/02/2012\n", "\n", "15/02/2012\n", "\n",
+        "07/02/2012\n"
+    ]

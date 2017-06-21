@@ -1,4 +1,4 @@
-[default]
+[taxi]
 # The path of your entries file. You're free to use a single file to store all
 # your entries but you're strongly encouraged to use date placeholders here. The
 # following will expand to ~/zebra/2011/11.tks if you're in November 2011

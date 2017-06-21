@@ -148,18 +148,102 @@ is equivalent)::
 
     taxi ci
 
+Searching for aliases
+~~~~~~~~~~~~~~~~~~~~~
+
+The whole point of Taxi is to record your time spend on activities, but how do you know which activities you can use?
+As explained in the introduction, activities are fetched with the `update` command. To see the available aliases, use
+the `alias list` command::
+
+    $> taxi alias list
+
+    [dummy] my_alias -> 2000/11 (My project, my activity)
+
+The part that appears in brackets is the backend that will be used to push the entries when using the `commit` command.
+The information on the right of the arrow is the "mapping", that is a project id and an activity id, whose names are in
+parentheses.
+
+You can search for a specific alias by adding a search string to the `alias list` command::
+
+    $> taxi alias list my_awesome_alias
+
+You can also limit the results to aliases you have already used in your timesheets with the `--used` option::
+
+    $> taxi alias list --used
+
+Filtering entries
+~~~~~~~~~~~~~~~~~
+
+The `status` and `commit` options support the `--since`, `--until` and `--today/--not-today` options that allow you to
+specify which entries should be included in the command. For example let's say you entered entries for yesterday and
+today (Wednesday 21 june)::
+
+    $> taxi status
+    Staging changes :
+
+    Tuesday 20 june
+
+    _internal                       0.25  Install Taxi
+                                    0.25
+    Wednesday 21 june
+
+    _internal                       1.00  First steps with Taxi
+                                    1.00
+
+    Total                           1.25
+
+    Use `taxi ci` to commit staging changes to the server
+
+And you only want to commit yesterday's entry. You can use the `--not-today` option that will ignore today's entries.
+Since you can use this option both with the `status` and `commit` command, you can review what you're about to commit
+with the `status` command::
+
+    $> taxi status --not-today
+    Staging changes :
+
+    Tuesday 20 june
+
+    _internal                       0.25  Install Taxi
+                                    0.25
+
+    Total                           0.25
+
+    Use `taxi ci` to commit staging changes to the server
+
+If you wanted to only include today's entries, you could use the `--since` option. Both `--since` and `--until` support
+the following notations:
+
+    * Relative: 5 days ago, 2 weeks ago, 1 month ago, 1 year ago, today, yesterday
+    * Absolute: 21.05.2017
+
+Back to our entries, let's filter yesterday's entry::
+
+    $> taxi status --since=today
+    Staging changes :
+
+    Wednesday 21 june
+
+    _internal                       1.00  First steps with Taxi
+                                    1.00
+
+    Total                           1.00
+
+    Use `taxi ci` to commit staging changes to the server
+
+In fact, the `--today` option is just a shortcut for `--since=today --until=today`.
+
 Ignored entries
 ~~~~~~~~~~~~~~~
 
 You'll sometimes have entries for which you're not sure which alias you should
 use and that shouldn't be pushed until you have a confirmation from someone
-else. Simply append a ``?`` to your alias, and the entry will be ignored. If we
+else. Simply prefix the entry line with `?` and the entry will be ignored. If we
 run the ``edit`` command and add a question mark to our ``pingpong`` alias like
 so::
 
     23/02/2015
 
-    pingpong? 09:00-10:30 Play ping-pong
+    ? pingpong 09:00-10:30 Play ping-pong
 
 The output becomes::
 
@@ -291,6 +375,12 @@ You can also see which plugins are installed with `plugin list`::
 Configuration
 ~~~~~~~~~~~~~
 
+The configuration file uses the `XDG user directories <https://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html>`_ specification. This means the location is the following:
+
+    * Linux: ``~/.local/share/taxi/.taxirc``
+    * OS X: ``~/Library/Application Support/taxi/.taxirc``
+    * Windows: ``C:\Documents and Settings\<User>\Application Data\Local Settings\sephii\taxi\.taxirc``
+
 The configuration file has a section named ``backends`` that allows you to
 define the active backends and the credentials you want to use. The syntax of
 the backends part is::
@@ -322,7 +412,7 @@ fetched with the ``update`` command.
     On Python 3::
 
         >>> from urllib import parse
-        >>> parse.quote('my_password, safe='')
+        >>> parse.quote('my_password', safe='')
 
 .. _config:
 
@@ -409,3 +499,15 @@ when starting a new month.
 
 This option only makes sense if you're using date placeholders in
 :ref:`config_file`.
+
+Flags characters customization
+------------------------------
+
+By default Taxi uses the `=` character for pushed entries and `?` for ignored entries. You can customize them in the
+`[flags]` section of the configuration file. Note that using `#` as a flag character will make any flagged entry
+interpreted as a comment and won't be parsed by Taxi. Example of using custom characters for the `ignored` and `pushed`
+flags::
+
+    [flags]
+    ignored = !
+    pushed = @
