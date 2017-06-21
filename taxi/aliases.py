@@ -129,10 +129,7 @@ class AliasesDatabase(object):
 
         items = six.moves.filter(alias_filter, six.iteritems(self))
 
-        aliases = collections.OrderedDict(
-            sorted(items, key=lambda a: a[1].mapping
-                   if a[1].mapping is not None else (0, 0))
-        )
+        aliases = collections.OrderedDict(sorted(items, key=lambda a: a[0].lower()))
 
         return aliases
 

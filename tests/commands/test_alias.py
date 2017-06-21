@@ -1,5 +1,7 @@
 from __future__ import unicode_literals
 
+from freezegun import freeze_time
+
 
 def test_alias_list(cli, config):
     config.clear_section('test_aliases')
@@ -84,3 +86,19 @@ def test_local_alias(cli, config):
     config.set('local_aliases', '__pingpong', '')
     output = cli('alias')
     assert '[local] __pingpong -> not mapped' in output
+
+
+@freeze_time('2017-06-21')
+def test_used_option_only_shows_used_aliases(cli, entries_file, config):
+    config.clear_section('test_aliases')
+    config.set('test_aliases', 'alias_1', '123/456')
+    config.set('test_aliases', 'alias_2', '123/457')
+
+    entries_file.write("""20.06.2017
+    alias_2 1 Play ping-pong
+    """)
+
+    output = cli('alias', ['list', '--used'])
+
+    assert 'alias_1' not in output
+    assert 'alias_2' in output

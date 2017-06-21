@@ -1,10 +1,12 @@
 from __future__ import unicode_literals
 
+import collections
+
 import click
 
-from ..aliases import aliases_database, Mapping
+from ..aliases import Mapping, aliases_database
 from ..projects import Project
-from .base import cli
+from .base import cli, get_timesheet_collection_for_context
 
 
 @cli.group(invoke_without_command=True)
@@ -26,13 +28,14 @@ def alias(ctx):
               help="If this flag is set, list (and search) mappings instead "
                    "of aliases.")
 @click.option('--backend', '-b', help="Limit search to given backend.")
+@click.option('--used', default=False, is_flag=True, help="Only list already used aliases.")
 @click.pass_context
-def list_(ctx, search_string, reverse, backend):
+def list_(ctx, search_string, reverse, backend, used):
     """
     List configured aliases.
     """
     if not reverse:
-        list_aliases(ctx, search_string, backend)
+        list_aliases(ctx, search_string, backend, used)
     else:
         show_mapping(ctx, search_string, backend)
 
@@ -99,8 +102,18 @@ def show_mapping(ctx, mapping_str, backend):
         )
 
 
-def list_aliases(ctx, search, backend):
-    for alias, m in aliases_database.filter_from_alias(search, backend).items():
+def list_aliases(ctx, search, backend, used):
+    if used:
+        timesheet_collection = get_timesheet_collection_for_context(ctx)
+        aliases_count = timesheet_collection.get_popular_aliases(limit=None)
+        aliases = sorted(dict(aliases_count).keys(), key=lambda item: item.lower())
+        aliases_mappings = collections.OrderedDict(
+            (alias, aliases_database[alias]) for alias in aliases if alias in aliases_database
+        )
+    else:
+        aliases_mappings = aliases_database.filter_from_alias(search, backend)
+
+    for alias, m in aliases_mappings.items():
         ctx.obj['view'].alias_detail(
             (alias, m),
             ctx.obj['projects_db'].get(m.mapping[0], m.backend)

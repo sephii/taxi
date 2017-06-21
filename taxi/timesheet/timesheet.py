@@ -154,6 +154,7 @@ class Timesheet(object):
     def get_popular_aliases(self, limit=5):
         """
         Return a list of 2-tuples `(alias, usage_count)`, sorted by `usage_count` of aliases used in this timesheet.
+        Only the top `limit` aliases are returned. If `limit` is left empty, all aliases are returned.
         """
         aliases_count = defaultdict(int)
 
@@ -163,7 +164,10 @@ class Timesheet(object):
 
         sorted_aliases_count = sorted(aliases_count.items(), key=lambda item: item[1], reverse=True)
 
-        return sorted_aliases_count[:limit]
+        if limit:
+            return sorted_aliases_count[:limit]
+        else:
+            return sorted_aliases_count
 
 
 class TimesheetCollection:

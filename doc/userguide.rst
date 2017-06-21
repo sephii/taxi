@@ -148,6 +148,29 @@ is equivalent)::
 
     taxi ci
 
+Searching for aliases
+~~~~~~~~~~~~~~~~~~~~~
+
+The whole point of Taxi is to record your time spend on activities, but how do you know which activities you can use?
+As explained in the introduction, activities are fetched with the `update` command. To see the available aliases, use
+the `alias list` command::
+
+    $> taxi alias list
+
+    [dummy] my_alias -> 2000/11 (My project, my activity)
+
+The part that appears in brackets is the backend that will be used to push the entries when using the `commit` command.
+The information on the right of the arrow is the "mapping", that is a project id and an activity id, whose names are in
+parentheses.
+
+You can search for a specific alias by adding a search string to the `alias list` command::
+
+    $> taxi alias list my_awesome_alias
+
+You can also limit the results to aliases you have already used in your timesheets with the `--used` option::
+
+    $> taxi alias list --used
+
 Filtering entries
 ~~~~~~~~~~~~~~~~~
 
