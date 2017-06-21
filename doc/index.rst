@@ -1,7 +1,7 @@
 Welcome to Taxi's documentation!
 ================================
 
-Contents:
+.. include:: ../README.rst
 
 .. toctree::
    :maxdepth: 3
@@ -9,8 +9,6 @@ Contents:
    userguide
    devguide
    api
-
-.. include:: ../README.rst
 
 Indices and tables
 ==================

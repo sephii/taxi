@@ -1,3 +1,5 @@
+.. image:: https://raw.githubusercontent.com/sephii/taxi/master/doc/images/taxi.png
+
 What is Taxi ?
 ==============
 
