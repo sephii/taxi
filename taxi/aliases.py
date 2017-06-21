@@ -103,7 +103,7 @@ class AliasesDatabase(object):
 
             return (
                 (mapping is None or item.mapping == mapping or
-                    (mapping[1] is None and item.mapping[0] == mapping[0])) and
+                    (mapping[1] is None and item.mapping is not None and item.mapping[0] == mapping[0])) and
                 (backend is None or item.backend == backend)
             )
 

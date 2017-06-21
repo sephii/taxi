@@ -86,10 +86,10 @@ def add_mapping(ctx, alias, mapping, backend):
 
 
 def show_mapping(ctx, mapping_str, backend):
-    mapping = Project.str_to_tuple(mapping_str)
+    mapping = Project.str_to_tuple(mapping_str) if mapping_str else None
 
     if mapping is None:
-        return
+        raise click.UsageError("You must specify a search string in the form xxx/yyy when using the reverse option.")
 
     for alias, m in aliases_database.filter_from_mapping(mapping, backend).items():
         ctx.obj['view'].mapping_detail(
