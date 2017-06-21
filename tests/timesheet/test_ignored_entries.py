@@ -20,7 +20,7 @@ def test_entry_without_question_mark_in_alias_is_not_ignored():
 
 def test_add_ignored_flag_to_alias_makes_entry_ignored():
     t = create_timesheet('10.10.2012\nfoo 2 Foo')
-    t.entries[datetime.date(2012, 10, 10)][0].alias = 'foo?'
+    t.entries[datetime.date(2012, 10, 10)][0].ignored = True
     assert list(t.entries.values())[0][0].ignored
 
 

@@ -214,13 +214,13 @@ Ignored entries
 
 You'll sometimes have entries for which you're not sure which alias you should
 use and that shouldn't be pushed until you have a confirmation from someone
-else. Simply append a ``?`` to your alias, and the entry will be ignored. If we
+else. Simply prefix the entry line with `?` and the entry will be ignored. If we
 run the ``edit`` command and add a question mark to our ``pingpong`` alias like
 so::
 
     23/02/2015
 
-    pingpong? 09:00-10:30 Play ping-pong
+    ? pingpong 09:00-10:30 Play ping-pong
 
 The output becomes::
 

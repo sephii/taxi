@@ -233,6 +233,14 @@ class TimesheetParser(object):
         else:
             flags = set()
 
+        # Backwards compatibility with previous notation that allowed to end the alias with a `?` to ignore it
+        if alias.endswith('?'):
+            flags.add(Entry.FLAG_IGNORED)
+            alias = alias[:-1]
+
+        if description == '?':
+            flags.add(Entry.FLAG_IGNORED)
+
         line = (
             split_line.group('flags') or '',
             split_line.group('spacing1') or '',

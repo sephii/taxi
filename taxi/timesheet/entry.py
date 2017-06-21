@@ -210,8 +210,7 @@ class Entry(FlaggableMixin):
             * Its alias ends with a `?`
         """
         return (
-            self.has_flag(self.FLAG_IGNORED) or self.hours == 0 or
-            self.description == '?' or self.alias[-1] == '?'
+            self.has_flag(self.FLAG_IGNORED) or self.hours == 0
         )
 
     @ignored.setter
