@@ -214,11 +214,12 @@ class TimesheetParser(object):
             else:
                 end_time = create_time_from_text(split_line.group('end_time'))
 
-        if start_time or end_time:
-            duration = (start_time, end_time)
-
         if split_line.group('duration') is not None:
             duration = float(split_line.group('duration'))
+        elif start_time or end_time:
+            duration = (start_time, end_time)
+        else:
+            duration = (None, None)
 
         description = split_line.group('description')
 
