@@ -292,3 +292,14 @@ foobar 0900-1000 1 hour of review
     assert lines[2].alias == 'foobar'
     assert lines[2].duration == (datetime.time(9), datetime.time(10))
     assert lines[2].description == '1 hour of review'
+
+
+def test_parse_continuation_entry_with_unknown_end_time():
+    contents = """03.07.2017
+alias_1       0845-0930 xxx
+alias_1       -? xxx
+"""
+    lines = TimesheetParser().parse_text(contents)
+
+    assert lines[-1].hours == 0
+    assert lines[-1].ignored
