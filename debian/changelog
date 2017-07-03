@@ -1,10 +1,4 @@
-taxi (4.3.0~b2-1) liip; urgency=medium
-
-  * New upstream release
-
- -- Didier Raboud (Liip) <didier.raboud@liip.ch>  Mon, 03 Jul 2017 13:39:23 +0200
-
-taxi (4.3.0~b1-1) liip; urgency=medium
+taxi (4.3.0-1) liip; urgency=medium
 
   * New upstream release
 
