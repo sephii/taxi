@@ -103,7 +103,7 @@ class AliasesDatabase(object):
 
             return (
                 (mapping is None or item.mapping == mapping or
-                    (mapping[1] is None and item.mapping[0] == mapping[0])) and
+                    (mapping[1] is None and item.mapping is not None and item.mapping[0] == mapping[0])) and
                 (backend is None or item.backend == backend)
             )
 
@@ -129,10 +129,7 @@ class AliasesDatabase(object):
 
         items = six.moves.filter(alias_filter, six.iteritems(self))
 
-        aliases = collections.OrderedDict(
-            sorted(items, key=lambda a: a[1].mapping
-                   if a[1].mapping is not None else (0, 0))
-        )
+        aliases = collections.OrderedDict(sorted(items, key=lambda a: a[0].lower()))
 
         return aliases
 

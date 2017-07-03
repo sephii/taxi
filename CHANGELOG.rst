@@ -2,6 +2,26 @@
 Changelog
 #########
 
+4.3.0 (unreleased)
+======================
+
+Added
+-----
+
+* Add support for flags: pushed lines are no longer commented.
+* Add previously used aliases as hints to new timesheets.
+* Add `--today`, `--since` and `--until` support for `status` and `commit` commands.
+* Add `--used` option to `alias list` command (#89).
+* Add note about config file location to the user documentation (#106).
+
+Changed
+-------
+
+* Fix installation script on OS X when Python 3 is available (#104).
+* Default configuration section renamed from `[default]` to `[taxi]`.
+* Remove deprecated `search` and `add` commands.
+* Make `update` command fetch closed projects as well (#103).
+
 4.2.0 (2016-05-25)
 ==================
 
@@ -9,6 +29,7 @@ Added
 -----
 
 * Add installer script and plugin management commands.
+
 
 4.1.0 (2016-03-09)
 ==================

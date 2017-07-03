@@ -1,23 +1,24 @@
 from __future__ import unicode_literals
 
+import datetime
+import functools
 import os
-from pkg_resources import resource_string
 import sys
 
 import click
-from click._termui_impl import Editor
+import pkg_resources
 import six
 from appdirs import AppDirs
+from click._termui_impl import Editor
 
-from .types import ExpandedPath, Hostname
+from .. import __version__
 from ..aliases import aliases_database
-from ..backends.registry import backends_registry
+from ..plugins import plugins_registry
 from ..projects import ProjectsDb
 from ..settings import Settings
-from ..timesheet.utils import get_timesheet_collection
+from ..timesheet import TimesheetCollection, TimesheetParser
 from ..ui.tty import TtyUi
-from .. import __version__
-
+from .types import Date, ExpandedPath, Hostname
 
 xdg_dirs = AppDirs("taxi", "sephii")
 
@@ -27,15 +28,21 @@ click.disable_unicode_literals_warning = True
 
 
 def get_timesheet_collection_for_context(ctx, entries_file=None):
+    """
+    Return a :class:`~taxi.timesheet.TimesheetCollection` object with the current timesheet(s). Since this depends on
+    the settings (to get the entries files path, the number of previous files, etc) this uses the settings object from
+    the current command context. If `entries_file` is set, this forces the path of the file to be used.
+    """
     if not entries_file:
         entries_file = ctx.obj['settings'].get_entries_file_path(False)
 
-    return get_timesheet_collection(
-        entries_file,
-        ctx.obj['settings']['nb_previous_files'],
-        ctx.obj['settings']['date_format'],
-        ctx.obj['settings']['auto_add']
+    parser = TimesheetParser(
+        date_format=ctx.obj['settings']['date_format'],
+        add_date_to_bottom=ctx.obj['settings'].get_add_to_bottom(),
+        flags_repr=ctx.obj['settings'].get_flags(),
     )
+
+    return TimesheetCollection.load(entries_file, ctx.obj['settings']['nb_previous_files'], parser)
 
 
 def populate_aliases(aliases):
@@ -44,7 +51,7 @@ def populate_aliases(aliases):
 
 
 def populate_backends(backends):
-    backends_registry.populate(dict(backends))
+    plugins_registry.populate_backends(dict(backends))
 
 
 def create_config_file(filename):
@@ -89,10 +96,9 @@ def create_config_file(filename):
             )
         ) + '\n')
 
-        config = resource_string('taxi',
-                                 'etc/taxirc.sample').decode('utf-8')
+        config = pkg_resources.resource_string('taxi', 'etc/taxirc.sample').decode('utf-8')
         context = {}
-        available_backends = backends_registry._entry_points.keys()
+        available_backends = plugins_registry.get_available_backends()
 
         context['backend'] = click.prompt(
             "Backend you want to use (choices are %s)" %
@@ -182,6 +188,42 @@ class AliasedGroup(click.Group):
         return None
 
 
+def date_options(func):
+    """
+    Decorator to add support for `--today/--not-today`, `--from` and `--to` options to the given command. The
+    calculated date is then passed as a parameter named `date`.
+    """
+    @click.option(
+        '--until', type=Date(), help="Only show entries until the given date."
+    )
+    @click.option(
+        '--since', type=Date(), help="Only show entries starting at the given date.",
+    )
+    @click.option(
+        '--today/--not-today', default=None, help="Only include today's entries (same as --since=today --until=today)"
+        " or ignore today's entries (same as --until=yesterday)"
+    )
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        since, until, today = kwargs.pop('since'), kwargs.pop('until'), kwargs.pop('today')
+
+        if today is not None:
+            if today:
+                date = datetime.date.today()
+            else:
+                date = (None, datetime.date.today() - datetime.timedelta(days=1))
+        elif since is not None or until is not None:
+            date = (since, until)
+        else:
+            date = None
+
+        kwargs['date'] = date
+
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
 def print_version(ctx, param, value):
     if not value or ctx.resilient_parsing:
         return
@@ -227,8 +269,13 @@ def cli(ctx, config, taxi_dir):
         os.makedirs(taxi_dir)
 
     populate_aliases(settings.get_aliases())
+    populate_backends(settings.get_backends())
 
     ctx.obj = {}
     ctx.obj['settings'] = settings
     ctx.obj['view'] = TtyUi()
     ctx.obj['projects_db'] = ProjectsDb(os.path.expanduser(taxi_dir))
+
+
+# This can't be called from inside a command because Click will already have built its commands list
+plugins_registry.register_commands()

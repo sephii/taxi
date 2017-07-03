@@ -84,7 +84,7 @@ class Settings(object):
     }
 
     SETTINGS = {
-        'default': {
+        'taxi': {
             'auto_fill_days': IntegerListSetting(default=range(0, 5)),
             'date_format': StringSetting(default='%d/%m/%Y'),
             'auto_add': StringSetting(default='auto',
@@ -93,13 +93,16 @@ class Settings(object):
             'file': StringSetting(default='~/zebra/%Y/%m/%d.tks'),
             'editor': StringSetting(),
             'regroup_entries': BooleanSetting(default=True),
+        },
+        'flags': {
+            'ignored': StringSetting(default='?'),
+            'pushed': StringSetting(default='='),
         }
     }
 
     def __init__(self, file):
         self.config = configparser.RawConfigParser(allow_no_value=True)
         self.filepath = os.path.expanduser(file)
-        self._backends_registry = {}
         self._settings = {}
 
         try:
@@ -125,13 +128,13 @@ class Settings(object):
                         "Value %s is not allowed for setting %s:%s" %
                         (value, section, key)
                     )
-                except configparser.NoOptionError:
+                except (configparser.NoOptionError, configparser.NoSectionError):
                     pass
 
     def __getitem__(self, key):
         return self.get(key)
 
-    def get(self, key, section='default'):
+    def get(self, key, section='taxi'):
         return self._settings[section][key].value
 
     def add_alias(self, alias, mapping):
@@ -249,12 +252,31 @@ class Settings(object):
 
         self.config.remove_option('default', 'local_aliases')
 
+    def convert_to_4_3(self):
+        if not self.config.has_section('default'):
+            return
+
+        defaults = self.config.items('default')
+
+        try:
+            self.config.add_section('taxi')
+        except configparser.DuplicateSectionError:
+            pass
+
+        for key, value in defaults:
+            self.config.set('taxi', key, value)
+
+        self.config.remove_section('default')
+
     @property
     def needed_conversions(self):
         conversions = []
 
         if self.config.has_option('default', 'local_aliases'):
             conversions.append(self.convert_to_4_1)
+
+        if self.config.has_section('default'):
+            conversions.append(self.convert_to_4_3)
 
         return conversions
 
@@ -265,6 +287,12 @@ class Settings(object):
             file_path = file_expand_date(file_path)
 
         return file_path
+
+    def get_flags(self):
+        return {flag: value.value for flag, value in self._settings['flags'].items()}
+
+    def get_add_to_bottom(self):
+        return {'auto': None, 'bottom': True, 'top': False}.get(self.get('auto_add'), None)
 
 
 def get_alias_section_name(backend_name, shared_section=False):

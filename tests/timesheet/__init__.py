@@ -1,20 +1,18 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-import unittest
-
 from taxi.timesheet import Timesheet
 from taxi.timesheet.entry import EntriesCollection
+from taxi.timesheet.parser import TimesheetParser
 from taxi.aliases import aliases_database, Mapping
 
 
-class BaseTimesheetTestCase(unittest.TestCase):
-    def _create_timesheet(self, text, add_date_to_bottom=False):
-        aliases_database.update({
-            'foo': Mapping(mapping=(123, 456), backend='test'),
-            'bar': Mapping(mapping=(12, 34), backend='test'),
-        })
-        entries = EntriesCollection(text)
-        entries.add_date_to_bottom = add_date_to_bottom
+def create_timesheet(text, add_date_to_bottom=False):
+    aliases_database.update({
+        'foo': Mapping(mapping=(123, 456), backend='test'),
+        'bar': Mapping(mapping=(12, 34), backend='test'),
+    })
+    parser = TimesheetParser(add_date_to_bottom=add_date_to_bottom)
+    entries = EntriesCollection(parser, text)
 
-        return Timesheet(entries)
+    return Timesheet(entries)

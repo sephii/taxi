@@ -1,19 +1,18 @@
 from __future__ import unicode_literals
 
-from taxi.settings import Settings
-
-from . import override_settings, CommandTestCase
+from six.moves import configparser
 
 
-class MigrationTestCase(CommandTestCase):
-    @override_settings({'default': {'local_aliases': '_foo, _bar'}})
-    def test_migration_to_41_copies_local_aliases(self):
-        stdout = self.run_command('alias', ['list', '_foo'])
-        self.assertIn('[local] _foo -> not mapped', stdout)
+def test_migration_to_43_copies_default_section(cli, config):
+    config.config.remove_section('taxi')
+    config.save()
+    with open(config.path, 'a') as config_fp:
+        config_fp.write('[default]\neditor = /bin/false\n')
 
-        settings = Settings(self.config_file)
-        self.assertTrue(settings.config.has_section('local_aliases'))
-        self.assertTrue(settings.config.has_option('local_aliases', '_foo'))
-        self.assertIsNone(settings.config.get('local_aliases', '_foo'))
-        self.assertTrue(settings.config.has_option('local_aliases', '_bar'))
-        self.assertIsNone(settings.config.get('local_aliases', '_bar'))
+    cli('status')
+
+    cp = configparser.RawConfigParser()
+    cp.read(config.path)
+
+    assert not cp.has_section('default')
+    assert cp.get('taxi', 'editor') == '/bin/false'

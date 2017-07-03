@@ -147,7 +147,7 @@ if 1:
             pass
         Popen([sys.executable, './virtualenv.py', lib_dir], cwd=t).wait()
         Popen([os.path.join(lib_dir, 'bin', 'pip'),
-           'install', '--upgrade', 'taxi']).wait()
+           'install', '--upgrade', 'taxi'], env={}).wait()
         os.symlink(os.path.join(lib_dir, 'bin', 'taxi'),
                    os.path.join(bin_dir, 'taxi'))
 
@@ -194,7 +194,7 @@ if 1:
         print('')
         if get_confirmation("Do you plan to use Taxi with Zebra?"):
             Popen([os.path.join(lib_dir, 'bin', 'pip'), 'install',
-                  'taxi-zebra']).wait()
+                  'taxi-zebra'], env={}).wait()
 
         print('')
         print("Taxi has been installed successfully! You can now run 'taxi"

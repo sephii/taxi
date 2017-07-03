@@ -4,7 +4,7 @@ import click
 import six
 
 from ..aliases import Mapping
-from ..backends.registry import backends_registry
+from ..plugins import plugins_registry
 from .base import cli, populate_backends
 
 
@@ -22,7 +22,7 @@ def update(ctx):
     projects = []
 
     for backend_name, backend_uri in ctx.obj['settings'].get_backends():
-        backend = backends_registry[backend_name]
+        backend = plugins_registry.get_backend(backend_name)
         backend_projects = backend.get_projects()
 
         for project in backend_projects:
@@ -36,12 +36,11 @@ def update(ctx):
     shared_aliases = {}
     backends_to_clear = set()
     for project in projects:
-        if project.is_active():
-            for alias, activity_id in six.iteritems(project.aliases):
-                mapping = Mapping(mapping=(project.id, activity_id),
-                                  backend=project.backend)
-                shared_aliases[alias] = mapping
-                backends_to_clear.add(project.backend)
+        for alias, activity_id in six.iteritems(project.aliases):
+            mapping = Mapping(mapping=(project.id, activity_id),
+                              backend=project.backend)
+            shared_aliases[alias] = mapping
+            backends_to_clear.add(project.backend)
 
     for backend in backends_to_clear:
         ctx.obj['settings'].clear_shared_aliases(backend)

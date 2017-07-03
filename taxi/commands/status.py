@@ -2,18 +2,17 @@ from __future__ import unicode_literals
 
 import click
 
-from ..timesheet.parser import ParseError
-from .base import cli, get_timesheet_collection_for_context
-from .types import DateRange
+from ..exceptions import ParseError
+from .base import cli, date_options, get_timesheet_collection_for_context
 
 
 @cli.command(short_help="Show a summary of your entries.")
-@click.option('-d', '--date', type=DateRange(),
-              help="Only show entries of the given date.")
 @click.option('-f', '--file', 'f', type=click.Path(dir_okay=False),
               help="Path to the entries file to use.")
+@click.option('--pushed', is_flag=True, help="Include pushed entries.")
+@date_options
 @click.pass_context
-def status(ctx, date, f):
+def status(ctx, date, f, pushed):
     """
     Shows the summary of what's going to be committed to the server.
     """
@@ -23,7 +22,8 @@ def status(ctx, date, f):
         ctx.obj['view'].err(e)
     else:
         ctx.obj['view'].show_status(
-            timesheet_collection.get_entries(
-                date, regroup=ctx.obj['settings']['regroup_entries']
+            timesheet_collection.entries.filter(
+                date, regroup=ctx.obj['settings']['regroup_entries'],
+                pushed=False if not pushed else None
             )
         )
