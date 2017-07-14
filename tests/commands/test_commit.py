@@ -4,6 +4,8 @@ import datetime
 
 from freezegun import freeze_time
 
+from taxi.timesheet import EntriesCollection, TimesheetParser
+
 from .assertions import line_in
 from .conftest import EntriesFileGenerator
 
@@ -258,3 +260,18 @@ alias_1 1200-1300 Play ping-pong
         "alias_1 1.00  Play ping-pong",
         stdout
     )
+
+
+@freeze_time('2017-07-03')
+def test_failed_entry_doesnt_change_continuation_entry_time(cli, entries_file):
+    entries_file.write("""03/07/2017
+alias_1 0800-0900 Using a correct alias
+fail  -1000 And a failing alias
+""")
+    cli('commit')
+
+    entries = EntriesCollection(TimesheetParser(), entries=entries_file.read())[datetime.date(2017, 7, 3)]
+
+    assert entries[0].pushed
+    assert not entries[1].pushed
+    assert entries[1].duration == (None, datetime.time(10))
