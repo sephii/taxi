@@ -15,6 +15,7 @@ Changed
 -------
 
 * Aliases pointing to inactive projects are now displayed in red in `alias` command output.
+* Accept decimal duration without leading number in timesheets (eg. `.5`).
 
 4.3.0 (2017-07-13)
 ==================
