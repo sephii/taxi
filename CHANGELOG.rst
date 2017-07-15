@@ -2,6 +2,14 @@
 Changelog
 #########
 
+4.3.1 (unreleased)
+==================
+
+Added
+-----
+
+* Add `--no-inactive` flag to `alias` command to hide aliases mapped to inactive projects.
+
 4.3.0 (2017-07-13)
 ==================
 

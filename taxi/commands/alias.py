@@ -29,13 +29,14 @@ def alias(ctx):
                    "of aliases.")
 @click.option('--backend', '-b', help="Limit search to given backend.")
 @click.option('--used', default=False, is_flag=True, help="Only list already used aliases.")
+@click.option('--inactive/--no-inactive', default=False, help="Include/exclude aliases related to inactive projects.")
 @click.pass_context
-def list_(ctx, search_string, reverse, backend, used):
+def list_(ctx, search_string, reverse, backend, used, inactive):
     """
     List configured aliases.
     """
     if not reverse:
-        list_aliases(ctx, search_string, backend, used)
+        list_aliases(ctx, search_string, backend, used, inactive=inactive)
     else:
         show_mapping(ctx, search_string, backend)
 
@@ -102,7 +103,7 @@ def show_mapping(ctx, mapping_str, backend):
         )
 
 
-def list_aliases(ctx, search, backend, used):
+def list_aliases(ctx, search, backend, used, inactive=False):
     if used:
         timesheet_collection = get_timesheet_collection_for_context(ctx)
         aliases_count = timesheet_collection.get_popular_aliases(limit=None)
@@ -114,8 +115,12 @@ def list_aliases(ctx, search, backend, used):
         aliases_mappings = aliases_database.filter_from_alias(search, backend)
 
     for alias, m in aliases_mappings.items():
-        ctx.obj['view'].alias_detail(
-            (alias, m),
-            ctx.obj['projects_db'].get(m.mapping[0], m.backend)
-            if m.mapping is not None else None
-        )
+        if m.mapping is not None:
+            project, activity = ctx.obj['projects_db'].mapping_to_project(m)
+        else:
+            project = None
+
+        if not inactive and (not project or not project.is_active()):
+            continue
+
+        ctx.obj['view'].alias_detail((alias, m), project)
