@@ -11,6 +11,11 @@ Added
 * Add `--no-inactive` flag to `alias` command to hide aliases mapped to inactive projects.
 * Option `--used` in `alias` command can now be used in conjunction with a string filter.
 
+Changed
+-------
+
+* Aliases pointing to inactive projects are now displayed in red in `alias` command output.
+
 4.3.0 (2017-07-13)
 ==================
 

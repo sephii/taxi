@@ -29,11 +29,12 @@ def alias(ctx):
                    "of aliases.")
 @click.option('--backend', '-b', help="Limit search to given backend.")
 @click.option('--used', default=False, is_flag=True, help="Only list already used aliases.")
-@click.option('--inactive/--no-inactive', default=False, help="Include/exclude aliases related to inactive projects.")
+@click.option('--inactive/--no-inactive', default=True, help="Include/exclude aliases related to inactive projects.")
 @click.pass_context
 def list_(ctx, search_string, reverse, backend, used, inactive):
     """
-    List configured aliases.
+    List configured aliases. Aliases in red belong to inactive projects and trying to push entries to these aliases
+    will probably result in an error.
     """
     if not reverse:
         list_aliases(ctx, search_string, backend, used, inactive=inactive)
@@ -103,7 +104,7 @@ def show_mapping(ctx, mapping_str, backend):
         )
 
 
-def list_aliases(ctx, search, backend, used, inactive=False):
+def list_aliases(ctx, search, backend, used, inactive):
     aliases_mappings = aliases_database.filter_from_alias(search, backend)
 
     if used:

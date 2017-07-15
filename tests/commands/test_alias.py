@@ -54,17 +54,19 @@ def test_alias_without_parameter_forwards_to_list(cli, alias_config):
     assert lines == [
         "[test] active1 -> 43/1 (active project, activity 1)",
         "[test] active2 -> 43/2 (active project, activity 2)",
+        "[test] inactive1 -> 42/1 (not started project, activity 1)",
+        "[test] inactive2 -> 42/2 (not started project, activity 2)",
         "[test] p2_active -> 44/1 (2nd active project, activity 1)",
     ]
 
 
 def test_alias_search_mapping_exact(cli, alias_config):
-    output = cli('alias', ['list', 'active1'])
+    output = cli('alias', ['list', '--no-inactive', 'active1'])
     assert output == "[test] active1 -> 43/1 (active project, activity 1)\n"
 
 
 def test_alias_search_mapping_partial(cli, alias_config):
-    output = cli('alias', ['list', 'active'])
+    output = cli('alias', ['list', '--no-inactive', 'active'])
     lines = output.splitlines()
 
     assert lines == [
@@ -113,7 +115,7 @@ def test_alias_add(cli, alias_config):
 
 def test_local_alias(cli, alias_config):
     alias_config.set('local_aliases', '__pingpong', '')
-    output = cli('alias', ['list', '--inactive'])
+    output = cli('alias', ['list'])
     assert '[local] __pingpong -> not mapped' in output
 
 
@@ -150,22 +152,24 @@ def test_search_string_can_be_used_with_used_flag(cli, entries_file, alias_confi
 
 
 @freeze_time('2017-06-21')
-def test_inactive_flag_can_be_used_with_used_flag(cli, entries_file, alias_config):
+def test_no_inactive_flag_can_be_used_with_used_flag(cli, entries_file, alias_config):
     entries_file.write("""20.06.2017
     inactive1 1 Play ping-pong
+    active2 1 Play ping-pong
     """)
 
-    stdout = cli('alias', ['list', '--used', '--inactive'])
+    stdout = cli('alias', ['list', '--used', '--no-inactive'])
 
-    assert 'inactive1' in stdout
+    assert 'inactive1' not in stdout
+    assert 'active2' in stdout
 
 
 @freeze_time('2017-06-21')
-def test_used_flag_excludes_inactive_by_default(cli, entries_file, alias_config):
+def test_used_flag_includes_inactive_by_default(cli, entries_file, alias_config):
     entries_file.write("""20.06.2017
     inactive1 1 Play ping-pong
     """)
 
     stdout = cli('alias', ['list', '--used'])
 
-    assert 'inactive1' not in stdout
+    assert 'inactive1' in stdout
