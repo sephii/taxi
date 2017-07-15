@@ -104,15 +104,16 @@ def show_mapping(ctx, mapping_str, backend):
 
 
 def list_aliases(ctx, search, backend, used, inactive=False):
+    aliases_mappings = aliases_database.filter_from_alias(search, backend)
+
     if used:
         timesheet_collection = get_timesheet_collection_for_context(ctx)
         aliases_count = timesheet_collection.get_popular_aliases(limit=None)
-        aliases = sorted(dict(aliases_count).keys(), key=lambda item: item.lower())
+        used_aliases = set(alias for alias, count in aliases_count)
+
         aliases_mappings = collections.OrderedDict(
-            (alias, aliases_database[alias]) for alias in aliases if alias in aliases_database
+            (alias, m) for alias, m in aliases_mappings.items() if alias in used_aliases
         )
-    else:
-        aliases_mappings = aliases_database.filter_from_alias(search, backend)
 
     for alias, m in aliases_mappings.items():
         if m.mapping is not None:

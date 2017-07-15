@@ -134,3 +134,38 @@ def test_alias_no_inactive_excludes_inactive_aliases(cli, alias_config):
 
     assert 'not started project' not in stdout
     assert 'active project' in stdout
+
+
+@freeze_time('2017-06-21')
+def test_search_string_can_be_used_with_used_flag(cli, entries_file, alias_config):
+    entries_file.write("""20.06.2017
+    p2_active 1 Play ping-pong
+    active2 1 Play ping-pong
+    """)
+
+    stdout = cli('alias', ['list', '--used', 'active2'])
+
+    assert 'active2' in stdout
+    assert 'p2_active' not in stdout
+
+
+@freeze_time('2017-06-21')
+def test_inactive_flag_can_be_used_with_used_flag(cli, entries_file, alias_config):
+    entries_file.write("""20.06.2017
+    inactive1 1 Play ping-pong
+    """)
+
+    stdout = cli('alias', ['list', '--used', '--inactive'])
+
+    assert 'inactive1' in stdout
+
+
+@freeze_time('2017-06-21')
+def test_used_flag_excludes_inactive_by_default(cli, entries_file, alias_config):
+    entries_file.write("""20.06.2017
+    inactive1 1 Play ping-pong
+    """)
+
+    stdout = cli('alias', ['list', '--used'])
+
+    assert 'inactive1' not in stdout
