@@ -204,7 +204,7 @@ class TimesheetParser(object):
                 try:
                     start_time = create_time_from_text(split_line.group('start_time'))
                 except ValueError:
-                    raise ParseError("Duration must be in format hh:mm or hhmm")
+                    raise ParseError("Start time is not a valid time, it must be in format hh:mm or hhmm")
             else:
                 start_time = None
 
@@ -212,7 +212,10 @@ class TimesheetParser(object):
             if split_line.group('end_time') == '?':
                 end_time = None
             else:
-                end_time = create_time_from_text(split_line.group('end_time'))
+                try:
+                    end_time = create_time_from_text(split_line.group('end_time'))
+                except ValueError:
+                    raise ParseError("End time is not a valid time, it must be in format hh:mm or hhmm")
 
         if split_line.group('duration') is not None:
             duration = float(split_line.group('duration'))
