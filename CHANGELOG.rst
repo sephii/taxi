@@ -2,6 +2,14 @@
 Changelog
 #########
 
+4.3.2 (2017-09-21)
+==================
+
+Changed
+-------
+
+* Display meaningful error message if end time from entry duration is not valid.
+
 4.3.1 (2017-08-10)
 ==================
 
