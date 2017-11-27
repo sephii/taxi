@@ -2,6 +2,14 @@
 Changelog
 #########
 
+4.4.0 (2017-11-27)
+==================
+
+Added
+-------
+
+* Allow to pass the new entry description to the `start` command.
+
 4.3.2 (2017-09-21)
 ==================
 
