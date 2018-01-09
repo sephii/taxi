@@ -119,7 +119,7 @@ class Timesheet(object):
         if not entry.in_progress:
             raise NoActivityInProgressError()
 
-        entry.duration = (entry.duration[0], self.round_to_quarter(
+        entry.duration = (entry.duration[0], round_to_quarter(
             entry.duration[0],
             end_time
         ))
