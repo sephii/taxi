@@ -4,7 +4,7 @@ import datetime
 
 import click
 
-from ..exceptions import NoActivityInProgressError, ParseError
+from ..exceptions import NoActivityInProgressError, ParseError, StopInThePastError
 from .base import cli, get_timesheet_collection_for_context
 
 
@@ -29,8 +29,9 @@ def stop(ctx, description, f):
         )
     except ParseError as e:
         ctx.obj['view'].err(e)
-    except NoActivityInProgressError:
-        ctx.obj['view'].err("You don't have any activity in progress for "
-                            "today")
+    except NoActivityInProgressError as e:
+        ctx.obj['view'].err(e)
+    except StopInThePastError as e:
+        ctx.obj['view'].err(e)
     else:
         current_timesheet.save()
