@@ -2,6 +2,19 @@
 Changelog
 #########
 
+4.4.1 (unreleased)
+==================
+
+Added
+-----
+
+* Add tests for the stop command
+
+Changed
+-------
+
+* Fix the broken stop command (#111)
+
 4.4.0 (2017-11-27)
 ==================
 
