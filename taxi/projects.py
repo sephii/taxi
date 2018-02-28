@@ -34,7 +34,7 @@ class Project:
         STATUS_CANCELLED: 'C',
     }
 
-    STR_TUPLE_REGEXP = r'^(\d{1,4})(?:/(\d{1,4}))?$'
+    STR_TUPLE_REGEXP = r'^(\d+)(?:/(\d+))?$'
 
     def __init__(self, id, name, status=None, description=None, budget=None):
         self.id = int(id)
@@ -134,7 +134,7 @@ Description: %s""" % (self.id, self.name, status, start_date, end_date,
         if t[1] is not None:
             return u'%s/%s' % t
         else:
-            return unicode(t[0])
+            return six.text_type(t[0])
 
 
 class Activity:

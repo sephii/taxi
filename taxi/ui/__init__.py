@@ -184,8 +184,12 @@ class BaseUi(object):
             args = [mapping.backend, mapping_name, alias]
 
         args.append(' (%s)' % project_name if project_name else '')
+        text = "[%s] %s -> %s%s" % tuple(args)
 
-        self.msg("[%s] %s -> %s%s" % tuple(args))
+        if project and project.is_active():
+            self.msg(text)
+        else:
+            self.msg(click.style(text, fg='red'))
 
     def mapping_detail(self, mapping, project):
         self._show_mapping(mapping, project, False)

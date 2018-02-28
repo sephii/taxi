@@ -2,8 +2,47 @@
 Changelog
 #########
 
-4.3.0 (unreleased)
-======================
+4.4.1 (2017-11-27)
+==================
+
+Fixed
+-----
+
+* Accept project and activity ids longer than 4 digits
+
+4.4.0 (2017-11-27)
+==================
+
+Added
+-------
+
+* Allow to pass the new entry description to the `start` command.
+
+4.3.2 (2017-09-21)
+==================
+
+Changed
+-------
+
+* Display meaningful error message if end time from entry duration is not valid.
+
+4.3.1 (2017-08-10)
+==================
+
+Added
+-----
+
+* Add `--no-inactive` flag to `alias` command to hide aliases mapped to inactive projects.
+* Option `--used` in `alias` command can now be used in conjunction with a string filter.
+
+Changed
+-------
+
+* Aliases pointing to inactive projects are now displayed in red in `alias` command output.
+* Accept decimal duration without leading number in timesheets (eg. `.5`).
+
+4.3.0 (2017-07-13)
+==================
 
 Added
 -----

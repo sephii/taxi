@@ -1,104 +1,175 @@
 from __future__ import unicode_literals
 
+import pytest
 from freezegun import freeze_time
 
+from taxi.projects import Activity, Project, ProjectsDb
 
-def test_alias_list(cli, config):
+
+@pytest.fixture
+def projects_db(data_dir):
+    projects_db = ProjectsDb(str(data_dir))
+    projects_list = []
+
+    project = Project(42, 'not started project', Project.STATUS_NOT_STARTED)
+    project.backend = 'test'
+    project.activities.append(Activity(1, 'activity 1', 0))
+    project.activities.append(Activity(2, 'activity 2', 0))
+    projects_list.append(project)
+
+    project = Project(43, 'active project', Project.STATUS_ACTIVE)
+    project.backend = 'test'
+    project.activities.append(Activity(1, 'activity 1', 0))
+    project.activities.append(Activity(2, 'activity 2', 0))
+    projects_list.append(project)
+
+    project = Project(44, '2nd active project', Project.STATUS_ACTIVE)
+    project.backend = 'test'
+    project.activities.append(Activity(1, 'activity 1', 0))
+    projects_list.append(project)
+
+    projects_db.update(projects_list)
+
+    return projects_db
+
+
+@pytest.fixture
+def alias_config(config, projects_db):
     config.clear_section('test_aliases')
-    for alias, activity in [('alias_1', '123/456'), ('alias_2', '123/457'),
-                            ('foo', '123/458')]:
+
+    aliases = [
+        ('inactive1', '42/1'), ('inactive2', '42/2'), ('active1', '43/1'), ('active2', '43/2'), ('p2_active', '44/1')
+    ]
+
+    for alias, activity in aliases:
         config.set('test_aliases', alias, activity)
 
+    return config
+
+
+def test_alias_without_parameter_forwards_to_list(cli, alias_config):
     output = cli('alias')
     lines = output.splitlines()
 
     assert lines == [
-        "[test] alias_1 -> 123/456",
-        "[test] alias_2 -> 123/457",
-        "[test] foo -> 123/458",
+        "[test] active1 -> 43/1 (active project, activity 1)",
+        "[test] active2 -> 43/2 (active project, activity 2)",
+        "[test] inactive1 -> 42/1 (not started project, activity 1)",
+        "[test] inactive2 -> 42/2 (not started project, activity 2)",
+        "[test] p2_active -> 44/1 (2nd active project, activity 1)",
     ]
 
 
-def test_alias_search_mapping_exact(cli, config):
-    config.clear_section('test_aliases')
-    config.set('test_aliases', 'alias_1', '123/456')
-    output = cli('alias', ['list', 'alias_1'])
-    assert output == "[test] alias_1 -> 123/456\n"
+def test_alias_search_mapping_exact(cli, alias_config):
+    output = cli('alias', ['list', '--no-inactive', 'active1'])
+    assert output == "[test] active1 -> 43/1 (active project, activity 1)\n"
 
 
-def test_alias_search_mapping_partial(cli, config):
-    config.clear_section('test_aliases')
-    config.set('test_aliases', 'alias_1', '123/456')
-    config.set('test_aliases', 'alias_2', '123/457')
-
-    output = cli('alias', ['list', 'alias'])
+def test_alias_search_mapping_partial(cli, alias_config):
+    output = cli('alias', ['list', '--no-inactive', 'active'])
     lines = output.splitlines()
 
     assert lines == [
-        "[test] alias_1 -> 123/456",
-        "[test] alias_2 -> 123/457"
+        "[test] active1 -> 43/1 (active project, activity 1)",
+        "[test] active2 -> 43/2 (active project, activity 2)",
+        "[test] p2_active -> 44/1 (2nd active project, activity 1)",
     ]
 
 
-def test_alias_search_project(cli, config):
-    config.clear_section('test_aliases')
-    config.set('test_aliases', 'alias_1', '123/456')
-    config.set('test_aliases', 'alias_2', '123/457')
-    output = cli('alias', ['list', '-r', '123'])
+def test_alias_search_project(cli, alias_config):
+    output = cli('alias', ['list', '-r', '43'])
     lines = output.splitlines()
 
     assert lines == [
-        "[test] 123/456 -> alias_1",
-        "[test] 123/457 -> alias_2"
+        "[test] 43/1 -> active1 (active project, activity 1)",
+        "[test] 43/2 -> active2 (active project, activity 2)",
     ]
 
+
+def test_alias_no_results(cli, alias_config):
     output = cli('alias', ['list', '12'])
     lines = output.splitlines()
 
     assert len(lines) == 0
 
 
-def test_alias_search_project_activity(cli, config):
-    config.clear_section('test_aliases')
-    config.set('test_aliases', 'alias_1', '123/456')
-    config.set('test_aliases', 'alias_2', '123/457')
-
-    output = cli('alias', ['list', '-r', '123/457'])
+def test_alias_search_project_activity(cli, alias_config):
+    output = cli('alias', ['list', '-r', '43/1'])
     lines = output.splitlines()
-    assert len(lines) == 1
-    assert "[test] 123/457 -> alias_2" in lines
-
-    output = cli('alias', ['list', '-r', '123/458'])
-    lines = output.splitlines()
-    assert len(lines) == 0
+    assert lines == ["[test] 43/1 -> active1 (active project, activity 1)"]
 
 
-def test_alias_add(cli, config):
-    cli('alias', ['add', '-b', 'test', 'bar', '123/458'])
+def test_alias_search_project_activity_no_results(cli, alias_config):
+    output = cli('alias', ['list', '-r', '43/5'])
+    assert not output
 
-    with open(config.path, 'r') as f:
+
+def test_alias_add(cli, alias_config):
+    cli('alias', ['add', '-b', 'test', 'bar', '43/1'])
+
+    with open(alias_config.path, 'r') as f:
         config_lines = f.readlines()
 
-    assert 'bar = 123/458\n' in config_lines
+    assert 'bar = 43/1\n' in config_lines
 
 
-def test_local_alias(cli, config):
-    config.set('local_aliases', '__pingpong', '')
-    output = cli('alias')
+def test_local_alias(cli, alias_config):
+    alias_config.set('local_aliases', '__pingpong', '')
+    output = cli('alias', ['list'])
     assert '[local] __pingpong -> not mapped' in output
 
 
 @freeze_time('2017-06-21')
-def test_used_option_only_shows_used_aliases(cli, entries_file, config):
-    config.clear_section('test_aliases')
-    config.set('test_aliases', 'alias_1', '123/456')
-    config.set('test_aliases', 'alias_2', '123/457')
-
+def test_used_option_only_shows_used_aliases(cli, entries_file, alias_config):
     entries_file.write("""20.06.2017
-    alias_2 1 Play ping-pong
+    active1 1 Play ping-pong
     """)
 
     output = cli('alias', ['list', '--used'])
 
-    assert 'alias_1' not in output
-    assert 'alias_2' in output
+    assert 'active2' not in output
+    assert 'active1' in output
+
+
+def test_alias_no_inactive_excludes_inactive_aliases(cli, alias_config):
+    stdout = cli('alias', ['list', '--no-inactive'])
+
+    assert 'not started project' not in stdout
+    assert 'active project' in stdout
+
+
+@freeze_time('2017-06-21')
+def test_search_string_can_be_used_with_used_flag(cli, entries_file, alias_config):
+    entries_file.write("""20.06.2017
+    p2_active 1 Play ping-pong
+    active2 1 Play ping-pong
+    """)
+
+    stdout = cli('alias', ['list', '--used', 'active2'])
+
+    assert 'active2' in stdout
+    assert 'p2_active' not in stdout
+
+
+@freeze_time('2017-06-21')
+def test_no_inactive_flag_can_be_used_with_used_flag(cli, entries_file, alias_config):
+    entries_file.write("""20.06.2017
+    inactive1 1 Play ping-pong
+    active2 1 Play ping-pong
+    """)
+
+    stdout = cli('alias', ['list', '--used', '--no-inactive'])
+
+    assert 'inactive1' not in stdout
+    assert 'active2' in stdout
+
+
+@freeze_time('2017-06-21')
+def test_used_flag_includes_inactive_by_default(cli, entries_file, alias_config):
+    entries_file.write("""20.06.2017
+    inactive1 1 Play ping-pong
+    """)
+
+    stdout = cli('alias', ['list', '--used'])
+
+    assert 'inactive1' in stdout

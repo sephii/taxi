@@ -54,7 +54,8 @@ class ConfigFile:
         },
         'test_aliases': {
             'alias_1': '123/456',
-            'post_push_fail': '123/457'
+            'post_push_fail': '123/457',
+            'fail': '123/458',
         }
     }
 

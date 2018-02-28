@@ -102,3 +102,15 @@ def test_non_current_workday_entries():
 
     timesheet = Timesheet(entries)
     assert len(timesheet.entries.filter(current_workday=False)) == 1
+
+
+def test_continuation_with_previous_entry_pushed():
+    contents = """03.07.2017
+= alias_1       0845-0930 xxx
+alias_1       -1000 xxx
+"""
+    timesheet = create_timesheet(contents)
+    continuation_entry = timesheet.entries[datetime.date(2017, 7, 3)][1]
+
+    assert continuation_entry.duration == (None, datetime.time(10))
+    assert continuation_entry.hours == 0.5

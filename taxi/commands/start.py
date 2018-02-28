@@ -11,10 +11,11 @@ from .base import cli, get_timesheet_collection_for_context
 
 @cli.command(short_help="Add entry with the current time to the entries file.")
 @click.argument('alias')
+@click.argument('description', nargs=-1)
 @click.option('-f', '--file', 'f', type=click.Path(dir_okay=False),
               help="Path to the entries file to use.")
 @click.pass_context
-def start(ctx, alias, f):
+def start(ctx, alias, description, f):
     """
     Use it when you start working on the given activity. This will add the
     activity and the current time to your entries file. When you're finished,
@@ -40,7 +41,9 @@ def start(ctx, alias, f):
     else:
         new_entry_start_time = datetime.datetime.now()
 
+    description = ' '.join(description) if description else '?'
     duration = (new_entry_start_time, None)
-    e = Entry(alias, duration, '?')
+
+    e = Entry(alias, duration, description)
     t.entries[today].append(e)
     t.save()

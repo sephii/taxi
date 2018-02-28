@@ -303,3 +303,21 @@ alias_1       -? xxx
 
     assert lines[-1].hours == 0
     assert lines[-1].ignored
+
+
+def test_parse_entry_with_floating_duration_without_leading_part():
+    contents = """03.07.2017
+alias_1       .5 xxx
+"""
+    lines = TimesheetParser().parse_text(contents)
+
+    assert lines[-1].hours == 0.5
+
+
+def test_invalid_end_time_raises_parse_error():
+    contents = """03.07.2017
+alias_1 0845-0960 xxx
+"""
+
+    with pytest.raises(ParseError):
+        TimesheetParser().parse_text(contents)
