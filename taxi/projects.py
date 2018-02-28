@@ -34,7 +34,7 @@ class Project:
         STATUS_CANCELLED: 'C',
     }
 
-    STR_TUPLE_REGEXP = r'^(\d{1,4})(?:/(\d{1,4}))?$'
+    STR_TUPLE_REGEXP = r'^(\d+)(?:/(\d+))?$'
 
     def __init__(self, id, name, status=None, description=None, budget=None):
         self.id = int(id)

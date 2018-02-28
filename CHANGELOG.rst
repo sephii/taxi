@@ -2,6 +2,14 @@
 Changelog
 #########
 
+4.4.1 (2017-11-27)
+==================
+
+Fixed
+-----
+
+* Accept project and activity ids longer than 4 digits
+
 4.4.0 (2017-11-27)
 ==================
 
