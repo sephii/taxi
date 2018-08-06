@@ -43,3 +43,7 @@ class ParseError(TaxiException):
 
 class NoActivityInProgressError(TaxiException):
     pass
+
+
+class StopInThePastError(TaxiException):
+    pass

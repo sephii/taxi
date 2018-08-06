@@ -2,6 +2,14 @@
 Changelog
 #########
 
+4.4.2 (unreleased)
+==================
+
+Changed
+-------
+
+* Fix the broken stop command (#111)
+
 4.4.1 (2017-11-27)
 ==================
 
