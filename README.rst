@@ -31,9 +31,14 @@ different systems.
 Installation & usage
 ====================
 
-The easiest way to install Taxi is by using the install script::
+The recommended way to install Taxi is by using `pipsi <https://github.com/mitsuhiko/pipsi>`_, so start by installing
+it. Once it's installed, install Taxi with::
 
-    curl https://raw.githubusercontent.com/sephii/taxi/master/install.sh | sh
+    pipsi install taxi
+
+You can now try to run the ``taxi`` command. If you're getting a "command not found" error, make sure that
+`~/.local/bin/` is in your ``PATH`` environment variable (eg. by running ``echo $PATH``). To change your ``PATH``
+environment variable, you can follow `this guide <https://stackoverflow.com/a/14638025>`_.
 
 Everything else is covered in the user documentation available on Read The Docs:
 https://taxi-timesheets.readthedocs.org/en/master/userguide.html
