@@ -5,31 +5,20 @@ Installation
 ------------
 
 Taxi runs on Python 2.7, 3.4 and 3.5. The easiest way to install it is by using
-the install script::
+pip::
 
-    curl https://raw.githubusercontent.com/sephii/taxi/master/install.sh | sh
+    pip install --user taxi
 
-The installer will guide you through the process of getting Taxi installed on
-your system.
+You'll now need to install a backend separately to be able to push your entries and retrieve
+projects and activities. For example to install the `zebra` backend::
 
-.. note::
-    If you get the following error::
+    pip install --user taxi-zebra
 
-        Error: None of the items in $PATH are writable. Run with sudo or add a $PATH item that you have access to.
+For a list of available backends, refer to the :ref:`supported_backends` list.
 
-    You can just re-run the command prefixed with sudo::
-
-        curl https://raw.githubusercontent.com/sephii/taxi/master/install.sh | sudo sh
-
-.. note::
-    If you don't like piping into sh, you can also install it directly from
-    PyPI::
-
-        pip install taxi
-
-    If you install Taxi that way, you'll need to install a backend separately
-    to be able to push your entries and retrieve projects and activities. For a
-    list of available backends, refer to the :ref:`supported_backends` list.
+You can now try to run the ``taxi`` command. If you're getting a "command not found" error, make sure that
+`~/.local/bin/` is in your ``PATH`` environment variable (eg. by running ``echo $PATH``). To change your ``PATH``
+environment variable, you can follow `this guide <https://stackoverflow.com/a/14638025>`_.
 
 First steps with Taxi
 ---------------------
