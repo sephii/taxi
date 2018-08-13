@@ -1,14 +1,12 @@
 language: python
 python:
  - 2.7
- - 3.3
  - 3.4
  - 3.5
  - 3.6
 install:
   - pip install tox
   - "if [[ $TRAVIS_PYTHON_VERSION == '2.7' ]]; then export TOXENV=py27; fi"
-  - "if [[ $TRAVIS_PYTHON_VERSION == '3.3' ]]; then export TOXENV=py33; fi"
   - "if [[ $TRAVIS_PYTHON_VERSION == '3.4' ]]; then export TOXENV=py34; fi"
   - "if [[ $TRAVIS_PYTHON_VERSION == '3.5' ]]; then export TOXENV=py35; fi"
   - "if [[ $TRAVIS_PYTHON_VERSION == '3.6' ]]; then export TOXENV=py36; fi"
