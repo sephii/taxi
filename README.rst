@@ -31,10 +31,14 @@ different systems.
 Installation & usage
 ====================
 
-The recommended way to install Taxi is by using `pipsi <https://github.com/mitsuhiko/pipsi>`_, so start by installing
-it. Once it's installed, install Taxi with::
+The recommended way to install Taxi is by running the following command::
 
-    pipsi install taxi
+    pip install --user taxi
+
+You'll probably want to install a backend too, that will allow you to push your timesheets. To install the Zebra
+backend for example::
+
+    pip install --user taxi-zebra
 
 You can now try to run the ``taxi`` command. If you're getting a "command not found" error, make sure that
 `~/.local/bin/` is in your ``PATH`` environment variable (eg. by running ``echo $PATH``). To change your ``PATH``
