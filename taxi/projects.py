@@ -110,7 +110,7 @@ Description: %s""" % (self.id, self.name, status, start_date, end_date,
         to a (project, activity, role) tuple. Raise `ValueError` if the given `string` contains any component that is
         not numeric.
         """
-        parts = string.split('/', maxsplit=2)
+        parts = string.split('/', None, 2)
         return tuple((int(parts[i]) if i < len(parts) else None) for i in range(3))
 
     @classmethod
