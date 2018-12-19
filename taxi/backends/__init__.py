@@ -16,7 +16,7 @@ class BaseBackend(object):
     parsing and the instanciation of the backend objects. The `options`
     parameter is a dictionary constructed from the backend URL querystring.
     """
-    def __init__(self, username, password, hostname, port, path, options):
+    def __init__(self, username, password, hostname, port, path, options, context):
         """
         Construct the backend.
         """
@@ -26,6 +26,7 @@ class BaseBackend(object):
         self.port = port
         self.path = path
         self.options = options
+        self.context = context
 
     def push_entry(self, date, entry):
         """

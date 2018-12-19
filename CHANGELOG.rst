@@ -2,6 +2,14 @@
 Changelog
 #########
 
+4.5.0 (2018-12-19)
+==================
+
+Changed
+-------
+
+* Added support for more information in aliases (= roles)
+
 4.4.2 (2018-09-25)
 ==================
 

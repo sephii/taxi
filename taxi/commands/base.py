@@ -50,8 +50,8 @@ def populate_aliases(aliases):
     aliases_database.update(aliases)
 
 
-def populate_backends(backends):
-    plugins_registry.populate_backends(dict(backends))
+def populate_backends(backends, context):
+    plugins_registry.populate_backends(dict(backends), context)
 
 
 def create_config_file(filename):
@@ -268,13 +268,13 @@ def cli(ctx, config, taxi_dir):
     if not os.path.exists(taxi_dir):
         os.makedirs(taxi_dir)
 
-    populate_aliases(settings.get_aliases())
-    populate_backends(settings.get_backends())
-
     ctx.obj = {}
     ctx.obj['settings'] = settings
     ctx.obj['view'] = TtyUi()
     ctx.obj['projects_db'] = ProjectsDb(os.path.expanduser(taxi_dir))
+
+    populate_aliases(settings.get_aliases())
+    populate_backends(settings.get_backends(), ctx.obj)
 
 
 # This can't be called from inside a command because Click will already have built its commands list

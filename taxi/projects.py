@@ -34,8 +34,6 @@ class Project:
         STATUS_CANCELLED: 'C',
     }
 
-    STR_TUPLE_REGEXP = r'^(\d+)(?:/(\d+))?$'
-
     def __init__(self, id, name, status=None, description=None, budget=None):
         self.id = int(id)
         self.name = name
@@ -108,33 +106,20 @@ Description: %s""" % (self.id, self.name, status, start_date, end_date,
     @classmethod
     def str_to_tuple(cls, string):
         """
-        Converts a string in the format xxx/yyy to a (project, activity)
-        tuple
-
+        Converts a string in the format xxx/yyy to a (project, activity) tuple, or a string in the format xxx/yyy/zzz
+        to a (project, activity, role) tuple. Raise `ValueError` if the given `string` contains any component that is
+        not numeric.
         """
-        matches = re.match(cls.STR_TUPLE_REGEXP, string)
-
-        if not matches or len(matches.groups()) != 2:
-            return None
-
-        return tuple(
-            [int(item) if item else None for item in matches.groups()]
-        )
+        parts = string.split('/', maxsplit=2)
+        return tuple((int(parts[i]) if i < len(parts) else None) for i in range(3))
 
     @classmethod
     def tuple_to_str(cls, t):
         """
-        Converts a (project, activity) tuple to a string in the format
-        xxx/yyy
-
+        Converts a (project, activity) tuple to a string in the format xxx/yyy, or a (project, activity, role) tuple in
+        the format xxx/yyy/zzz.
         """
-        if len(t) != 2:
-            return None
-
-        if t[1] is not None:
-            return u'%s/%s' % t
-        else:
-            return six.text_type(t[0])
+        return '/'.join(six.text_type(part) for part in t if part)
 
 
 class Activity:

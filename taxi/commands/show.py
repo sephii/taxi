@@ -4,6 +4,7 @@ import click
 
 from taxi.aliases import aliases_database
 
+from ..projects import Project
 from .base import cli
 
 
@@ -43,9 +44,8 @@ def get_mapping_matches(search, matches, projects_db):
     if '/' not in search:
         return matches
 
-    mapping = search.split('/', 1)
     try:
-        mapping = tuple(int(m) for m in mapping)
+        mapping = Project.str_to_tuple(search)
     except ValueError:
         return matches
 
