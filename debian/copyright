@@ -1,9 +1,25 @@
-Files: *
-Copyright: Copyright 2012 Sylvain Fankhauser <sylvain.fankhauser@liip.ch>
-License: ??
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: taxi
+Upstream-Contact: Sylvain Fankhauser <sylvain.fankhauser@liip.ch>
+Source: https://github.com/sephii/taxi
+Copyright: 2012-2018 Sylvain Fankhauser <sylvain.fankhauser@liip.ch>
+License: WTFPL-2
+              DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE
+                      Version 2, December 2004
+ .
+   Copyright (C) 2004 Sam Hocevar
+ .
+   Everyone is permitted to copy and distribute verbatim or modified
+   copies of this license document, and changing it is allowed as long
+   as the name is changed.
+ .
+              DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE
+     TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
+ .
+    0. You just DO WHAT THE FUCK YOU WANT TO.
 
 Files: debian/*
-Copyright: 2012-2013 Didier Raboud <didier.raboud@liip.ch>
+Copyright: 2012-2018 Didier Raboud <didier.raboud@liip.ch>
            2013      Gilles Meier <gilles.meier@liip.ch>
 License: GPL-2+
  This program is free software; you can redistribute it
