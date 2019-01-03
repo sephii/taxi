@@ -1,6 +1,6 @@
 Source: taxi
 Section: comm
-Priority: extra
+Priority: optional
 Maintainer: Didier Raboud <didier.raboud@liip.ch>
 Build-Depends:
  debhelper (>= 9),
