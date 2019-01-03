@@ -1,3 +1,9 @@
+taxi (4.5.0-1~2019010301) unstable-ci; urgency=medium
+
+  * Use debhelper-compat (= 12) B-D
+
+ -- Didier Raboud (Liip) <didier.raboud@liip.ch>  Thu, 03 Jan 2019 13:46:08 +0100
+
 taxi (4.5.0-1~2019010300) unstable-ci; urgency=medium
 
   * New 4.5.0 upstream release
