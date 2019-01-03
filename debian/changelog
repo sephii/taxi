@@ -1,3 +1,20 @@
+taxi (4.5.0-1~2019010300) unstable-ci; urgency=medium
+
+  * New 4.5.0 upstream release
+    - Add support for more information in aliases (= roles)
+
+  * Packaging cleanup
+    - Add python3-pytest-runner as B-D
+    - Trim trailing whitespace.
+    - Change priority extra to priority optional.
+    - Use secure URI in Vcs control header.
+    - Rewrite d/control with cme
+    - Bump debhelper compat to 11 without changes needed
+    - Reformulate description
+    - Cleanup d/copyright
+
+ -- Didier Raboud (Liip) <didier.raboud@liip.ch>  Thu, 03 Jan 2019 09:47:36 +0100
+
 taxi (4.4.1-1) liip; urgency=medium
 
   * New 4.4.1 upstream release
