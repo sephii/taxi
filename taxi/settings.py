@@ -175,14 +175,14 @@ class Settings(object):
         aliases = defaultdict(dict)
 
         for (backend, uri) in backends:
-            for shared_section in [False, True]:
+            for shared_section in [True, False]:
                 backend_aliases_section = get_alias_section_name(
                     backend, shared_section
                 )
 
                 if self.config.has_section(backend_aliases_section):
                     for (alias, mapping) in self.config.items(backend_aliases_section):
-                        mapping = Project.str_to_tuple(mapping) if mapping is not None else None
+                        mapping = Project.str_to_tuple(mapping) if mapping else None
                         mapping_obj = Mapping(mapping, backend)
 
                         aliases[alias] = mapping_obj

@@ -2,6 +2,22 @@
 Changelog
 #########
 
+4.5.0 (2019-01-02)
+==================
+
+Changed
+-------
+
+* Added support for more information in aliases (= roles)
+
+4.4.2 (2018-09-25)
+==================
+
+Changed
+-------
+
+* Fix the broken stop command (#111)
+
 4.4.1 (2017-11-27)
 ==================
 

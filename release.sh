@@ -5,7 +5,8 @@ release () {
     git commit -m "Bump version number to $1" taxi/__init__.py
     git tag -m "Release $1" -s $1
     git push origin $1
-    ./setup.py sdist upload
+    ./setup.py sdist
+    twine upload dist/*
 }
 
 if [ "$#" -ne 1 ]; then

@@ -10,7 +10,7 @@ import six
 from ..aliases import aliases_database
 from ..backends import PushEntriesFailed
 from ..plugins import plugins_registry
-from .base import AliasedCommand, cli, date_options, get_timesheet_collection_for_context, populate_backends
+from .base import AliasedCommand, cli, date_options, get_timesheet_collection_for_context
 
 
 @cli.command(cls=AliasedCommand, aliases=['ci'], short_help="Commit entries to the backend.")
@@ -27,8 +27,6 @@ def commit(ctx, f, force_yes, date):
     single date (eg. 20.01.2014), as a range (eg. 20.01.2014-22.01.2014), or as
     a range with one of the dates omitted (eg. -22.01.2014).
     """
-    populate_backends(ctx.obj['settings'].get_backends())
-
     timesheet_collection = get_timesheet_collection_for_context(ctx, f)
 
     if not date and not force_yes:
@@ -56,17 +54,18 @@ def commit(ctx, f, force_yes, date):
                     backends_entries[backend].append(entry)
 
                     try:
-                        backend.push_entry(entries_date, entry)
-                    except Exception as e:
-                        entry.push_error = six.text_type(e)
+                        additional_info = backend.push_entry(entries_date, entry)
                     except KeyboardInterrupt:
                         entry.push_error = ("Interrupted, check status in"
                                             " backend")
                         raise
+                    except Exception as e:
+                        additional_info = None
+                        entry.push_error = six.text_type(e)
                     else:
                         entry.push_error = None
                     finally:
-                        ctx.obj['view'].pushed_entry(entry)
+                        ctx.obj['view'].pushed_entry(entry, additional_info)
 
         # Call post_push_entries on backends
         backends_post_push(backends_entries)

@@ -107,7 +107,7 @@ class AliasesDatabase(object):
                 (backend is None or item.backend == backend)
             )
 
-        items = six.moves.filter(mapping_filter, six.iteritems(self))
+        items = [item for item in six.iteritems(self) if mapping_filter(item)]
 
         aliases = collections.OrderedDict(
             sorted(items, key=lambda alias: alias[1].mapping

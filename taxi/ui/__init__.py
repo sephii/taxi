@@ -162,7 +162,7 @@ class BaseUi(object):
             self.msg("[%s] %s -> not mapped" % (mapping.backend, alias))
             return
 
-        mapping_name = '%s/%s' % mapping.mapping
+        mapping_name = Project.tuple_to_str(mapping.mapping)
 
         if not project:
             project_name = ''
@@ -240,7 +240,7 @@ class BaseUi(object):
             "Total failed", self.DURATION_FORMAT.format(total)]
         ), bold=True, fg='red'))
 
-    def get_entry_status(self, entry):
+    def get_entry_status(self, entry, additional_info=None):
         status = [flag for flag in entry.flags]
 
         if entry.alias not in aliases_database:
@@ -258,9 +258,10 @@ class BaseUi(object):
                 not aliases_database[entry.alias].is_mapped()):
             duration_format = '(' + duration_format + ')'
 
+        description = '{} ({})'.format(entry.description, additional_info) if additional_info else entry.description
+
         return self.columnize([
-            project_name, duration_format.format(entry.hours),
-            entry.description
+            project_name, duration_format.format(entry.hours), description
         ])
 
     def columnize(self, text):
@@ -324,14 +325,14 @@ class BaseUi(object):
         ]), bold=True))
         self.msg('\nUse `taxi ci` to commit staging changes to the server')
 
-    def pushed_entry(self, entry):
+    def pushed_entry(self, entry, additional_info=None):
         if entry.push_error is not None:
             self.msg(click.style("%s - Failed, reason: %s" % (
                 self.get_entry_status(entry),
                 entry.push_error
             ), fg='red', bold=True))
         else:
-            self.msg(self.get_entry_status(entry))
+            self.msg(self.get_entry_status(entry, additional_info))
 
     def entry_to_str(self, entry):
         if entry.ignored:
@@ -428,7 +429,7 @@ class BaseUi(object):
         modified_aliases = set()
         for alias, mapping in six.iteritems(aliases_after_update):
             if (alias in aliases_database
-                    and aliases_database[alias] != mapping):
+                    and aliases_database[alias][:2] != mapping[:2]):
                 modified_aliases.add(alias)
 
         if added_aliases:
@@ -467,7 +468,7 @@ class BaseUi(object):
                     "an alias to {activity} ({mapping}) on the {backend} "
                     "backend".format(
                         activity=click.style(activity_str, bold=True),
-                        mapping='%s/%s' % alias.mapping,
+                        mapping=Project.tuple_to_str(alias.mapping),
                         backend=click.style(alias.backend, bold=True)
                     )
                 )

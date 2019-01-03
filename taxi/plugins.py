@@ -71,7 +71,7 @@ class PluginsRegistry(object):
         """
         return [backend for backend in self._backends_registry.values() if isinstance(backend, backend_class)]
 
-    def populate_backends(self, backends):
+    def populate_backends(self, backends, context):
         """
         Iterate over the given backends list and instantiate every backend
         found. Can raise :exc:`BackendNotFoundError` if a backend
@@ -81,9 +81,9 @@ class PluginsRegistry(object):
         and URIs as values.
         """
         for name, uri in backends.items():
-            self._backends_registry[name] = self._load_backend(uri)
+            self._backends_registry[name] = self._load_backend(uri, context)
 
-    def _load_backend(self, backend_uri):
+    def _load_backend(self, backend_uri, context):
         """
         Return the instantiated backend object identified by the given
         `backend_uri`.
@@ -110,7 +110,7 @@ class PluginsRegistry(object):
         return backend(
             username=parsed.username, password=password,
             hostname=parsed.hostname, port=parsed.port,
-            path=parsed.path, options=options
+            path=parsed.path, options=options, context=context,
         )
 
     def register_commands(self):

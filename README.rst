@@ -31,9 +31,18 @@ different systems.
 Installation & usage
 ====================
 
-The easiest way to install Taxi is by using the install script::
+The recommended way to install Taxi is by running the following command::
 
-    curl https://raw.githubusercontent.com/sephii/taxi/master/install.sh | sh
+    pip install --user taxi
+
+You'll probably want to install a backend too, that will allow you to push your timesheets. To install the Zebra
+backend for example::
+
+    pip install --user taxi-zebra
+
+You can now try to run the ``taxi`` command. If you're getting a "command not found" error, make sure that
+`~/.local/bin/` is in your ``PATH`` environment variable (eg. by running ``echo $PATH``). To change your ``PATH``
+environment variable, you can follow `this guide <https://stackoverflow.com/a/14638025>`_.
 
 Everything else is covered in the user documentation available on Read The Docs:
 https://taxi-timesheets.readthedocs.org/en/master/userguide.html

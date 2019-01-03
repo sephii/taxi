@@ -8,7 +8,7 @@ from functools import reduce
 
 import six
 
-from ..exceptions import NoActivityInProgressError, ParseError
+from ..exceptions import NoActivityInProgressError, ParseError, StopInThePastError
 from ..utils import file as file_utils
 from ..utils.date import months_ago
 from ..utils.structures import OrderedSet
@@ -114,12 +114,15 @@ class Timesheet(object):
         try:
             entry = self.entries[date][-1]
         except IndexError:
-            raise NoActivityInProgressError()
+            raise NoActivityInProgressError("You don't have any activity in progress for today")
 
         if not entry.in_progress:
-            raise NoActivityInProgressError()
+            raise NoActivityInProgressError("You don't have any activity in progress for today")
 
-        entry.duration = (entry.duration[0], self.round_to_quarter(
+        if entry.get_start_time() > end_time:
+            raise StopInThePastError("You are trying to stop an activity in the future")
+
+        entry.duration = (entry.duration[0], round_to_quarter(
             entry.duration[0],
             end_time
         ))
