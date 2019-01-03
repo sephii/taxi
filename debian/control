@@ -11,6 +11,7 @@ Build-Depends:
  python3-click (>= 3.3),
  python3-freezegun,
  python3-pytest,
+ python3-pytest-runner,
  python3-setuptools,
  python3-six (>= 1.9.0)
 Standards-Version: 3.9.8
