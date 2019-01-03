@@ -1,33 +1,31 @@
 Source: taxi
+Maintainer: Didier Raboud <didier.raboud@liip.ch>
 Section: comm
 Priority: optional
-Maintainer: Didier Raboud <didier.raboud@liip.ch>
-Build-Depends:
- debhelper (>= 9),
- bash-completion,
- dh-python,
- python3,
- python3-appdirs (>= 1.4.0),
- python3-click (>= 3.3),
- python3-freezegun,
- python3-pytest,
- python3-pytest-runner,
- python3-setuptools,
- python3-six (>= 1.9.0)
-Standards-Version: 3.9.8
-Homepage: https://github.com/sephii/taxi
-Vcs-Git: https://github.com/sephii/taxi.git
+Build-Depends: debhelper (>= 9),
+               bash-completion,
+               dh-python,
+               python3,
+               python3-appdirs (>= 1.4.0),
+               python3-click,
+               python3-freezegun,
+               python3-pytest,
+               python3-pytest-runner,
+               python3-setuptools,
+               python3-six (>= 1.9.0)
+Standards-Version: 4.3.0
 Vcs-Browser: https://github.com/sephii/taxi
+Vcs-Git: https://github.com/sephii/taxi.git
+Homepage: https://github.com/sephii/taxi
 
 Package: taxi
 Architecture: all
-Depends:
- python3-appdirs (>= 1.4.0),
- python3-click (>= 3.3),
- python3-six (>= 1.9.0),
- taxi-backend-zebra | taxi-backend,
- ${misc:Depends},
- ${python3:Depends}
+Depends: python3-appdirs (>= 1.4.0),
+         python3-click,
+         python3-six (>= 1.9.0),
+         taxi-backend-zebra | taxi-backend,
+         ${misc:Depends},
+         ${python3:Depends}
 Description: Interface to Liip's Zebra
  Taxi is a new interface for Zebra, based on TKS.
  .
