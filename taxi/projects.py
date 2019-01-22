@@ -119,7 +119,7 @@ Description: %s""" % (self.id, self.name, status, start_date, end_date,
         Converts a (project, activity) tuple to a string in the format xxx/yyy, or a (project, activity, role) tuple in
         the format xxx/yyy/zzz.
         """
-        return '/'.join(six.text_type(part) for part in t if part)
+        return '/'.join(six.text_type(part) for part in t if part is not None)
 
 
 class Activity:

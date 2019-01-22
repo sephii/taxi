@@ -2,6 +2,14 @@
 Changelog
 #########
 
+4.5.1 (unreleased)
+==================
+
+Changed
+-------
+
+* Allow 0 values in aliases mappings
+
 4.5.0 (2019-01-02)
 ==================
 
