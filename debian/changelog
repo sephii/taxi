@@ -1,3 +1,10 @@
+taxi (4.5.1-1~2019012200) unstable-ci; urgency=medium
+
+  * New 4.5.1 upstream release
+    - Allow 0 value in alias mappings
+
+ -- Didier Raboud (Liip) <didier.raboud@liip.ch>  Tue, 22 Jan 2019 13:49:04 +0100
+
 taxi (4.5.0-1~2019010301) unstable-ci; urgency=medium
 
   * Use debhelper-compat (= 12) B-D
