@@ -101,7 +101,7 @@ class Settings(object):
     }
 
     def __init__(self, file):
-        self.config = configparser.RawConfigParser(allow_no_value=True)
+        self.config = configparser.ConfigParser(allow_no_value=True)
         self.filepath = os.path.expanduser(file)
         self._settings = {}
 
