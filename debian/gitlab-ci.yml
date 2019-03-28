@@ -5,3 +5,5 @@ variables:
 
 build:
   extends: .build-package
+  tags:
+      - docker
