@@ -1,3 +1,9 @@
+taxi (4.5.1-1~2019032900) unstable-ci; urgency=medium
+
+  * Rebuild on Gitlab CI
+
+ -- Didier Raboud (Liip) <didier.raboud@liip.ch>  Fri, 29 Mar 2019 12:23:26 +0100
+
 taxi (4.5.1-1~2019012200) unstable-ci; urgency=medium
 
   * New 4.5.1 upstream release
