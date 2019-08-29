@@ -5,7 +5,7 @@ from taxi import __version__
 
 tests_require = [
     'freezegun>=0.2.8',
-    'pytest>=2.7.3',
+    'pytest>=2.7.3,<5',
 ]
 
 install_requires = [
