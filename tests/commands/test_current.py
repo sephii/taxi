@@ -47,7 +47,7 @@ def test_current_fails_with_exit_code_1_when_no_current_entry(cli, config, data_
 
 
 def test_entry_uses_custom_timesheet(cli, data_dir):
-    file_path = os.path.join(data_dir, 'timesheet.tks')
+    file_path = os.path.join(str(data_dir), 'timesheet.tks')
     with open(file_path, 'w') as f:
         f.write(
             "20/01/2014\nalias_1 1000-? hello world"
