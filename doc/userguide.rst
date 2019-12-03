@@ -4,7 +4,7 @@ User guide
 Installation
 ------------
 
-Taxi runs on Python 2.7, 3.4 and 3.5. The easiest way to install it is by using
+Taxi runs on Python 3.5 and up. The easiest way to install it is by using
 pip::
 
     pip install --user taxi
