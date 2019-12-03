@@ -9,6 +9,7 @@ Added
 -------
 
 * Add `current` command to show the current entry in progress
+* Add `config` command to open the configuration file
 
 4.5.2 (2019-08-29)
 ==================
