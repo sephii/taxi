@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 import datetime
 import functools
+import logging
 import os
 import sys
 
@@ -20,6 +21,7 @@ from ..timesheet import TimesheetCollection, TimesheetParser
 from ..ui.tty import TtyUi
 from .types import Date, ExpandedPath, Hostname
 
+logger = logging.getLogger(__name__)
 xdg_dirs = AppDirs("taxi", "sephii")
 
 # Disable click 5.0 unicode_literals warnings. See
@@ -260,8 +262,25 @@ def get_data_dir():
 @click.option('--version', is_flag=True, callback=print_version,
               expose_value=False, is_eager=True,
               help="Print version number and exit.")
+@click.option('--verbose', '-v', count=True,
+              help="Verbose mode, repeat to increase verbosity (-v = warning,"
+              " -vv = info, -vvv = debug).")
 @click.pass_context
-def cli(ctx, config, taxi_dir):
+def cli(ctx, config, taxi_dir, verbose):
+    verbosity_mapping = {
+        1: logging.WARNING,
+        2: logging.INFO,
+        3: logging.DEBUG,
+    }
+    if verbose > 0:
+        try:
+            logging.basicConfig(level=verbosity_mapping[verbose])
+        except KeyError:
+            raise click.ClickException("Max verbosity is -vvv")
+
+    logging.debug("Using configuration file in %s", config)
+    logging.debug("Using data directory %s", taxi_dir)
+
     create_config_file(config)
     settings = Settings(config)
 

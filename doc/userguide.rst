@@ -34,8 +34,8 @@ Since this is the first time you run Taxi, you'll get asked a few questions::
     ================
 
     It looks like this is the first time you run Taxi. You will need a
-    configuration file (~/.taxirc) to proceed. Please answer a few questions to
-    create your configuration file.
+    configuration file (~/.config/taxi/taxirc) in order to proceed.
+    Please answer a few questions to create your configuration file.
 
     Backend you want to use (choices are dummy, zebra): zebra
     Username or token: b4b8123f4addb27ad0eb0b2b0a0ae81730af96b8
@@ -364,11 +364,19 @@ You can also see which plugins are installed with `plugin list`::
 Configuration
 ~~~~~~~~~~~~~
 
-The configuration file uses the `XDG user directories <https://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html>`_ specification. This means the location is the following:
+The configuration file uses the `XDG user directories
+<https://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html>`_
+specification. This means the location is the following:
 
-    * Linux: ``~/.local/share/taxi/.taxirc``
-    * OS X: ``~/Library/Application Support/taxi/.taxirc``
-    * Windows: ``C:\Documents and Settings\<User>\Application Data\Local Settings\sephii\taxi\.taxirc``
+    * Linux: ``~/.config/taxi/taxirc``
+    * OS X: ``~/Library/Application Support/taxi/taxirc``
+    * Windows: ``%LOCALAPPDATA%\sephii\taxi\taxirc`` or ``C:\Users\<User>\AppData\Local\sephii\taxi\taxirc``
+
+You can see the location of the configuration file used by running taxi in verbose mode, for example::
+
+    $ taxi -vvv status
+    DEBUG:root:Using configuration file in /home/sephi/.config/taxi/taxirc
+    ...
 
 The configuration file has a section named ``backends`` that allows you to
 define the active backends and the credentials you want to use. The syntax of
