@@ -4,7 +4,7 @@ User guide
 Installation
 ------------
 
-Taxi runs on Python 2.7, 3.4 and 3.5. The easiest way to install it is by using
+Taxi runs on Python 3.5 and up. The easiest way to install it is by using
 pip::
 
     pip install --user taxi
@@ -53,7 +53,7 @@ Taxi::
     If you didn't choose the correct editor when running Taxi for the first
     time you might get into an editor called `vim` at this point. To exit it,
     type `:q!`. Then to manually set the editor Taxi should use, open your Taxi
-    configuration file (by default `~/.config/taxi/taxirc`), and change the
+    configuration file (by using the command `taxi config`), and change the
     value of the `editor` setting to the editor you want. If you're using
     Linux, you might put `gedit`. If you're using OS X, you might put `open
     -a TextEdit`.
@@ -273,8 +273,7 @@ Internal aliases
 Some people like to timesheet everything they do: lunch, ping-pong games, going
 to the restroom... anyway, if you're that kind of people you probably don't
 want these entries to be pushed. To achieve that, start by adding a dummy
-backend to your configuration file (by default `~/.config/taxi/taxirc` or
-`~/.taxirc`)::
+backend to your configuration file (to open it, run `taxi config`)::
 
     [backends]
     internal = dummy://
@@ -295,6 +294,13 @@ Getting help
 ~~~~~~~~~~~~
 
 Use ``taxi <command> --help`` to get help on any Taxi command.
+
+Upgrading Taxi
+--------------
+
+To upgrade Taxi, run `pip install --upgrade taxi`. If you have any plugins,
+you'll also need to manually upgrade them, by running for example `pip
+install --upgrade taxi-zebra`.
 
 Timesheet syntax
 ----------------
@@ -363,6 +369,8 @@ You can also see which plugins are installed with `plugin list`::
 
 Configuration
 ~~~~~~~~~~~~~
+
+You can open your configuration file using the command `taxi config`.
 
 The configuration file uses the `XDG user directories
 <https://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html>`_

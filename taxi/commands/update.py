@@ -1,7 +1,4 @@
-from __future__ import unicode_literals
-
 import click
-import six
 
 from ..aliases import Mapping
 from ..plugins import plugins_registry
@@ -34,7 +31,7 @@ def update(ctx):
     shared_aliases = {}
     backends_to_clear = set()
     for project in projects:
-        for alias, activity_id in six.iteritems(project.aliases):
+        for alias, activity_id in project.aliases.items():
             mapping = Mapping(mapping=(project.id, activity_id),
                               backend=project.backend)
             shared_aliases[alias] = mapping

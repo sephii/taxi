@@ -1,6 +1,26 @@
-#########
+########
 Changelog
 #########
+
+5.0 (unreleased)
+================
+
+Added
+-----
+
+* Add `current` command to show the current entry in progress
+* Add `config` command to open the configuration file
+
+Changed
+-------
+
+* Drop support for Python < 3.5
+
+Fixed
+-----
+
+* Do not overwrite existing entry description when using the `stop` command
+* Make `stop` command support chained durations
 
 4.5.2 (2019-08-29)
 ==================

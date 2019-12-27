@@ -1,11 +1,7 @@
-from __future__ import unicode_literals
-
 from collections import defaultdict
-import datetime
 import itertools
 
 import click
-import six
 
 from ..aliases import aliases_database
 from ..backends import PushEntriesFailed
@@ -47,7 +43,7 @@ def commit(ctx, f, force_yes, date):
                 timesheet, date, ctx.obj['settings']['regroup_entries']
             )
 
-            for (entries_date, entries) in entries_to_push.items():
+            for entries_date, entries in entries_to_push.items():
                 for entry in entries:
                     backend_name = aliases_database[entry.alias].backend
                     backend = plugins_registry.get_backend(backend_name)
@@ -61,7 +57,7 @@ def commit(ctx, f, force_yes, date):
                         raise
                     except Exception as e:
                         additional_info = None
-                        entry.push_error = six.text_type(e)
+                        entry.push_error = str(e)
                     else:
                         entry.push_error = None
                     finally:
@@ -76,7 +72,7 @@ def commit(ctx, f, force_yes, date):
 
     ignored_entries = timesheet_collection.entries.filter(date=date, ignored=True, unmapped=False, pushed=False)
     ignored_entries_list = []
-    for (entries_date, entries) in six.iteritems(ignored_entries):
+    for entries_date, entries in ignored_entries.items():
         ignored_entries_list.extend(entries)
 
     all_entries = itertools.chain(*backends_entries.values())
@@ -85,19 +81,19 @@ def commit(ctx, f, force_yes, date):
 
 
 def backends_post_push(backends_entries):
-    for backend, entries in six.iteritems(backends_entries):
+    for backend, entries in backends_entries.items():
         try:
             backend.post_push_entries()
         except PushEntriesFailed as e:
             if e.entries:
-                for entry, error in six.iteritems(e.entries):
-                    entry.push_error = error if error else six.text_type(e)
+                for entry, error in e.entries.items():
+                    entry.push_error = error if error else str(e)
             else:
                 for entry in entries:
-                    entry.push_error = six.text_type(e)
+                    entry.push_error = str(e)
         except Exception as e:
             for entry in entries:
-                entry.push_error = six.text_type(e)
+                entry.push_error = str(e)
 
 
 def comment_timesheets_entries(timesheet_collection, date):

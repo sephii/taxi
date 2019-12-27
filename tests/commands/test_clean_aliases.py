@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 from freezegun import freeze_time
 
 from taxi.projects import Activity, Project, ProjectsDb

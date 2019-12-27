@@ -1,9 +1,9 @@
+import configparser
 import os
 
 import py
 import pytest
 from click.testing import CliRunner
-from six.moves import configparser
 
 from taxi.backends import BaseBackend, PushEntriesFailed, PushEntryFailed
 from taxi.commands.base import cli as taxi_cli
@@ -135,7 +135,7 @@ def entries_file(tmpdir, config):
 
 @pytest.fixture
 def cli(config, data_dir):
-    def inner(cmd, args=None, input=None):
+    def inner(cmd, args=None, input=None, return_stdout=True):
         if not args:
             args = []
 
@@ -148,7 +148,7 @@ def cli(config, data_dir):
             taxi_cli, args, input=input, standalone_mode=False, catch_exceptions=False
         )
 
-        return result.output
+        return result.output if return_stdout else result
 
     return inner
 

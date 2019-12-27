@@ -1,10 +1,6 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 from collections import defaultdict
 import inspect
 import re
-import six
 
 import click
 
@@ -59,7 +55,7 @@ class BaseUi(object):
                 self.msg("%4s %s" % (key, project.id, project.name))
 
     def project_with_activities(self, project, numbered_activities=False):
-        self.msg(six.text_type(project))
+        self.msg(str(project))
         self.msg("\nActivities:")
         mappings = aliases_database.get_reversed_aliases()
 
@@ -427,7 +423,7 @@ class BaseUi(object):
                          set(aliases_database.aliases.keys()))
 
         modified_aliases = set()
-        for alias, mapping in six.iteritems(aliases_after_update):
+        for alias, mapping in aliases_after_update.items():
             if (alias in aliases_database
                     and aliases_database[alias][:2] != mapping[:2]):
                 modified_aliases.add(alias)

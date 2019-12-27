@@ -1,13 +1,11 @@
-from __future__ import unicode_literals
-
 import json
 import pkg_resources
 import subprocess
 import sys
 
 import click
-from six.moves.urllib import request
-from six.moves.urllib.error import HTTPError
+from urllib import request
+from urllib.error import HTTPError
 
 from .base import cli
 from ..plugins import plugins_registry

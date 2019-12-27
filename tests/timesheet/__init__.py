@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 from taxi.timesheet import Timesheet
 from taxi.timesheet.entry import EntriesCollection
 from taxi.timesheet.parser import TimesheetParser

@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 import click
 
 from ..aliases import aliases_database, Mapping

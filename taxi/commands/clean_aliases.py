@@ -1,7 +1,4 @@
-from __future__ import unicode_literals
-
 import click
-import six
 
 from ..aliases import aliases_database
 from .base import cli
@@ -19,7 +16,7 @@ def clean_aliases(ctx, force_yes):
     """
     inactive_aliases = []
 
-    for (alias, mapping) in six.iteritems(aliases_database):
+    for alias, mapping in aliases_database.items():
         # Ignore local aliases
         if mapping.mapping is None:
             continue

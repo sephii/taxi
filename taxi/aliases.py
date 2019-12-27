@@ -1,8 +1,5 @@
-from __future__ import unicode_literals
-
 import collections
 import difflib
-import six
 
 
 class Mapping(collections.namedtuple('BaseMapping', ['mapping', 'backend'])):
@@ -63,7 +60,7 @@ class AliasesDatabase(object):
         return self.items()
 
     def items(self):
-        return six.iteritems(self.aliases)
+        return self.aliases.items()
 
     def keys(self):
         return list(self.aliases.keys())
@@ -82,7 +79,7 @@ class AliasesDatabase(object):
         Return the reversed aliases dict. Instead of being in the form
         {'alias': mapping}, the dict is in the form {mapping: 'alias'}.
         """
-        return dict((v, k) for k, v in six.iteritems(self.aliases))
+        return dict((v, k) for k, v in self.aliases.items())
 
     def get_close_matches(self, alias):
         """
@@ -107,7 +104,7 @@ class AliasesDatabase(object):
                 (backend is None or item.backend == backend)
             )
 
-        items = [item for item in six.iteritems(self) if mapping_filter(item)]
+        items = [item for item in self.items() if mapping_filter(item)]
 
         aliases = collections.OrderedDict(
             sorted(items, key=lambda alias: alias[1].mapping
@@ -127,7 +124,7 @@ class AliasesDatabase(object):
             return ((alias is None or alias in key) and
                     (backend is None or item.backend == backend))
 
-        items = six.moves.filter(alias_filter, six.iteritems(self))
+        items = filter(alias_filter, self.items())
 
         aliases = collections.OrderedDict(sorted(items, key=lambda a: a[0].lower()))
 
