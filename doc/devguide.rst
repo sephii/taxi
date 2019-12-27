@@ -298,22 +298,19 @@ system-wide one.
 Running tests
 -------------
 
-Tests use `tox <http://tox.readthedocs.org/>`_, which allows to run tests on
-multiple Python versions. You'll need Python 2.7 and Python 3.4 installed to be
-able to run all the tests, or you can let the continuous integration server do
-the job for you. Anyway, if you want to run the tests locally, simply run::
+Setup a virtual environment as explained in the previous section, then install
+the test requirements in it::
 
-    tox
+    pip install -r requirements_test.txt
 
-This will create virtual environments for each Python version and run the tests
-against it. If you want to limit the tests to a certain Python version, run::
+To run the tests, run the following command::
 
-    tox -e py27
+    pytest
 
-This will only run the tests on Python 2.7. When developing it's useful to only
-run certain tests, for this, use the following command::
+When developing it's useful to only run certain tests, for this, use the
+following command::
 
-    tox -- --addopts tests/commands/test_alias.py::AliasCommandTestCase::test_alias_list
+    pytest tests/commands/test_alias.py::AliasCommandTestCase::test_alias_list
 
 You can also leave out ``::test_alias_list`` to run all tests in the
 ``AliasCommandTestCase``, or leave out ``::AliasCommandTestCase`` as well if
