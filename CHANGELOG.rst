@@ -16,6 +16,11 @@ Changed
 
 * Drop support for Python < 3.5
 
+Fixed
+-----
+
+* Do not overwrite existing entry description when using the `stop` command
+
 4.5.2 (2019-08-29)
 ==================
 
