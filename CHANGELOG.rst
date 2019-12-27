@@ -20,6 +20,7 @@ Fixed
 -----
 
 * Do not overwrite existing entry description when using the `stop` command
+* Make `stop` command support chained durations
 
 4.5.2 (2019-08-29)
 ==================

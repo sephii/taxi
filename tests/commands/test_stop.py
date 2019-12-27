@@ -65,3 +65,19 @@ alias 10:00-ff:ff Play ping-pong
         output = cli('stop', ['Play ping-pong'])
 
     assert output.startswith('Error: Parse error')
+
+
+def test_stop_with_chained_duration(cli, entries_file):
+    entries = """20/01/2014
+alias_1 09:00-10:00 foobar
+alias_1 -? baz
+"""
+    expected = """20/01/2014
+alias_1 09:00-10:00 foobar
+alias_1 -11:00 baz
+"""
+
+    entries_file.write(entries)
+    with freeze_time('2014-01-20 11:00:00'):
+        cli('stop')
+    assert entries_file.read() == expected

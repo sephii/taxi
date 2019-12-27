@@ -118,7 +118,7 @@ class Timesheet(object):
             raise StopInThePastError("You are trying to stop an activity in the future")
 
         entry.duration = (entry.duration[0], round_to_quarter(
-            entry.duration[0],
+            entry.get_start_time(),
             end_time
         ))
 
