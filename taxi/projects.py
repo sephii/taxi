@@ -34,7 +34,7 @@ class Project:
         STATUS_CANCELLED: 'C',
     }
 
-    def __init__(self, id, name, status=None, description=None, budget=None):
+    def __init__(self, id, name, status=None, description=None, budget=None, team=None):
         self.id = int(id)
         self.name = name
         self.activities = []
@@ -45,6 +45,7 @@ class Project:
         self.start_date = None
         self.end_date = None
         self.backend = None
+        self.team = team
 
     def __str__(self):
         if self.status in self.STATUSES:
