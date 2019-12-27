@@ -1,8 +1,4 @@
-from __future__ import unicode_literals
-
 import re
-
-from six.moves import input
 
 
 def select_number(max, description, min=0):

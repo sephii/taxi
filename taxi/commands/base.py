@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 import datetime
 import functools
 import logging
@@ -8,7 +6,6 @@ import sys
 
 import click
 import pkg_resources
-import six
 from appdirs import AppDirs
 from click._termui_impl import Editor
 
@@ -61,7 +58,7 @@ def create_config_file(filename):
     Create main configuration file if it doesn't exist.
     """
     import textwrap
-    from six.moves.urllib import parse
+    from urllib import parse
 
     if not os.path.exists(filename):
         old_default_config_file = os.path.join(os.path.dirname(filename),
@@ -173,7 +170,7 @@ class AliasedGroup(click.Group):
             return rv
 
         # Check in aliases
-        for name, command in six.iteritems(self.commands):
+        for name, command in self.commands.items():
             if (isinstance(command, AliasedCommand)
                     and cmd_name in command.aliases):
                 return super(AliasedGroup, self).get_command(ctx, name)

@@ -1,6 +1,4 @@
-from __future__ import unicode_literals
-
-from six.moves import configparser
+import configparser
 
 
 def test_migration_to_43_copies_default_section(cli, config):

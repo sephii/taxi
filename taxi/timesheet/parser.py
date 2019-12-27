@@ -1,8 +1,6 @@
 import datetime
 import re
 
-import six
-
 from ..exceptions import ParseError
 from ..utils import date as date_utils
 from .entry import Entry
@@ -17,7 +15,7 @@ def create_time_from_text(text):
     """
     text = text.replace(':', '')
 
-    if not re.match('^\d{3,}$', text):
+    if not re.match(r'^\d{3,}$', text):
         raise ValueError("Time must be numeric")
 
     minutes = int(text[-2:])
@@ -115,7 +113,7 @@ class TimesheetParser(object):
 
             duration = '%s-%s' % (start, end)
         else:
-            duration = six.text_type(duration)
+            duration = str(duration)
 
         return duration
 

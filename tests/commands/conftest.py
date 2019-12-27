@@ -1,9 +1,9 @@
+import configparser
 import os
 
 import py
 import pytest
 from click.testing import CliRunner
-from six.moves import configparser
 
 from taxi.backends import BaseBackend, PushEntriesFailed, PushEntryFailed
 from taxi.commands.base import cli as taxi_cli

@@ -1,12 +1,8 @@
-from __future__ import unicode_literals
-
 import codecs
 import datetime
 import os
 from collections import defaultdict
 from functools import reduce
-
-import six
 
 from ..exceptions import NoActivityInProgressError, ParseError, StopInThePastError
 from ..utils import file as file_utils
@@ -36,7 +32,6 @@ def round_to_quarter(start_time, end_time):
     ).time()
 
 
-@six.python_2_unicode_compatible
 class Timesheet(object):
     """
     A timesheet is a link between an entries collection and a file.

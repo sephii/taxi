@@ -1,19 +1,12 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 from collections import defaultdict
 import copy
 import datetime
 import json
 import os
-import re
-
-import six
 
 from .exceptions import TaxiException
 
 
-@six.python_2_unicode_compatible
 class Project:
     STATUS_NOT_STARTED = 0
     STATUS_ACTIVE = 1
@@ -120,7 +113,7 @@ Description: %s""" % (self.id, self.name, status, start_date, end_date,
         Converts a (project, activity) tuple to a string in the format xxx/yyy, or a (project, activity, role) tuple in
         the format xxx/yyy/zzz.
         """
-        return '/'.join(six.text_type(part) for part in t if part is not None)
+        return '/'.join(str(part) for part in t if part is not None)
 
 
 class Activity:
