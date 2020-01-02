@@ -1,9 +1,7 @@
-from __future__ import unicode_literals
-
 import collections
 
 
-class OrderedSet(collections.MutableSet):
+class OrderedSet(collections.abc.MutableSet):
     """
     Source: http://code.activestate.com/recipes/576694-orderedset/
     """

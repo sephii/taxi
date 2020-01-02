@@ -1,7 +1,5 @@
-from __future__ import unicode_literals
-
 import pkg_resources
-from six.moves.urllib import parse
+from urllib import parse
 
 from .exceptions import TaxiException
 

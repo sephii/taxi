@@ -1,10 +1,6 @@
-from __future__ import unicode_literals
-
 import collections
 import copy
 import datetime
-
-import six
 
 from ..aliases import aliases_database
 from ..utils import date as date_utils
@@ -447,7 +443,7 @@ class EntriesCollection(collections.defaultdict):
 
         filtered_entries = collections.defaultdict(list)
 
-        for (entries_date, entries) in six.iteritems(self):
+        for (entries_date, entries) in self.items():
             if (date is not None and (
                     (date[0] is not None and entries_date < date[0])
                     or (date[1] is not None and entries_date > date[1]))):
@@ -548,7 +544,6 @@ class EntriesList(list):
             self.entries_collection.add_entry(self.date, x)
 
 
-@six.python_2_unicode_compatible
 class AggregatedTimesheetEntry(object):
     """
     Proxy class to :class:`TimesheetEntry`. An

@@ -1,9 +1,3 @@
-from __future__ import unicode_literals
-
-import six
-
-
-@six.python_2_unicode_compatible
 class TextLine(object):
     """
     The TextLine is either a blank line or a comment line.

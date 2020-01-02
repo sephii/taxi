@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 import datetime
 
 import click
@@ -18,14 +16,14 @@ def stop(ctx, description, f):
     Use it when you stop working on the current task. You can add a description
     to what you've done.
     """
-    description = ' '.join(description)
+    description = ' '.join(description).strip()
     try:
         timesheet_collection = get_timesheet_collection_for_context(ctx, f)
         current_timesheet = timesheet_collection.latest()
         current_timesheet.continue_entry(
             datetime.date.today(),
             datetime.datetime.now().time(),
-            description
+            description or None
         )
     except ParseError as e:
         ctx.obj['view'].err(e)

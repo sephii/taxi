@@ -2,10 +2,6 @@
 The role of a backend is to handle the communication with a backend tool that
 will store the timesheets and provide projects and activities.
 """
-from __future__ import unicode_literals
-
-import six
-
 
 class BaseBackend(object):
     """
@@ -70,7 +66,6 @@ class PushEntryFailed(Exception):
     pass
 
 
-@six.python_2_unicode_compatible
 class PushEntriesFailed(Exception):
     """
     Exception indicating that a set of entries couldn't be pushed. Typically

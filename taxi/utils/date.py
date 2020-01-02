@@ -1,10 +1,5 @@
-from __future__ import unicode_literals
-
 import datetime
-import locale
 import re
-
-import six
 
 
 def get_previous_working_day(date):
@@ -22,11 +17,6 @@ def get_previous_working_day(date):
 
 def unicode_strftime(date, format):
     formatted_date = date.strftime(format)
-
-    if six.PY2:
-        locale_encoding = locale.getlocale()[1]
-        if locale_encoding is not None:
-            formatted_date = formatted_date.decode(locale_encoding)
 
     return formatted_date
 

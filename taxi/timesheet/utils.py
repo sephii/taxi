@@ -1,6 +1,3 @@
-from __future__ import unicode_literals
-
-
 def is_top_down(lines):
     """
     Return `True` if dates in the given lines go in an ascending order, or `False` if they go in a descending order. If

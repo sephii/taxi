@@ -1,7 +1,4 @@
-from __future__ import unicode_literals
-
 import click
-import six
 
 
 class TaxiException(click.ClickException):
@@ -12,7 +9,6 @@ class CancelException(TaxiException):
     pass
 
 
-@six.python_2_unicode_compatible
 class ParseError(TaxiException):
     def __init__(self, message, line=None, line_number=None):
         self.line = line

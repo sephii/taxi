@@ -1,11 +1,7 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 from collections import defaultdict
+import configparser
 import copy
 import os
-
-from six.moves import configparser
 
 from .aliases import Mapping
 from .projects import Project
@@ -107,7 +103,7 @@ class Settings(object):
 
         try:
             with open(self.filepath, 'r') as fp:
-                self.config.readfp(fp)
+                self.config.read_file(fp)
         except IOError:
             raise IOError(
                 "The specified configuration file `%s` doesn't exist" % file
@@ -196,7 +192,7 @@ class Settings(object):
         """
         Convert a pre-4.0 configuration file to a 4.0 configuration file.
         """
-        from six.moves.urllib import parse
+        from urllib import parse
 
         if not self.config.has_section('backends'):
             self.config.add_section('backends')

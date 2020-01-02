@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 from taxi.aliases import AliasesDatabase, Mapping
 
 
