@@ -1,3 +1,9 @@
+taxi (5.0-1~2020010200) unstable-ci; urgency=medium
+
+  * New 5.0 upstream release
+
+ -- Didier Raboud (Liip) <didier.raboud@liip.ch>  Thu, 02 Jan 2020 12:15:53 +0100
+
 taxi (4.5.2-1~2019120900) unstable-ci; urgency=medium
 
   * New 4.5.2 release
