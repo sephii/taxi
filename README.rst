@@ -52,7 +52,10 @@ https://taxi-timesheets.readthedocs.org/en/master/userguide.html
 Supported backends
 ==================
 
-* `Zebra <https://github.com/sephii/taxi-zebra>`_
+* `zebra <https://github.com/sephii/taxi-zebra>`_ : Liip's zebra backend
+* `tempo <https://github.com/alexandreblin/taxi-tempo>`_ : Atlassian JIRA's `Tempo Timesheets <https://tempo.io>`_
+* `tipee <https://github.com/alexandreblin/taxi-tipee>`_ : Gammadia's `tipee <https://tipee.ch>` backend
+* `multi <https://github.com/alexandreblin/taxi-multi>`_ : a special backend to push entries over multiple other backends
 
 
 Contrib packages
