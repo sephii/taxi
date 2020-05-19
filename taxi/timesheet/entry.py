@@ -46,7 +46,7 @@ class Entry(FlaggableMixin):
         super(Entry, self).__init__()
 
         self._text = text
-        self.alias = alias
+        self.alias = alias.lower()
         self.duration = duration
         self.description = description
         self.previous_entry = None

@@ -62,6 +62,8 @@ def add(ctx, alias, mapping, backend):
 
 
 def add_mapping(ctx, alias, mapping, backend):
+    alias = alias.lower()
+
     if mapping:
         mapping = Project.str_to_tuple(mapping)
         if mapping is None:

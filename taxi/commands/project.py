@@ -96,7 +96,7 @@ def alias(ctx, search, backend):
 @project.command(name='show', short_help="Show the details of the given "
                                          "project id.")
 @click.option('--backend', '-b', help="Show project of given backend.")
-@click.argument('project_id', type=int)
+@click.argument('project_id')
 @click.pass_context
 def show(ctx, project_id, backend):
     """

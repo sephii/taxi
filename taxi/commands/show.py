@@ -32,6 +32,8 @@ def show(ctx, search):
 
 
 def get_alias_matches(search, matches):
+    search = search.lower()
+
     if search in aliases_database:
         matches['aliases'].append(aliases_database[search])
 
@@ -41,6 +43,8 @@ def get_alias_matches(search, matches):
 def get_mapping_matches(search, matches, projects_db):
     if '/' not in search:
         return matches
+
+    search = search.lower()
 
     try:
         mapping = Project.str_to_tuple(search)
@@ -55,7 +59,7 @@ def get_mapping_matches(search, matches, projects_db):
     project_activity = None
 
     for activity in project.activities:
-        if activity.id == mapping[1]:
+        if str(activity.id) == str(mapping[1]):
             project_activity = activity
 
     if project and project_activity:
@@ -65,12 +69,9 @@ def get_mapping_matches(search, matches, projects_db):
 
 
 def get_project_matches(search, matches, projects_db):
-    try:
-        project_id = int(search)
-    except ValueError:
-        return matches
+    search = search.lower()
 
-    project = projects_db.get(project_id)
+    project = projects_db.get(search)
     if project:
         matches['projects'].append((project, None))
 

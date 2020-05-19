@@ -28,7 +28,7 @@ class Project:
     }
 
     def __init__(self, id, name, status=None, description=None, budget=None, team=None):
-        self.id = int(id)
+        self.id = id.lower() if isinstance(id, str) else int(id)
         self.name = name
         self.activities = []
         self.status = int(status) if status is not None else None
@@ -79,7 +79,7 @@ Description: %s""" % (self.id, self.name, status, start_date, end_date,
 
     def get_activity(self, id):
         for activity in self.activities:
-            if activity.id == id:
+            if str(activity.id) == str(id):
                 return activity
 
         return None
@@ -105,7 +105,7 @@ Description: %s""" % (self.id, self.name, status, start_date, end_date,
         not numeric.
         """
         parts = string.split('/', 2)
-        return tuple((int(parts[i]) if i < len(parts) else None) for i in range(3))
+        return tuple((parts[i] if i < len(parts) else None) for i in range(3))
 
     @classmethod
     def tuple_to_str(cls, t):
@@ -117,8 +117,8 @@ Description: %s""" % (self.id, self.name, status, start_date, end_date,
 
 
 class Activity:
-    def __init__(self, id, name, price):
-        self.id = int(id)
+    def __init__(self, id, name, price=None):
+        self.id = id.lower() if isinstance(id, str) else int(id)
         self.name = name
         self.price = price
 
@@ -178,7 +178,7 @@ class ProjectsDb:
             for s in search:
                 s = s.lower()
                 found = (project.name.lower().find(s) > -1 or
-                         str(project.id) == s)
+                         str(project.id).lower().find(s) > -1)
 
                 if not found:
                     break
@@ -198,7 +198,7 @@ class ProjectsDb:
             self._projects_by_id_cache = defaultdict(list)
 
             for project in projects:
-                self._projects_by_id_cache[project.id].append(project)
+                self._projects_by_id_cache[str(project.id).lower()].append(project)
 
         for project in self._projects_by_id_cache.get(id, []):
             if backend is None or project.backend == backend:
