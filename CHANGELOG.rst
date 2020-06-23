@@ -2,6 +2,14 @@
 Changelog
 #########
 
+5.1 (unreleased)
+================
+
+Added
+-----
+
+* Add support for more date format codes (days, weeks, months and years) in the `file` setting
+
 5.0 (2019-12-27)
 ================
 

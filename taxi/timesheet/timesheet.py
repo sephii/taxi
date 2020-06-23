@@ -1,6 +1,8 @@
 import codecs
 import datetime
+import enum
 import os
+import re
 from collections import defaultdict
 from functools import reduce
 
@@ -265,27 +267,51 @@ class TimesheetCollection:
         `nb_previous_files`. See :func:`taxi.utils.file.expand_date` for more information about filename expansion. If
         `from_date` is set, it will be used as a starting date instead of the current date.
         """
-        date_units = ['m', 'Y']
-        smallest_unit = None
-
         if not from_date:
             from_date = datetime.date.today()
 
-        for date_unit in date_units:
-            if ('%' + date_unit) in file_pattern:
-                smallest_unit = date_unit
-                break
+        Resolution = enum.IntEnum("Resolution", "DAY WEEK MONTH YEAR")
+        resolutions = {
+            'a': Resolution.WEEK,
+            'A': Resolution.WEEK,
+            'w': Resolution.WEEK,
+            'd': Resolution.DAY,
+            'b': Resolution.MONTH,
+            'B': Resolution.MONTH,
+            'm': Resolution.MONTH,
+            'y': Resolution.YEAR,
+            'Y': Resolution.YEAR,
+            'j': Resolution.DAY,
+            'U': Resolution.WEEK,
+            'W': Resolution.WEEK,
+            'V': Resolution.WEEK,
+            'u': Resolution.DAY,
+        }
+        used_units = re.findall(r'%([a-zA-Z])', file_pattern)
+        unknown_units = set(used_units) - set(resolutions.keys())
 
-        if smallest_unit is None:
-            return OrderedSet([file_pattern])
+        if unknown_units:
+            raise ValueError(
+                "Unsupported units used in file pattern: {}".format(
+                    ", ".join("%{}".format(unit) for unit in unknown_units)
+                )
+            )
 
+        if not used_units:
+            return OrderedSet([file_utils.expand_date(file_pattern, from_date)])
+
+        resolution = min(resolutions[res] for res in used_units)
         files = OrderedSet()
 
         for i in range(nb_previous_files, -1, -1):
-            if smallest_unit == 'm':
+            if resolution == Resolution.MONTH:
                 file_date = months_ago(from_date, i)
-            elif smallest_unit == 'Y':
+            elif resolution == Resolution.YEAR:
                 file_date = from_date.replace(day=1, year=from_date.year - i)
+            elif resolution == Resolution.DAY:
+                file_date = from_date - datetime.timedelta(days=i)
+            elif resolution == Resolution.WEEK:
+                file_date = from_date - datetime.timedelta(days=i * 7)
 
             files.add(file_utils.expand_date(file_pattern, file_date))
 

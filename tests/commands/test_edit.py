@@ -1,5 +1,8 @@
 import datetime
+import os
 
+import click
+import pytest
 from freezegun import freeze_time
 
 from .conftest import EntriesFileGenerator
@@ -102,3 +105,9 @@ def test_autofill_adds_initial_data(cli, data_dir, config):
         new_file_contents = fp.readlines()
 
     assert new_file_contents == ['# Recently used aliases:\n', '# alias_2\n', '# alias_1\n']
+
+
+def test_edit_with_unsupported_date_format(cli, config, data_dir):
+    config.set('taxi', 'file', os.path.join(data_dir, '/tmp/%Y_%f.txt'))
+    with pytest.raises(click.ClickException):
+        cli('edit')

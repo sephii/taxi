@@ -43,7 +43,11 @@ def edit(ctx, file_to_edit, previous_file):
                 t.save()
 
     # Get the path to the file we should open in the editor
-    timesheet_files = list(reversed(TimesheetCollection.get_files(file_to_edit, previous_file)))
+    try:
+        timesheet_files = list(reversed(TimesheetCollection.get_files(file_to_edit, previous_file)))
+    except ValueError as e:
+        raise click.ClickException(str(e))
+
     if previous_file >= len(timesheet_files):
         ctx.fail("Couldn't find the requested previous file for `%s`." % file_to_edit)
 

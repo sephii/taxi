@@ -41,7 +41,10 @@ def get_timesheet_collection_for_context(ctx, entries_file=None):
         flags_repr=ctx.obj['settings'].get_flags(),
     )
 
-    return TimesheetCollection.load(entries_file, ctx.obj['settings']['nb_previous_files'], parser)
+    try:
+        return TimesheetCollection.load(entries_file, ctx.obj['settings']['nb_previous_files'], parser)
+    except ValueError as e:
+        raise click.ClickException(str(e))
 
 
 def populate_aliases(aliases):

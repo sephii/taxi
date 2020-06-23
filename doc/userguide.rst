@@ -476,11 +476,10 @@ The path of your entries file. You're free to use a single file to store all
 your entries but you're strongly encouraged to use date placeholders here. The
 following will expand to ``~/zebra/2011/11.tks`` if you're in November 2011.
 
-You can use any datetime placeholder defined in `the strftime documentation
-<http://docs.python.org/library/datetime.html#strftime-and-strptime-behavior>`_.
-**However** taxi only supports the ``%Y`` and ``%m`` placeholders to check for
-previous timesheets (used for example when you run ``taxi edit X``, where ``X``
-is the number of timesheets to go back in time).
+You can use any datetime format code defined in `the strftime documentation
+<http://docs.python.org/library/datetime.html#strftime-and-strptime-behavior>`_
+down to a resolution of a day (hours, minutes and seconds format codes are not
+supported because they make little sense).
 
 regroup_entries
 ~~~~~~~~~~~~~~~
