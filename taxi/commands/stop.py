@@ -23,7 +23,8 @@ def stop(ctx, description, f):
         current_timesheet.continue_entry(
             datetime.date.today(),
             datetime.datetime.now().time(),
-            description or None
+            rounded_to_minutes=ctx.obj['settings']['round_entries'],
+            description=description or None,
         )
     except ParseError as e:
         ctx.obj['view'].err(e)

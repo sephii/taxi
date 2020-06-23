@@ -89,6 +89,7 @@ class Settings(object):
             'file': StringSetting(default='~/zebra/%Y/%m/%d.tks'),
             'editor': StringSetting(),
             'regroup_entries': BooleanSetting(default=True),
+            'round_entries': IntegerSetting(default=15),
         },
         'flags': {
             'ignored': StringSetting(default='?'),

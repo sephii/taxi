@@ -504,6 +504,16 @@ when starting a new month.
 This option only makes sense if you're using date placeholders in
 :ref:`config_file`.
 
+round_entries
+~~~~~~~~~~~~~
+
+Default: 15
+
+Number of minutes to round entries duration to when using the `stop` command.
+For example, if you start working on a task at 10:02 and you run `taxi stop` at
+10:10 with the default `round_entries` setting you'll get `10:02-10:17`. Note
+that entries are always rounded up, never down.
+
 Flags characters customization
 ------------------------------
 

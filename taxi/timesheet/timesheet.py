@@ -14,23 +14,21 @@ from .entry import EntriesCollection
 from .parser import TimesheetParser
 
 
-def round_to_quarter(start_time, end_time):
+def round_to(start_time, end_time, precision_minutes):
     """
-    Return the duration between `start_time` and `end_time` :class:`datetime.time` objects, rounded to 15 minutes.
+    Return the duration between `start_time` and `end_time`
+    :class:`datetime.time` objects, rounded to `precision_minutes` minutes.
     """
-    # We don't care about the date (only about the time) but Python
-    # can substract only datetime objects, not time ones
-    today = datetime.date.today()
-    start_date = datetime.datetime.combine(today, start_time)
-    end_date = datetime.datetime.combine(today, end_time)
+    def to_seconds(time):
+        return time.second + time.minute * 60 + time.hour * 60 * 60
 
-    difference_minutes = (end_date - start_date).seconds / 60
-    remainder = difference_minutes % 15
-    # Round up
-    difference_minutes += 15 - remainder if remainder > 0 else 0
+    precision_seconds = precision_minutes * 60
+    difference = to_seconds(end_time) - to_seconds(start_time)
+    needs_rounding = difference % precision_seconds > 0
+    rounded_difference = ((difference // precision_seconds) + 1) * precision_seconds if needs_rounding else difference
 
     return (
-        start_date + datetime.timedelta(minutes=difference_minutes)
+        datetime.datetime.combine(datetime.date.today(), start_time) + datetime.timedelta(seconds=rounded_difference)
     ).time()
 
 
@@ -101,7 +99,7 @@ class Timesheet(object):
         date_entries = self.entries.filter(**kwargs)
         return sum(sum(entry.hours for entry in entries) for entries in date_entries.values())
 
-    def continue_entry(self, date, end_time, description=None):
+    def continue_entry(self, date, end_time, rounded_to_minutes, description=None):
         """
         Find the in-progress entry for the given date (ie. the last entry that has an empty end time) and set its end
         time and optionally its description to the given values. `end_time` should be a :class:`datetime.time` object.
@@ -119,9 +117,10 @@ class Timesheet(object):
         if entry.get_start_time() > end_time:
             raise StopInThePastError("You are trying to stop an activity in the future")
 
-        entry.duration = (entry.duration[0], round_to_quarter(
+        entry.duration = (entry.duration[0], round_to(
             entry.get_start_time(),
-            end_time
+            end_time,
+            precision_minutes=rounded_to_minutes
         ))
 
         if description is not None:

@@ -36,6 +36,10 @@ editor = {editor}
 # Default is 1.
 # nb_previous_files = 1
 
+# Number of minutes to round entries duration to when using the `stop` command.
+# Default is 15.
+# round_entries = 15
+
 [backends]
 # You'll need taxi-zebra to be able to use this
 default = {backend}://{username}{password}@{hostname}
