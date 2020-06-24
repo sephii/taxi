@@ -47,6 +47,42 @@ environment variable, you can follow `this guide <https://stackoverflow.com/a/14
 Everything else is covered in the user documentation available on Read The Docs:
 https://taxi-timesheets.readthedocs.org/en/master/userguide.html
 
+Installing with Nix/NixOS
+=========================
+
+The `Nix <https://nixos.org/>`_ channel allows you to keep your version
+up-to-date with the Nix package manager. To use it, run the following command::
+
+    nix-channel --add https://github.com/liip/taxi/archive/nix.tar.gz taxi
+
+If you're running NixOS, you can then install it declaratively by adding it to
+your ``/etc/nixos/configuration.nix`` file and then running ``nixos-rebuild
+switch``::
+
+    with import <taxi> { };
+
+    environment.systemPackages = [
+        # ...
+        taxi
+    ]
+
+If you want more control over the installed plugins (by default only Zebra), use ``taxi.withPlugins``::
+
+    with import <taxi> { };
+
+    environment.systemPackages = [
+        # ...
+        (taxi.withPlugins [ taxi_zebra ])
+    ]
+
+If you're not using NixOS, you can install it with ``nix-env``::
+
+    # Version with default plugins (only Zebra)
+    nix-env -iA taxi.taxi
+
+    # Version with custom plugins
+    nix-env -iA -f '<taxi>' -E 't: t.taxi.withPlugins [ t.taxi_zebra ]'
+
 .. _supported_backends:
 
 Supported backends
