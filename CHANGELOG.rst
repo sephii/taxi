@@ -10,6 +10,7 @@ Added
 
 * Add support for more date format codes (days, weeks, months and years) in the `file` setting
 * Add new `round_entries` setting to customize entries duration rounding
+* Add installation instructions for Nix and Debian systems
 
 5.0 (2019-12-27)
 ================

@@ -4,21 +4,76 @@ User guide
 Installation
 ------------
 
-Taxi runs on Python 3.5 and up. The easiest way to install it is by using
-pip::
+After following the installation procedure specific to your platform, you should
+be able to run the ``taxi`` command. If you're getting a "command not found"
+error, make sure that ``~/.local/bin/`` is in your ``PATH`` environment variable
+(eg. by running ``echo $PATH``). To change your ``PATH`` environment variable,
+you can follow `this guide <https://stackoverflow.com/a/14638025>`_.
 
-    pip install --user taxi
+Debian & Ubuntu
+~~~~~~~~~~~~~~~
 
-You'll now need to install a backend separately to be able to push your entries and retrieve
-projects and activities. For example to install the `zebra` backend::
+Head over to `the releases <https://github.com/liip/taxi/releases>`_ and
+download the ``.deb`` file. You can then install it with a graphical package
+manager, or with the following command::
 
-    pip install --user taxi-zebra
+    sudo dpkg -i taxi.deb
 
-For a list of available backends, refer to the :ref:`supported_backends` list.
+To upgrade Taxi, download the new ``.deb`` file and install it.
 
-You can now try to run the ``taxi`` command. If you're getting a "command not found" error, make sure that
-`~/.local/bin/` is in your ``PATH`` environment variable (eg. by running ``echo $PATH``). To change your ``PATH``
-environment variable, you can follow `this guide <https://stackoverflow.com/a/14638025>`_.
+Nix
+~~~
+
+The `Nix <https://nixos.org/>`_ channel allows you to keep your version
+up-to-date with the Nix package manager. To use it, run the following command::
+
+    nix-channel --add https://github.com/liip/taxi/archive/master.tar.gz taxi
+
+If you're running NixOS, you can then install it declaratively by adding it to
+your ``/etc/nixos/configuration.nix`` file and then running ``nixos-rebuild
+switch``::
+
+    with import <taxi> { };
+
+    environment.systemPackages = [
+        # ...
+        taxi
+    ]
+
+If you want more control over the installed plugins (by default only Zebra), use ``taxi.withPlugins``::
+
+    with import <taxi> { };
+
+    environment.systemPackages = [
+        # ...
+        (taxi.withPlugins [ taxi_zebra ])
+    ]
+
+If you're not using NixOS, you can install it with ``nix-env``::
+
+    # Version with default plugins (only Zebra)
+    nix-env -iA taxi.taxi
+
+    # Version with custom plugins
+    nix-env -iA -f '<taxi>' -E 't: t.taxi.withPlugins [ t.taxi_zebra ]'
+
+To upgrade Taxi, run ``nix-env --upgrade taxi``.
+
+Other platforms
+~~~~~~~~~~~~~~~
+
+Make sure you have Python at least 3.5 installed (by running ``python3
+--version``), then use ``pip`` to install taxi in your user directory (you
+should **not** use sudo or run this command as root)::
+
+    pip3 install --user taxi
+
+You'll probably want to install a backend too, that will allow you to push your timesheets. To install the Zebra
+backend for example (again, **no** sudo or root user)::
+
+    pip3 install --user taxi-zebra
+
+To upgrade Taxi and the Zebra plugin, run ``pip3 install --user --upgrade taxi taxi-zebra``
 
 First steps with Taxi
 ---------------------
