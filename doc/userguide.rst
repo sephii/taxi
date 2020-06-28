@@ -40,22 +40,9 @@ switch``::
         taxi
     ]
 
-If you want more control over the installed plugins (by default only Zebra), use ``taxi.withPlugins``::
-
-    with import <taxi> { };
-
-    environment.systemPackages = [
-        # ...
-        (taxi.withPlugins [ taxi_zebra ])
-    ]
-
 If you're not using NixOS, you can install it with ``nix-env``::
 
-    # Version with default plugins (only Zebra)
     nix-env -iA taxi.taxi
-
-    # Version with custom plugins
-    nix-env -iA -f '<taxi>' -E 't: t.taxi.withPlugins [ t.taxi_zebra ]'
 
 To upgrade Taxi, run ``nix-env --upgrade taxi``.
 
