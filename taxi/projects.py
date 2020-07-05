@@ -4,6 +4,7 @@ import datetime
 import json
 import os
 
+from .aliases import Mapping
 from .exceptions import TaxiException
 
 
@@ -28,7 +29,7 @@ class Project:
     }
 
     def __init__(self, id, name, status=None, description=None, budget=None, team=None):
-        self.id = int(id)
+        self.id = id
         self.name = name
         self.activities = []
         self.status = int(status) if status is not None else None
@@ -105,7 +106,7 @@ Description: %s""" % (self.id, self.name, status, start_date, end_date,
         not numeric.
         """
         parts = string.split('/', 2)
-        return tuple((int(parts[i]) if i < len(parts) else None) for i in range(3))
+        return tuple((parts[i] if i < len(parts) else None) for i in range(3))
 
     @classmethod
     def tuple_to_str(cls, t):
@@ -118,7 +119,7 @@ Description: %s""" % (self.id, self.name, status, start_date, end_date,
 
 class Activity:
     def __init__(self, id, name, price):
-        self.id = int(id)
+        self.id = id
         self.name = name
         self.price = price
 
@@ -218,6 +219,13 @@ class ProjectsDb:
             return (project, None)
 
         return (project, activity)
+
+    def get_aliases(self):
+        return {
+            alias: Mapping(mapping=(project.id, activity_id), backend=project.backend)
+            for project in self.get_projects()
+            for alias, activity_id in project.aliases.items()
+        }
 
 
 class LocalProjectsDb:

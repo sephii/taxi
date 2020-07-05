@@ -425,7 +425,8 @@ class BaseUi(object):
         modified_aliases = set()
         for alias, mapping in aliases_after_update.items():
             if (alias in aliases_database
-                    and aliases_database[alias][:2] != mapping[:2]):
+                    and aliases_database[alias].mapping
+                    and aliases_database[alias].mapping[:2] != mapping.mapping[:2]):
                 modified_aliases.add(alias)
 
         if added_aliases:

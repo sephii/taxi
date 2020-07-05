@@ -1,6 +1,5 @@
 import click
 
-from ..aliases import Mapping
 from ..plugins import plugins_registry
 from .base import cli
 
@@ -27,37 +26,21 @@ def update(ctx):
 
     ctx.obj['projects_db'].update(projects)
 
-    # Put the shared aliases in the config file
-    shared_aliases = {}
-    backends_to_clear = set()
-    for project in projects:
-        for alias, activity_id in project.aliases.items():
-            mapping = Mapping(mapping=(project.id, activity_id),
-                              backend=project.backend)
-            shared_aliases[alias] = mapping
-            backends_to_clear.add(project.backend)
-
-    for backend in backends_to_clear:
-        ctx.obj['settings'].clear_shared_aliases(backend)
-
     # The user can have local aliases with additional information (eg. role definition). If these aliases also exist on
     # the remote, then they probably need to be cleared out locally to make sure they don't unintentionally use an
     # alias with a wrong role
     current_aliases = ctx.obj['settings'].get_aliases()
+    shared_aliases = ctx.obj['projects_db'].get_aliases()
     removed_aliases = [
         (alias, mapping)
         for alias, mapping in current_aliases.items()
         if (alias in shared_aliases and shared_aliases[alias].backend == mapping.backend
             and mapping.mapping[:2] != shared_aliases[alias].mapping[:2])
     ]
-
     if removed_aliases:
         ctx.obj['settings'].remove_aliases(removed_aliases)
 
-    for alias, mapping in shared_aliases.items():
-        ctx.obj['settings'].add_shared_alias(alias, mapping)
-
-    aliases_after_update = ctx.obj['settings'].get_aliases()
+    aliases_after_update = dict(ctx.obj['settings'].get_aliases(), **ctx.obj['projects_db'].get_aliases())
 
     ctx.obj['settings'].write_config()
 
