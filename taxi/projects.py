@@ -194,6 +194,8 @@ class ProjectsDb:
         return found_list
 
     def get(self, id, backend=None):
+        id = str(id)
+
         if self._projects_by_id_cache is None:
             projects = self.get_projects()
             self._projects_by_id_cache = defaultdict(list)
@@ -222,7 +224,7 @@ class ProjectsDb:
 
     def get_aliases(self):
         return {
-            alias: Mapping(mapping=(project.id, activity_id), backend=project.backend)
+            alias: Mapping(mapping=(str(project.id), str(activity_id)), backend=project.backend)
             for project in self.get_projects()
             for alias, activity_id in project.aliases.items()
         }
@@ -267,9 +269,10 @@ class LocalProjectsDbDecoder(json.JSONDecoder):
         projects_copy = []
         for project in projects:
             project['activities'] = [
-                Activity(activity['id'], activity['name'], activity['price'])
+                Activity(str(activity['id']), activity['name'], activity['price'])
                 for activity in project['activities']
             ]
+            project['id'] = str(project['id'])
             for date_type in ['start_date', 'end_date']:
                 if project[date_type] is not None:
                     project[date_type] = datetime.datetime.strptime(
