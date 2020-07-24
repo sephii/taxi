@@ -53,8 +53,9 @@ Supported backends
 ==================
 
 * `zebra <https://github.com/sephii/taxi-zebra>`_ : Liip's zebra backend
-* `tempo <https://github.com/alexandreblin/taxi-tempo>`_ : Atlassian JIRA's `Tempo Timesheets <https://tempo.io>`_
+* `tempo <https://github.com/alexandreblin/taxi-tempo>`_ : Atlassian JIRA's `Tempo Timesheets <https://tempo.io>`_ backend
 * `tipee <https://github.com/alexandreblin/taxi-tipee>`_ : Gammadia's `tipee <https://tipee.ch>` backend
+* `bexio <https://github.com/alexandreblin/taxi-bexio>`_ : Bexio `Timesheets <https://bexio.com>`_ backend
 * `multi <https://github.com/alexandreblin/taxi-multi>`_ : a special backend to push entries over multiple other backends
 
 
