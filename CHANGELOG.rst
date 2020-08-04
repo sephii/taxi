@@ -2,7 +2,7 @@
 Changelog
 #########
 
-6.0rc1 (unreleased)
+6.0rc1 (2020-08-04)
 ===================
 
 Added
