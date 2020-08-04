@@ -1,6 +1,6 @@
 import click
 
-from ..exceptions import ParseError
+from ..exceptions import EntriesCollectionValidationError, ParseError
 from ..settings import Settings
 from ..timesheet import TimesheetCollection
 from .base import cli, get_timesheet_collection_for_context
@@ -30,7 +30,7 @@ def edit(ctx, file_to_edit, previous_file):
             timesheet_collection = get_timesheet_collection_for_context(
                 ctx, file_to_edit
             )
-        except ParseError:
+        except (ParseError, EntriesCollectionValidationError):
             pass
         else:
             t = timesheet_collection.latest()
@@ -69,7 +69,7 @@ def edit(ctx, file_to_edit, previous_file):
         timesheet_collection = get_timesheet_collection_for_context(
             ctx, file_to_edit
         )
-    except ParseError as e:
+    except (EntriesCollectionValidationError, ParseError) as e:
         ctx.obj['view'].err(e)
     else:
         ctx.obj['view'].show_status(

@@ -43,3 +43,7 @@ class NoActivityInProgressError(TaxiException):
 
 class StopInThePastError(TaxiException):
     pass
+
+
+class EntriesCollectionValidationError(TaxiException):
+    pass

@@ -3,6 +3,7 @@ import copy
 import datetime
 
 from ..aliases import aliases_database
+from ..exceptions import EntriesCollectionValidationError
 from ..utils import date as date_utils
 from .flags import FlaggableMixin
 from .lines import DateLine, TextLine
@@ -386,7 +387,7 @@ class EntriesCollection(collections.defaultdict):
         """
         self.lines = self.parser.parse_text(entries)
 
-        for line in self.lines:
+        for lineno, line in enumerate(self.lines, 1):
             if isinstance(line, DateLine):
                 current_date = line.date
                 self[current_date] = self.default_factory(self, line.date)
@@ -394,6 +395,18 @@ class EntriesCollection(collections.defaultdict):
                 if len(self[current_date]) > 0:
                     line.previous_entry = self[current_date][-1]
                     self[current_date][-1].next_entry = line
+
+                start_time = line.get_start_time()
+                if start_time and line.duration[1] and line.duration[1] <= start_time:
+                    line_str = " ".join(line._text).strip()
+                    raise EntriesCollectionValidationError(
+                        "Error at line {lineno} of your timesheet:\n\n\t{line}"
+                        "\n\nThe entry cannot go back in time. If you're trying "
+                        "to create an entry that spans on 2 days, please create "
+                        "an entry on 2 separate days.".format(
+                            lineno=lineno, line=line_str
+                        )
+                    )
 
                 self[current_date].append(line)
 

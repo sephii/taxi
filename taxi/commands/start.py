@@ -2,7 +2,7 @@ import datetime
 
 import click
 
-from ..exceptions import ParseError
+from ..exceptions import EntriesCollectionValidationError, ParseError
 from ..timesheet import Entry
 from .base import cli, get_timesheet_collection_for_context
 
@@ -23,7 +23,7 @@ def start(ctx, alias, description, f):
 
     try:
         timesheet_collection = get_timesheet_collection_for_context(ctx, f)
-    except ParseError as e:
+    except (EntriesCollectionValidationError, ParseError) as e:
         ctx.obj['view'].err(e)
         return
 
