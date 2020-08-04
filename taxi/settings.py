@@ -172,18 +172,27 @@ class Settings(object):
     def get_backends(self):
         return self.config.items('backends')
 
-    def convert_to_5_1(self):
+    def get_shared_aliases_sections(self):
         backends = self.get_backends()
 
-        for backend, uri in backends:
-            shared_aliases_section = '{}_shared_aliases'.format(backend)
+        shared_aliases_sections = [
+            "{}_shared_aliases".format(backend) for backend, uri in backends
+        ]
 
-            if self.config.has_section(shared_aliases_section):
-                self.config.remove_section(shared_aliases_section)
+        return [
+            section
+            for section in shared_aliases_sections
+            if self.config.has_section(section)
+        ]
+
+    def convert_to_6(self):
+        for section in self.get_shared_aliases_sections():
+            self.config.remove_section(section)
 
     @property
     def needed_conversions(self):
-        conversions = [self.convert_to_5_1]
+        shared_aliases_sections = self.get_shared_aliases_sections()
+        conversions = [self.convert_to_6] if shared_aliases_sections else []
 
         return conversions
 
