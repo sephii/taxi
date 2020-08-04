@@ -10,12 +10,12 @@ def projects_db(data_dir):
     project = Project(42, 'not started project',
                       Project.STATUS_NOT_STARTED)
     project.backend = 'test'
-    project.activities.append(Activity(1, 'activity 1', 0))
-    project.activities.append(Activity(2, 'activity 2', 0))
+    project.activities.append(Activity(1, 'activity 1'))
+    project.activities.append(Activity(2, 'activity 2'))
     projects_list.append(project)
     project = Project(123, 'my project', Project.STATUS_ACTIVE)
     project.backend = 'test'
-    project.activities.append(Activity(456, 'my activity', 0))
+    project.activities.append(Activity(456, 'my activity'))
     projects_list.append(project)
     projects_db.update(projects_list)
 

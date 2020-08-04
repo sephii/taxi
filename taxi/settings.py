@@ -135,7 +135,7 @@ class Settings(object):
         return self._settings[section][key].value
 
     def add_alias(self, alias, mapping):
-        alias_section = get_alias_section_name(mapping.backend, False)
+        alias_section = get_alias_section_name(mapping.backend)
 
         if not self.config.has_section(alias_section):
             self.config.add_section(alias_section)
@@ -145,135 +145,54 @@ class Settings(object):
 
     def remove_aliases(self, aliases):
         for alias, mapping in aliases:
-            for shared_section in [False, True]:
-                backend_section = get_alias_section_name(mapping.backend,
-                                                         shared_section)
-                if self.config.has_option(backend_section, alias):
-                    self.config.remove_option(backend_section, alias)
-                    break
+            backend_section = get_alias_section_name(mapping.backend)
+            if self.config.has_option(backend_section, alias):
+                self.config.remove_option(backend_section, alias)
 
     def write_config(self):
         with open(self.filepath, 'w') as file:
             self.config.write(file)
 
-    def add_shared_alias(self, alias, mapping):
-        section = get_alias_section_name(mapping.backend, True)
-        if not self.config.has_section(section):
-            self.config.add_section(section)
-
-        self.config.set(section, alias, '%s/%s' % mapping.mapping)
-
-    def clear_shared_aliases(self, backend):
-        self.config.remove_section(get_alias_section_name(backend, True))
-        self.config.add_section(get_alias_section_name(backend, True))
-
     def get_aliases(self):
         backends = self.get_backends()
         aliases = defaultdict(dict)
 
-        for (backend, uri) in backends:
-            for shared_section in [True, False]:
-                backend_aliases_section = get_alias_section_name(
-                    backend, shared_section
-                )
+        for backend, uri in backends:
+            backend_aliases_section = get_alias_section_name(backend)
 
-                if self.config.has_section(backend_aliases_section):
-                    for (alias, mapping) in self.config.items(backend_aliases_section):
-                        mapping = Project.str_to_tuple(mapping) if mapping else None
-                        mapping_obj = Mapping(mapping, backend)
+            if self.config.has_section(backend_aliases_section):
+                for (alias, mapping) in self.config.items(backend_aliases_section):
+                    mapping = Project.str_to_tuple(mapping) if mapping else None
+                    mapping_obj = Mapping(mapping, backend)
 
-                        aliases[alias] = mapping_obj
+                    aliases[alias] = mapping_obj
 
         return aliases
 
     def get_backends(self):
         return self.config.items('backends')
 
-    def convert_to_4(self):
-        """
-        Convert a pre-4.0 configuration file to a 4.0 configuration file.
-        """
-        from urllib import parse
+    def get_shared_aliases_sections(self):
+        backends = self.get_backends()
 
-        if not self.config.has_section('backends'):
-            self.config.add_section('backends')
+        shared_aliases_sections = [
+            "{}_shared_aliases".format(backend) for backend, uri in backends
+        ]
 
-        site = parse.urlparse(self.get('site', default_value=''))
-        backend_uri = 'zebra://{username}:{password}@{hostname}'.format(
-            username=self.get('username', default_value=''),
-            password=parse.quote(self.get('password', default_value=''),
-                                 safe=''),
-            hostname=site.hostname
-        )
-        self.config.set('backends', 'default', backend_uri)
+        return [
+            section
+            for section in shared_aliases_sections
+            if self.config.has_section(section)
+        ]
 
-        self.config.remove_option('default', 'username')
-        self.config.remove_option('default', 'password')
-        self.config.remove_option('default', 'site')
-
-        if not self.config.has_section('default_aliases'):
-            self.config.add_section('default_aliases')
-
-        if not self.config.has_section('default_shared_aliases'):
-            self.config.add_section('default_shared_aliases')
-
-        if self.config.has_section('wrmap'):
-            for alias, mapping in self.config.items('wrmap'):
-                self.config.set('default_aliases', alias, mapping)
-
-            self.config.remove_section('wrmap')
-
-        if self.config.has_section('shared_wrmap'):
-            for alias, mapping in self.config.items('shared_wrmap'):
-                self.config.set('default_shared_aliases', alias, mapping)
-
-            self.config.remove_section('shared_wrmap')
-
-    def convert_to_4_1(self):
-        if not self.config.has_option('default', 'local_aliases'):
-            return
-
-        local_aliases = self.config.get('default', 'local_aliases')
-        local_aliases = ListSetting().to_python(local_aliases)
-
-        if not self.config.has_section('backends'):
-            self.config.add_section('backends')
-
-        self.config.set('backends', 'local', 'dummy://')
-
-        if not self.config.has_section('local_aliases'):
-            self.config.add_section('local_aliases')
-
-        for alias in local_aliases:
-            self.config.set('local_aliases', alias, None)
-
-        self.config.remove_option('default', 'local_aliases')
-
-    def convert_to_4_3(self):
-        if not self.config.has_section('default'):
-            return
-
-        defaults = self.config.items('default')
-
-        try:
-            self.config.add_section('taxi')
-        except configparser.DuplicateSectionError:
-            pass
-
-        for key, value in defaults:
-            self.config.set('taxi', key, value)
-
-        self.config.remove_section('default')
+    def convert_to_6(self):
+        for section in self.get_shared_aliases_sections():
+            self.config.remove_section(section)
 
     @property
     def needed_conversions(self):
-        conversions = []
-
-        if self.config.has_option('default', 'local_aliases'):
-            conversions.append(self.convert_to_4_1)
-
-        if self.config.has_section('default'):
-            conversions.append(self.convert_to_4_3)
+        shared_aliases_sections = self.get_shared_aliases_sections()
+        conversions = [self.convert_to_6] if shared_aliases_sections else []
 
         return conversions
 
@@ -292,6 +211,5 @@ class Settings(object):
         return {'auto': None, 'bottom': True, 'top': False}.get(self.get('auto_add'), None)
 
 
-def get_alias_section_name(backend_name, shared_section=False):
-    return '%s_%s' % (backend_name,
-                      'aliases' if not shared_section else 'shared_aliases')
+def get_alias_section_name(backend_name):
+    return '%s_aliases' % backend_name

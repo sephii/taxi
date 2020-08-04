@@ -47,6 +47,10 @@ def get_timesheet_collection_for_context(ctx, entries_file=None):
         raise click.ClickException(str(e))
 
 
+def get_all_aliases(projects_db, settings):
+    return dict(projects_db.get_aliases(), **settings.get_aliases())
+
+
 def populate_aliases(aliases):
     aliases_database.reset()
     aliases_database.update(aliases)
@@ -283,6 +287,7 @@ def cli(ctx, config, taxi_dir, verbose):
 
     create_config_file(config)
     settings = Settings(config)
+    projects_db = ProjectsDb(os.path.expanduser(taxi_dir))
 
     if not os.path.exists(taxi_dir):
         os.makedirs(taxi_dir)
@@ -290,9 +295,9 @@ def cli(ctx, config, taxi_dir, verbose):
     ctx.obj = {}
     ctx.obj['settings'] = settings
     ctx.obj['view'] = TtyUi()
-    ctx.obj['projects_db'] = ProjectsDb(os.path.expanduser(taxi_dir))
+    ctx.obj['projects_db'] = projects_db
 
-    populate_aliases(settings.get_aliases())
+    populate_aliases(get_all_aliases(projects_db=projects_db, settings=settings))
     populate_backends(settings.get_backends(), ctx.obj)
 
 
