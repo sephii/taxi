@@ -19,6 +19,11 @@ Changed
 * Remove "shared aliases" from the config file
 * Remove unused ``price`` parameter from the ``Activity`` class
 
+Fixed
+-----
+
+* Allow editing invalid configuration files with the ``config`` command (#135)
+
 5.0 (2019-12-27)
 ================
 
