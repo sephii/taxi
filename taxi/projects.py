@@ -3,6 +3,7 @@ import copy
 import datetime
 import json
 import os
+import warnings
 
 from .aliases import Mapping
 from .exceptions import TaxiException
@@ -118,10 +119,9 @@ Description: %s""" % (self.id, self.name, status, start_date, end_date,
 
 
 class Activity:
-    def __init__(self, id, name, price):
+    def __init__(self, id, name):
         self.id = id
         self.name = name
-        self.price = price
 
 
 class ProjectsDb:
@@ -269,7 +269,7 @@ class LocalProjectsDbDecoder(json.JSONDecoder):
         projects_copy = []
         for project in projects:
             project['activities'] = [
-                Activity(str(activity['id']), activity['name'], activity['price'])
+                Activity(str(activity['id']), activity['name'])
                 for activity in project['activities']
             ]
             project['id'] = str(project['id'])

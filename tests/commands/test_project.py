@@ -16,14 +16,14 @@ def projects_db(data_dir):
     project = Project(43, 'active project',
                       Project.STATUS_ACTIVE)
     project.backend = 'test'
-    project.activities.append(Activity(1, 'activity 1', 0))
-    project.activities.append(Activity(2, 'activity 2', 0))
+    project.activities.append(Activity(1, 'activity 1'))
+    project.activities.append(Activity(2, 'activity 2'))
     projects_list.append(project)
 
     project = Project(44, '2nd active project',
                       Project.STATUS_ACTIVE)
     project.backend = 'test'
-    project.activities.append(Activity(1, 'activity 1', 0))
+    project.activities.append(Activity(1, 'activity 1'))
     projects_list.append(project)
 
     projects_db.update(projects_list)
@@ -76,7 +76,7 @@ def test_show_nonexistent_project_shows_error(cli):
 
 def test_add_single_choice(cli, data_dir, config):
     project = Project(1, 'test project', Project.STATUS_ACTIVE)
-    project.activities = [Activity(2, 'test activity', 0)]
+    project.activities = [Activity(2, 'test activity')]
     p = ProjectsDb(str(data_dir))
     p.update([project])
 
@@ -90,9 +90,9 @@ def test_add_single_choice(cli, data_dir, config):
 
 def test_add_multiple_choices(cli, data_dir, config):
     p1 = Project(1, 'test project', Project.STATUS_ACTIVE)
-    p1.activities = [Activity(2, 'test activity', 0)]
+    p1.activities = [Activity(2, 'test activity')]
     p2 = Project(2, 'test project 2', Project.STATUS_ACTIVE)
-    p2.activities = [Activity(3, 'test activity 2', 0)]
+    p2.activities = [Activity(3, 'test activity 2')]
     p = ProjectsDb(str(data_dir))
     p.update([p1, p2])
 
@@ -105,7 +105,7 @@ def test_add_multiple_choices(cli, data_dir, config):
 
 def test_add_inactive_project(cli, data_dir):
     project = Project(1, 'test project', Project.STATUS_FINISHED)
-    project.activities = [Activity(2, 'test activity', 0)]
+    project.activities = [Activity(2, 'test activity')]
     p = ProjectsDb(str(data_dir))
     p.update([project])
 

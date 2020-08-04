@@ -8,8 +8,8 @@ Changelog
 Added
 -----
 
-* Add support for more date format codes (days, weeks, months and years) in the `file` setting
-* Add new `round_entries` setting to customize entries duration rounding
+* Add support for more date format codes (days, weeks, months and years) in the ``file`` setting
+* Add new ``round_entries`` setting to customize entries duration rounding
 * Add installation instructions for Nix and Debian systems
 
 Changed
@@ -17,6 +17,7 @@ Changed
 
 * Don't force projects and activities ids to be integers
 * Remove "shared aliases" from the config file
+* Remove unused ``price`` parameter from the ``Activity`` class
 
 5.0 (2019-12-27)
 ================
