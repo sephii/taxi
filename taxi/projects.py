@@ -3,7 +3,6 @@ import copy
 import datetime
 import json
 import os
-import warnings
 
 from .aliases import Mapping
 from .exceptions import TaxiException
