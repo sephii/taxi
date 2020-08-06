@@ -40,11 +40,11 @@ in the docs.
 Supported backends
 ==================
 
-* `zebra <https://github.com/sephii/taxi-zebra>`_ : Liip's zebra backend
-* `tempo <https://github.com/alexandreblin/taxi-tempo>`_ : Atlassian JIRA's `Tempo Timesheets <https://tempo.io>`_ backend
-* `tipee <https://github.com/alexandreblin/taxi-tipee>`_ : Gammadia's `tipee <https://tipee.ch>`_ backend
-* `bexio <https://github.com/alexandreblin/taxi-bexio>`_ : Bexio `Timesheets <https://bexio.com>`_ backend
-* `multi <https://github.com/alexandreblin/taxi-multi>`_ : a special backend to push entries over multiple other backends
+* `zebra <https://github.com/sephii/taxi-zebra>`__ : Liip's zebra backend
+* `tempo <https://github.com/alexandreblin/taxi-tempo>`__ : Atlassian JIRA's `Tempo Timesheets <https://tempo.io>`__ backend
+* `tipee <https://github.com/alexandreblin/taxi-tipee>`__ : Gammadia's `tipee <https://tipee.ch>`__ backend
+* `bexio <https://github.com/alexandreblin/taxi-bexio>`__ : Bexio `Timesheets <https://bexio.com>`__ backend
+* `multi <https://github.com/alexandreblin/taxi-multi>`__ : a special backend to push entries over multiple other backends
 
 Contrib packages
 ================
