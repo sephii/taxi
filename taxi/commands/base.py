@@ -280,9 +280,15 @@ def cli(ctx, config, taxi_dir, verbose):
     }
     if verbose > 0:
         try:
-            logging.basicConfig(level=verbosity_mapping[verbose])
+            level = verbosity_mapping[verbose]
         except KeyError:
             raise click.ClickException("Max verbosity is -vvv")
+    else:
+        level = logging.ERROR
+
+    logging.basicConfig(
+        level=level, filemode='w', filename=os.path.join(get_data_dir(), 'taxi.log')
+    )
 
     logging.debug("Using configuration file in %s", config)
     logging.debug("Using data directory %s", taxi_dir)

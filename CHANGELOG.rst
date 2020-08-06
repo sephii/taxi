@@ -2,6 +2,15 @@
 Changelog
 #########
 
+6.0rc2 (unreleased)
+===================
+
+Changed
+-------
+
+* Log to a file (``~/.local/share/taxi/taxi.log``) instead of stdout
+* Push errors are now logged
+
 6.0rc1 (2020-08-04)
 ===================
 
