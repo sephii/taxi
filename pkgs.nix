@@ -22,14 +22,14 @@ let
 
   package = python3Packages.buildPythonApplication rec {
     pname = "taxi";
-    version = "6.0rc1";
+    version = "6.0rc2";
 
     # Using GitHub instead of PyPI because tests are not distributed on the PyPI releases
     src = fetchFromGitHub {
       owner = "liip";
       repo = pname;
-      rev = "9e6022d0bb634ac14bd6707845b4566f00e8099e";
-      sha256 = "0nypprcg19f1pax8819p0xw3x2irq50yvbxf20fy0b2xs7crhqax";
+      rev = version;
+      sha256 = "10xmm9b912vfdmwc8l4j6q7sgflk8ym7q4bj9pzj6kkv96nrgc4c";
     };
 
     propagatedBuildInputs = [ python3Packages.click python3Packages.appdirs python3Packages.setuptools ];
@@ -49,11 +49,11 @@ let
 
   taxiZebra = python3Packages.buildPythonPackage rec {
     pname = "taxi_zebra";
-    version = "2.2.0rc1";
+    version = "2.2.0rc2";
 
     src = python3.pkgs.fetchPypi {
       inherit pname version;
-      sha256 = "1lbp46vnzjlz32izwx9pns2sd835fk2pncz7c4agki7k3bi03rwy";
+      sha256 = "1rmvvz9pmnp03b7kh7xa6q4hgs4ccg8qdhm2zqixas69gmfpfibi";
     };
 
     buildInputs = [ package ];
