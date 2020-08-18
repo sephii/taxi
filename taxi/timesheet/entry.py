@@ -400,12 +400,11 @@ class EntriesCollection(collections.defaultdict):
                 if start_time and line.duration[1] and line.duration[1] <= start_time:
                     line_str = " ".join(line._text).strip()
                     raise EntriesCollectionValidationError(
-                        "Error at line {lineno} of your timesheet:\n\n\t{line}"
-                        "\n\nThe entry cannot go back in time. If you're trying "
-                        "to create an entry that spans on 2 days, please create "
-                        "an entry on 2 separate days.".format(
-                            lineno=lineno, line=line_str
-                        )
+                        line=line_str,
+                        line_number=lineno,
+                        message="The entry cannot go back in time. If you're "
+                        "trying to create an entry that spans on 2 days, please "
+                        "create an entry on 2 separate days."
                     )
 
                 self[current_date].append(line)

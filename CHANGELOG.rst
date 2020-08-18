@@ -2,6 +2,14 @@
 Changelog
 #########
 
+6.0 (2020-08-18)
+================
+
+Changed
+-------
+
+* Add timesheet path in error message when trying to create entries with negative duration
+
 6.0rc2 (2020-08-06)
 ===================
 

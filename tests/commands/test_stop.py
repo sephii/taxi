@@ -81,7 +81,7 @@ alias 10:00-ff:ff Play ping-pong
     with freeze_time('2014-01-20'):
         output = cli('stop', ['Play ping-pong'])
 
-    assert output.startswith('Error: Parse error')
+    assert output.startswith('Error:')
 
 
 def test_stop_with_chained_duration(cli, entries_file):

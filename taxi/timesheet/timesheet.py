@@ -6,7 +6,12 @@ import re
 from collections import defaultdict
 from functools import reduce
 
-from ..exceptions import NoActivityInProgressError, ParseError, StopInThePastError
+from ..exceptions import (
+    EntriesCollectionValidationError,
+    NoActivityInProgressError,
+    ParseError,
+    StopInThePastError
+)
 from ..utils import file as file_utils
 from ..utils.date import months_ago
 from ..utils.structures import OrderedSet
@@ -237,7 +242,7 @@ class TimesheetCollection:
                 timesheet = Timesheet.load(
                     file_path, parser=parser, initial=lambda: timesheet_collection.get_new_timesheets_contents()
                 )
-            except ParseError as e:
+            except (ParseError, EntriesCollectionValidationError) as e:
                 e.file = file_path
                 raise
 
