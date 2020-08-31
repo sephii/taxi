@@ -17,6 +17,7 @@ Standards-Version: 4.5.0
 Vcs-Browser: https://github.com/sephii/taxi
 Vcs-Git: https://github.com/sephii/taxi.git
 Homepage: https://github.com/sephii/taxi
+Rules-Requires-Root: no
 
 Package: taxi
 Architecture: all
