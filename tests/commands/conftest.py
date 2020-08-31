@@ -45,7 +45,7 @@ class TestBackendEntryPoint(object):
 class ConfigFile:
     DEFAULT_CONFIG = {
         'taxi': {
-            'editor': '/bin/touch',
+            'editor': 'touch',
             'date_format': '%d/%m/%Y',
         },
         'backends': {

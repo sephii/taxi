@@ -28,32 +28,23 @@ You can then get a summary of your timesheet::
 Through the use of backends, Taxi allows you to push your timesheets to
 different systems.
 
-Installation & usage
-====================
+Installation
+============
 
-The recommended way to install Taxi is by running the following command::
-
-    pip install --user taxi
-
-You'll probably want to install a backend too, that will allow you to push your timesheets. To install the Zebra
-backend for example::
-
-    pip install --user taxi-zebra
-
-You can now try to run the ``taxi`` command. If you're getting a "command not found" error, make sure that
-`~/.local/bin/` is in your ``PATH`` environment variable (eg. by running ``echo $PATH``). To change your ``PATH``
-environment variable, you can follow `this guide <https://stackoverflow.com/a/14638025>`_.
-
-Everything else is covered in the user documentation available on Read The Docs:
-https://taxi-timesheets.readthedocs.org/en/master/userguide.html
+Refer to the `"Installation" section
+<https://taxi-timesheets.readthedocs.io/en/master/userguide.html#installation>`_
+in the docs.
 
 .. _supported_backends:
 
 Supported backends
 ==================
 
-* `Zebra <https://github.com/sephii/taxi-zebra>`_
-
+* `zebra <https://github.com/sephii/taxi-zebra>`__ : Liip's zebra backend
+* `tempo <https://github.com/alexandreblin/taxi-tempo>`__ : Atlassian JIRA's `Tempo Timesheets <https://tempo.io>`__ backend
+* `tipee <https://github.com/alexandreblin/taxi-tipee>`__ : Gammadia's `tipee <https://tipee.ch>`__ backend
+* `bexio <https://github.com/alexandreblin/taxi-bexio>`__ : Bexio `Timesheets <https://bexio.com>`__ backend
+* `multi <https://github.com/alexandreblin/taxi-multi>`__ : a special backend to push entries over multiple other backends
 
 Contrib packages
 ================

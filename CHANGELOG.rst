@@ -2,6 +2,46 @@
 Changelog
 #########
 
+6.0 (2020-08-18)
+================
+
+Changed
+-------
+
+* Add timesheet path in error message when trying to create entries with negative duration
+
+6.0rc2 (2020-08-06)
+===================
+
+Changed
+-------
+
+* Log to a file (``~/.local/share/taxi/taxi.log``) instead of stdout
+* Push errors are now logged
+
+6.0rc1 (2020-08-04)
+===================
+
+Added
+-----
+
+* Add support for more date format codes (days, weeks, months and years) in the ``file`` setting
+* Add new ``round_entries`` setting to customize entries duration rounding
+* Add installation instructions for Nix and Debian systems
+* Add error message when trying to create entries with negative duration (#113)
+
+Changed
+-------
+
+* Don't force projects and activities ids to be integers
+* Remove "shared aliases" from the config file
+* Remove unused ``price`` parameter from the ``Activity`` class
+
+Fixed
+-----
+
+* Allow editing invalid configuration files with the ``config`` command (#135)
+
 5.0 (2019-12-27)
 ================
 

@@ -41,7 +41,14 @@ def get_timesheet_collection_for_context(ctx, entries_file=None):
         flags_repr=ctx.obj['settings'].get_flags(),
     )
 
-    return TimesheetCollection.load(entries_file, ctx.obj['settings']['nb_previous_files'], parser)
+    try:
+        return TimesheetCollection.load(entries_file, ctx.obj['settings']['nb_previous_files'], parser)
+    except ValueError as e:
+        raise click.ClickException(str(e))
+
+
+def get_all_aliases(projects_db, settings):
+    return dict(projects_db.get_aliases(), **settings.get_aliases())
 
 
 def populate_aliases(aliases):
@@ -53,9 +60,11 @@ def populate_backends(backends, context):
     plugins_registry.populate_backends(dict(backends), context)
 
 
-def create_config_file(filename):
+def create_config_file(filename, run_conversions=True):
     """
-    Create main configuration file if it doesn't exist.
+    Create main configuration file if it doesn't exist. If `run_conversions` is
+    set and the configuration file already exists, it is converted to the latest
+    config file format.
     """
     import textwrap
     from urllib import parse
@@ -134,7 +143,7 @@ def create_config_file(filename):
 
         with open(filename, 'w') as f:
             f.write(templated_config)
-    else:
+    elif run_conversions:
         settings = Settings(filename)
         conversions = settings.needed_conversions
 
@@ -271,15 +280,23 @@ def cli(ctx, config, taxi_dir, verbose):
     }
     if verbose > 0:
         try:
-            logging.basicConfig(level=verbosity_mapping[verbose])
+            level = verbosity_mapping[verbose]
         except KeyError:
             raise click.ClickException("Max verbosity is -vvv")
+    else:
+        level = logging.ERROR
+
+    logging.basicConfig(
+        level=level, filemode='w', filename=os.path.join(get_data_dir(), 'taxi.log')
+    )
 
     logging.debug("Using configuration file in %s", config)
     logging.debug("Using data directory %s", taxi_dir)
 
-    create_config_file(config)
-    settings = Settings(config)
+    is_config = ctx.invoked_subcommand == "config"
+    create_config_file(config, run_conversions=not is_config)
+    settings = Settings(config) if not is_config else None
+    projects_db = ProjectsDb(os.path.expanduser(taxi_dir))
 
     if not os.path.exists(taxi_dir):
         os.makedirs(taxi_dir)
@@ -287,10 +304,12 @@ def cli(ctx, config, taxi_dir, verbose):
     ctx.obj = {}
     ctx.obj['settings'] = settings
     ctx.obj['view'] = TtyUi()
-    ctx.obj['projects_db'] = ProjectsDb(os.path.expanduser(taxi_dir))
+    ctx.obj['projects_db'] = projects_db
+    ctx.obj['config_path'] = config
 
-    populate_aliases(settings.get_aliases())
-    populate_backends(settings.get_backends(), ctx.obj)
+    if not is_config:
+        populate_aliases(get_all_aliases(projects_db=projects_db, settings=settings))
+        populate_backends(settings.get_backends(), ctx.obj)
 
 
 # This can't be called from inside a command because Click will already have built its commands list

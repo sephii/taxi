@@ -1,6 +1,5 @@
 import click
 
-from ..aliases import aliases_database
 from .base import cli
 
 
@@ -16,7 +15,7 @@ def clean_aliases(ctx, force_yes):
     """
     inactive_aliases = []
 
-    for alias, mapping in aliases_database.items():
+    for alias, mapping in ctx.obj['settings'].get_aliases().items():
         # Ignore local aliases
         if mapping.mapping is None:
             continue

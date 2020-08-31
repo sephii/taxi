@@ -31,6 +31,23 @@ alias_1 10:00-10:15 Play ping-pong
     assert entries_file.read() == expected
 
 
+def test_round_with_custom_duration(cli, entries_file, config):
+    config.set('taxi', 'round_entries', '5')
+
+    entries = """20/01/2014
+alias_1 10:00-? ?
+"""
+    expected = """20/01/2014
+alias_1 10:00-10:05 Play ping-pong
+"""
+
+    entries_file.write(entries)
+    with freeze_time('2014-01-20 10:01:00'):
+        cli('stop', ['Play ping-pong'])
+
+    assert entries_file.read() == expected
+
+
 def test_stop_in_the_past(cli, entries_file):
     entries = """20/01/2014
 alias_1 10:00-? ?
@@ -64,7 +81,7 @@ alias 10:00-ff:ff Play ping-pong
     with freeze_time('2014-01-20'):
         output = cli('stop', ['Play ping-pong'])
 
-    assert output.startswith('Error: Parse error')
+    assert output.startswith('Error:')
 
 
 def test_stop_with_chained_duration(cli, entries_file):

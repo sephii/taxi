@@ -1,10 +1,17 @@
 import codecs
 import datetime
+import enum
 import os
+import re
 from collections import defaultdict
 from functools import reduce
 
-from ..exceptions import NoActivityInProgressError, ParseError, StopInThePastError
+from ..exceptions import (
+    EntriesCollectionValidationError,
+    NoActivityInProgressError,
+    ParseError,
+    StopInThePastError
+)
 from ..utils import file as file_utils
 from ..utils.date import months_ago
 from ..utils.structures import OrderedSet
@@ -12,23 +19,21 @@ from .entry import EntriesCollection
 from .parser import TimesheetParser
 
 
-def round_to_quarter(start_time, end_time):
+def round_to(start_time, end_time, precision_minutes):
     """
-    Return the duration between `start_time` and `end_time` :class:`datetime.time` objects, rounded to 15 minutes.
+    Return the duration between `start_time` and `end_time`
+    :class:`datetime.time` objects, rounded to `precision_minutes` minutes.
     """
-    # We don't care about the date (only about the time) but Python
-    # can substract only datetime objects, not time ones
-    today = datetime.date.today()
-    start_date = datetime.datetime.combine(today, start_time)
-    end_date = datetime.datetime.combine(today, end_time)
+    def to_seconds(time):
+        return time.second + time.minute * 60 + time.hour * 60 * 60
 
-    difference_minutes = (end_date - start_date).seconds / 60
-    remainder = difference_minutes % 15
-    # Round up
-    difference_minutes += 15 - remainder if remainder > 0 else 0
+    precision_seconds = precision_minutes * 60
+    difference = to_seconds(end_time) - to_seconds(start_time)
+    needs_rounding = difference % precision_seconds > 0
+    rounded_difference = ((difference // precision_seconds) + 1) * precision_seconds if needs_rounding else difference
 
     return (
-        start_date + datetime.timedelta(minutes=difference_minutes)
+        datetime.datetime.combine(datetime.date.today(), start_time) + datetime.timedelta(seconds=rounded_difference)
     ).time()
 
 
@@ -99,7 +104,7 @@ class Timesheet(object):
         date_entries = self.entries.filter(**kwargs)
         return sum(sum(entry.hours for entry in entries) for entries in date_entries.values())
 
-    def continue_entry(self, date, end_time, description=None):
+    def continue_entry(self, date, end_time, rounded_to_minutes, description=None):
         """
         Find the in-progress entry for the given date (ie. the last entry that has an empty end time) and set its end
         time and optionally its description to the given values. `end_time` should be a :class:`datetime.time` object.
@@ -117,9 +122,10 @@ class Timesheet(object):
         if entry.get_start_time() > end_time:
             raise StopInThePastError("You are trying to stop an activity in the future")
 
-        entry.duration = (entry.duration[0], round_to_quarter(
+        entry.duration = (entry.duration[0], round_to(
             entry.get_start_time(),
-            end_time
+            end_time,
+            precision_minutes=rounded_to_minutes
         ))
 
         if description is not None:
@@ -236,7 +242,7 @@ class TimesheetCollection:
                 timesheet = Timesheet.load(
                     file_path, parser=parser, initial=lambda: timesheet_collection.get_new_timesheets_contents()
                 )
-            except ParseError as e:
+            except (ParseError, EntriesCollectionValidationError) as e:
                 e.file = file_path
                 raise
 
@@ -265,27 +271,51 @@ class TimesheetCollection:
         `nb_previous_files`. See :func:`taxi.utils.file.expand_date` for more information about filename expansion. If
         `from_date` is set, it will be used as a starting date instead of the current date.
         """
-        date_units = ['m', 'Y']
-        smallest_unit = None
-
         if not from_date:
             from_date = datetime.date.today()
 
-        for date_unit in date_units:
-            if ('%' + date_unit) in file_pattern:
-                smallest_unit = date_unit
-                break
+        Resolution = enum.IntEnum("Resolution", "DAY WEEK MONTH YEAR")
+        resolutions = {
+            'a': Resolution.WEEK,
+            'A': Resolution.WEEK,
+            'w': Resolution.WEEK,
+            'd': Resolution.DAY,
+            'b': Resolution.MONTH,
+            'B': Resolution.MONTH,
+            'm': Resolution.MONTH,
+            'y': Resolution.YEAR,
+            'Y': Resolution.YEAR,
+            'j': Resolution.DAY,
+            'U': Resolution.WEEK,
+            'W': Resolution.WEEK,
+            'V': Resolution.WEEK,
+            'u': Resolution.DAY,
+        }
+        used_units = re.findall(r'%([a-zA-Z])', file_pattern)
+        unknown_units = set(used_units) - set(resolutions.keys())
 
-        if smallest_unit is None:
-            return OrderedSet([file_pattern])
+        if unknown_units:
+            raise ValueError(
+                "Unsupported units used in file pattern: {}".format(
+                    ", ".join("%{}".format(unit) for unit in unknown_units)
+                )
+            )
 
+        if not used_units:
+            return OrderedSet([file_utils.expand_date(file_pattern, from_date)])
+
+        resolution = min(resolutions[res] for res in used_units)
         files = OrderedSet()
 
         for i in range(nb_previous_files, -1, -1):
-            if smallest_unit == 'm':
+            if resolution == Resolution.MONTH:
                 file_date = months_ago(from_date, i)
-            elif smallest_unit == 'Y':
+            elif resolution == Resolution.YEAR:
                 file_date = from_date.replace(day=1, year=from_date.year - i)
+            elif resolution == Resolution.DAY:
+                file_date = from_date - datetime.timedelta(days=i)
+            elif resolution == Resolution.WEEK:
+                file_date = from_date - datetime.timedelta(days=i * 7)
 
             files.add(file_utils.expand_date(file_pattern, file_date))
 

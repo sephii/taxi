@@ -2,7 +2,12 @@ import datetime
 
 import click
 
-from ..exceptions import NoActivityInProgressError, ParseError, StopInThePastError
+from ..exceptions import (
+    EntriesCollectionValidationError,
+    NoActivityInProgressError,
+    ParseError,
+    StopInThePastError
+)
 from .base import cli, get_timesheet_collection_for_context
 
 
@@ -23,13 +28,10 @@ def stop(ctx, description, f):
         current_timesheet.continue_entry(
             datetime.date.today(),
             datetime.datetime.now().time(),
-            description or None
+            rounded_to_minutes=ctx.obj['settings']['round_entries'],
+            description=description or None,
         )
-    except ParseError as e:
-        ctx.obj['view'].err(e)
-    except NoActivityInProgressError as e:
-        ctx.obj['view'].err(e)
-    except StopInThePastError as e:
+    except (EntriesCollectionValidationError, NoActivityInProgressError, ParseError, StopInThePastError) as e:
         ctx.obj['view'].err(e)
     else:
         current_timesheet.save()

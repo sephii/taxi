@@ -65,12 +65,7 @@ def get_mapping_matches(search, matches, projects_db):
 
 
 def get_project_matches(search, matches, projects_db):
-    try:
-        project_id = int(search)
-    except ValueError:
-        return matches
-
-    project = projects_db.get(project_id)
+    project = projects_db.get(search)
     if project:
         matches['projects'].append((project, None))
 

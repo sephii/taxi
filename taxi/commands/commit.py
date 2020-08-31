@@ -1,5 +1,6 @@
 from collections import defaultdict
 import itertools
+import logging
 
 import click
 
@@ -7,6 +8,8 @@ from ..aliases import aliases_database
 from ..backends import PushEntriesFailed
 from ..plugins import plugins_registry
 from .base import AliasedCommand, cli, date_options, get_timesheet_collection_for_context
+
+logger = logging.getLogger(__name__)
 
 
 @cli.command(cls=AliasedCommand, aliases=['ci'], short_help="Commit entries to the backend.")
@@ -56,6 +59,7 @@ def commit(ctx, f, force_yes, date):
                                             " backend")
                         raise
                     except Exception as e:
+                        logger.exception("Error during push")
                         additional_info = None
                         entry.push_error = str(e)
                     else:

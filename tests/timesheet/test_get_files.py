@@ -21,3 +21,13 @@ def test_get_files_m_spans_over_previous_year_and_changes_year():
 def test_get_files_Y_returns_previous_files():
     f = TimesheetCollection.get_files('foo_%Y', 2, datetime.date(2014, 2, 1))
     assert f == ['foo_2014', 'foo_2013', 'foo_2012']
+
+
+def test_get_files_V_and_Y_returns_previous_files():
+    f = TimesheetCollection.get_files('foo_%Y-%V', 1, datetime.date(2020, 4, 11))
+    assert f == ['foo_2020-15', 'foo_2020-14']
+
+
+def test_get_files_V_returns_previous_files():
+    f = TimesheetCollection.get_files('foo_%V', 1, datetime.date(2020, 4, 11))
+    assert f == ['foo_15', 'foo_14']

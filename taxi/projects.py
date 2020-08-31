@@ -4,6 +4,7 @@ import datetime
 import json
 import os
 
+from .aliases import Mapping
 from .exceptions import TaxiException
 
 
@@ -28,7 +29,7 @@ class Project:
     }
 
     def __init__(self, id, name, status=None, description=None, budget=None, team=None):
-        self.id = int(id)
+        self.id = id
         self.name = name
         self.activities = []
         self.status = int(status) if status is not None else None
@@ -105,7 +106,7 @@ Description: %s""" % (self.id, self.name, status, start_date, end_date,
         not numeric.
         """
         parts = string.split('/', 2)
-        return tuple((int(parts[i]) if i < len(parts) else None) for i in range(3))
+        return tuple((parts[i] if i < len(parts) else None) for i in range(3))
 
     @classmethod
     def tuple_to_str(cls, t):
@@ -117,10 +118,9 @@ Description: %s""" % (self.id, self.name, status, start_date, end_date,
 
 
 class Activity:
-    def __init__(self, id, name, price):
-        self.id = int(id)
+    def __init__(self, id, name):
+        self.id = id
         self.name = name
-        self.price = price
 
 
 class ProjectsDb:
@@ -193,6 +193,8 @@ class ProjectsDb:
         return found_list
 
     def get(self, id, backend=None):
+        id = str(id)
+
         if self._projects_by_id_cache is None:
             projects = self.get_projects()
             self._projects_by_id_cache = defaultdict(list)
@@ -218,6 +220,13 @@ class ProjectsDb:
             return (project, None)
 
         return (project, activity)
+
+    def get_aliases(self):
+        return {
+            alias: Mapping(mapping=(str(project.id), str(activity_id)), backend=project.backend)
+            for project in self.get_projects()
+            for alias, activity_id in project.aliases.items()
+        }
 
 
 class LocalProjectsDb:
@@ -259,9 +268,10 @@ class LocalProjectsDbDecoder(json.JSONDecoder):
         projects_copy = []
         for project in projects:
             project['activities'] = [
-                Activity(activity['id'], activity['name'], activity['price'])
+                Activity(str(activity['id']), activity['name'])
                 for activity in project['activities']
             ]
+            project['id'] = str(project['id'])
             for date_type in ['start_date', 'end_date']:
                 if project[date_type] is not None:
                     project[date_type] = datetime.datetime.strptime(

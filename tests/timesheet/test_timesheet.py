@@ -1,7 +1,9 @@
 import datetime
 
+import pytest
 from freezegun import freeze_time
 
+from taxi.exceptions import EntriesCollectionValidationError
 from taxi.timesheet import EntriesCollection, Entry, Timesheet, TimesheetParser
 
 from . import create_timesheet
@@ -111,3 +113,20 @@ alias_1       -1000 xxx
 
     assert continuation_entry.duration == (None, datetime.time(10))
     assert continuation_entry.hours == 0.5
+
+
+def test_going_back_in_time_in_next_entry_raises_an_error():
+    contents = """10.10.2012
+foo 0900-1000 baz
+bar     -0900 bar"""
+
+    with pytest.raises(EntriesCollectionValidationError):
+        create_timesheet(contents)
+
+
+def test_going_back_in_time_raises_an_error():
+    contents = """10.10.2012
+foo 2300-0100 baz"""
+
+    with pytest.raises(EntriesCollectionValidationError):
+        create_timesheet(contents)

@@ -1,6 +1,6 @@
 import click
 
-from ..exceptions import ParseError
+from ..exceptions import EntriesCollectionValidationError, ParseError
 from .base import cli, date_options, get_timesheet_collection_for_context
 
 
@@ -16,7 +16,7 @@ def status(ctx, date, f, pushed):
     """
     try:
         timesheet_collection = get_timesheet_collection_for_context(ctx, f)
-    except ParseError as e:
+    except (ParseError, EntriesCollectionValidationError) as e:
         ctx.obj['view'].err(e)
     else:
         ctx.obj['view'].show_status(

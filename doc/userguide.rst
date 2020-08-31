@@ -4,21 +4,79 @@ User guide
 Installation
 ------------
 
-Taxi runs on Python 3.5 and up. The easiest way to install it is by using
-pip::
+To install Taxi, follow the steps below specific to your system.
 
-    pip install --user taxi
+OS X, Windows, generic Linux
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You'll now need to install a backend separately to be able to push your entries and retrieve
-projects and activities. For example to install the `zebra` backend::
+Make sure you have Python at least 3.5 installed (by running ``python3
+--version``), then use ``pip3`` to install taxi in your user directory (you
+should **not** use sudo or run this command as root)::
 
-    pip install --user taxi-zebra
+    $ pip3 install --user taxi
 
-For a list of available backends, refer to the :ref:`supported_backends` list.
+You'll probably want to install a backend too, that will allow you to push your
+timesheets. To install the Zebra backend for example (again, **no** sudo or root
+user needed)::
 
-You can now try to run the ``taxi`` command. If you're getting a "command not found" error, make sure that
-`~/.local/bin/` is in your ``PATH`` environment variable (eg. by running ``echo $PATH``). To change your ``PATH``
-environment variable, you can follow `this guide <https://stackoverflow.com/a/14638025>`_.
+    $ pip3 install --user taxi-zebra
+
+To upgrade Taxi and the Zebra plugin, run ``pip3 install --user --upgrade taxi taxi-zebra``
+
+Debian & Ubuntu
+~~~~~~~~~~~~~~~
+
+Run the following commands to add the Taxi repository and install it along with
+the Zebra backend::
+
+    sudo apt install apt-transport-https
+    wget 'https://taxi-packages.liip.ch/taxi-packages.liip.ch.key' -O - | sudo apt-key add
+    echo "deb [arch=amd64] https://taxi-packages.liip.ch/ unstable-ci main" | sudo tee /etc/apt/sources.list.d/taxi.list
+    sudo apt update
+    sudo apt install taxi taxi-backend-zebra
+
+Nix
+~~~
+
+The `Nix <https://nixos.org/>`_ channel allows you to keep your Taxi version
+up-to-date with the Nix package manager. To use it, run the following command::
+
+    nix-channel --add https://github.com/liip/taxi/archive/master.tar.gz taxi
+
+If you're running NixOS, you can then install it declaratively by adding it to
+your ``/etc/nixos/configuration.nix`` file and then running ``nixos-rebuild
+switch``::
+
+    let
+      taxi = import <taxi>;
+    in
+    environment.systemPackages = [
+        # ...
+        taxi.taxi
+    ]
+
+If you're not using NixOS, you can install it with ``nix-env``::
+
+    nix-env -iA taxi.taxi
+
+To upgrade Taxi, run ``nix-env --upgrade taxi``.
+
+Common installation issues
+--------------------------
+
+taxi: command not found
+~~~~~~~~~~~~~~~~~~~~~~~
+
+This usually means the Python user binary path (where the ``taxi`` binary is
+installed) is not in your ``PATH`` environment variable.
+
+Run the following command to identify the Python user binary path::
+
+    $ python3 -c "import os, site; print(os.path.join(site.getuserbase(), 'bin'))"
+    /home/sephi/.local/bin
+
+Add this directory to your ``PATH`` environment variable, for example by
+following `this guide <https://stackoverflow.com/a/14638025>`_.
 
 First steps with Taxi
 ---------------------
@@ -476,11 +534,10 @@ The path of your entries file. You're free to use a single file to store all
 your entries but you're strongly encouraged to use date placeholders here. The
 following will expand to ``~/zebra/2011/11.tks`` if you're in November 2011.
 
-You can use any datetime placeholder defined in `the strftime documentation
-<http://docs.python.org/library/datetime.html#strftime-and-strptime-behavior>`_.
-**However** taxi only supports the ``%Y`` and ``%m`` placeholders to check for
-previous timesheets (used for example when you run ``taxi edit X``, where ``X``
-is the number of timesheets to go back in time).
+You can use any datetime format code defined in `the strftime documentation
+<http://docs.python.org/library/datetime.html#strftime-and-strptime-behavior>`_
+down to a resolution of a day (hours, minutes and seconds format codes are not
+supported because they make little sense).
 
 regroup_entries
 ~~~~~~~~~~~~~~~
@@ -504,6 +561,16 @@ when starting a new month.
 
 This option only makes sense if you're using date placeholders in
 :ref:`config_file`.
+
+round_entries
+~~~~~~~~~~~~~
+
+Default: 15
+
+Number of minutes to round entries duration to when using the `stop` command.
+For example, if you start working on a task at 10:02 and you run `taxi stop` at
+10:10 with the default `round_entries` setting you'll get `10:02-10:17`. Note
+that entries are always rounded up, never down.
 
 Flags characters customization
 ------------------------------
