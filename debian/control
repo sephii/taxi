@@ -13,7 +13,7 @@ Build-Depends: debhelper-compat (= 13),
                python3-pytest-runner,
                python3-setuptools,
                python3-six (>= 1.9.0)
-Standards-Version: 4.3.0
+Standards-Version: 4.5.0
 Vcs-Browser: https://github.com/sephii/taxi
 Vcs-Git: https://github.com/sephii/taxi.git
 Homepage: https://github.com/sephii/taxi
