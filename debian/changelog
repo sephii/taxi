@@ -1,3 +1,9 @@
+taxi (6.0-1) UNRELEASED; urgency=medium
+
+  * Update to new upstream version 6.0.
+
+ -- Didier 'OdyX' Raboud <didier.raboud@liip.ch>  Mon, 31 Aug 2020 15:12:49 +0200
+
 taxi (5.0-1~2020010200) unstable-ci; urgency=medium
 
   * New 5.0 upstream release
