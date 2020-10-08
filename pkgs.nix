@@ -49,11 +49,11 @@ let
 
   taxiZebra = python3Packages.buildPythonPackage rec {
     pname = "taxi_zebra";
-    version = "2.2.3";
+    version = "2.3.0";
 
     src = python3.pkgs.fetchPypi {
       inherit pname version;
-      sha256 = "0ldhqmp521fql0153h67arlm19jpgprsapxh4klc1y9c0ikf0v9g";
+      sha256 = "1gwqhpxi12lpsd73q8rhak0lkmjncnd741d65hgfvfzvvyaayddy";
     };
 
     buildInputs = [ package ];
