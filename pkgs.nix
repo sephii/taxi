@@ -22,14 +22,14 @@ let
 
   package = python3Packages.buildPythonApplication rec {
     pname = "taxi";
-    version = "6.0";
+    version = "6.0.1";
 
     # Using GitHub instead of PyPI because tests are not distributed on the PyPI releases
     src = fetchFromGitHub {
       owner = "liip";
       repo = pname;
       rev = version;
-      sha256 = "11c27g946rgl3px5i60532hh8cscm933bpkwxl6fb29xg0q30wsy";
+      sha256 = "13nj3w76dk7h64y6phapkwa6iwdwpsnwlf5l6mmfcalbplpyvcxc";
     };
 
     propagatedBuildInputs = [ python3Packages.click python3Packages.appdirs python3Packages.setuptools ];
