@@ -286,8 +286,9 @@ def cli(ctx, config, taxi_dir, verbose):
     else:
         level = logging.ERROR
 
+    os.makedirs(taxi_dir, exist_ok=True)
     logging.basicConfig(
-        level=level, filemode='w', filename=os.path.join(get_data_dir(), 'taxi.log')
+        level=level, filemode='w', filename=os.path.join(taxi_dir, 'taxi.log')
     )
 
     logging.debug("Using configuration file in %s", config)
