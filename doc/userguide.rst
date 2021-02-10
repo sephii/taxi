@@ -10,18 +10,18 @@ OS X, Windows, generic Linux
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Make sure you have Python at least 3.5 installed (by running ``python3
---version``), then use ``pip3`` to install taxi in your user directory (you
-should **not** use sudo or run this command as root)::
+--version``), then use ``python3 -m pip`` to install taxi in your user directory
+(you should **not** use sudo or run this command as root)::
 
-    $ pip3 install --user taxi
+    $ python3 -m pip install --user taxi
 
 You'll probably want to install a backend too, that will allow you to push your
 timesheets. To install the Zebra backend for example (again, **no** sudo or root
 user needed)::
 
-    $ pip3 install --user taxi-zebra
+    $ python3 -m pip install --user taxi-zebra
 
-To upgrade Taxi and the Zebra plugin, run ``pip3 install --user --upgrade taxi taxi-zebra``
+To upgrade Taxi and the Zebra plugin, run ``python3 -m pip install --user --upgrade taxi taxi-zebra``
 
 Debian & Ubuntu
 ~~~~~~~~~~~~~~~
@@ -77,6 +77,17 @@ Run the following command to identify the Python user binary path::
 
 Add this directory to your ``PATH`` environment variable, for example by
 following `this guide <https://stackoverflow.com/a/14638025>`_.
+
+python3: command not found
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Run the following command::
+
+    $ python --version
+    Python 3.8.5
+
+Check that the version is at least 3.5. If that’s the case, replace ``python3``
+by ``python`` when running commands. If that’s not the case, install Python 3.
 
 First steps with Taxi
 ---------------------
