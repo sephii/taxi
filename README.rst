@@ -45,6 +45,7 @@ Supported backends
 * `tipee <https://github.com/alexandreblin/taxi-tipee>`__ : Gammadia's `tipee <https://tipee.ch>`__ backend
 * `bexio <https://github.com/alexandreblin/taxi-bexio>`__ : Bexio `Timesheets <https://bexio.com>`__ backend
 * `multi <https://github.com/alexandreblin/taxi-multi>`__ : a special backend to push entries over multiple other backends
+* `clockify <https://github.com/sephii/taxi-clockify>`__ : backend for the free timesheeting tool `clockify.me <https://clockify.me/>`_
 
 Contrib packages
 ================
