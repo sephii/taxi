@@ -72,11 +72,11 @@ let
 
   taxiClockify = python3Packages.buildPythonPackage rec {
     pname = "taxi_clockify";
-    version = "1.2";
+    version = "1.3";
 
     src = python3.pkgs.fetchPypi {
       inherit pname version;
-      sha256 = "0y29v9m90ahf1vjim5v0vss4aj9npy1v62x8p9s64r0zhm0j7ivv";
+      sha256 = "1gb47sn19s441w5wnd52j28ncqmw22cjmg5j6kiw3khdi37y24va";
     };
 
     buildInputs = [ package ];
