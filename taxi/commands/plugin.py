@@ -60,7 +60,7 @@ def get_installed_plugins():
         # Strip the first five characters from the plugin name since all
         # plugins are expected to start with `taxi-`
         backend.dist.project_name[5:]: backend.dist.version
-        for backend in backends_registry._entry_points.values()
+        for backend in plugins_registry._entry_points.values()
         if backend.dist.project_name != 'taxi'
     }
 
