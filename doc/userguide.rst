@@ -41,7 +41,7 @@ Nix
 The `Nix <https://nixos.org/>`_ channel allows you to keep your Taxi version
 up-to-date with the Nix package manager. To use it, run the following command::
 
-    nix-channel --add https://github.com/liip/taxi/archive/master.tar.gz taxi
+    nix-channel --add https://github.com/liip/taxi/archive/main.tar.gz taxi
 
 If you're running NixOS, you can then install it declaratively by adding it to
 your ``/etc/nixos/configuration.nix`` file and then running ``nixos-rebuild
