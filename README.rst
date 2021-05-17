@@ -1,4 +1,4 @@
-.. image:: https://raw.githubusercontent.com/sephii/taxi/master/doc/images/taxi.png
+.. image:: https://raw.githubusercontent.com/sephii/taxi/main/doc/images/taxi.png
 
 What is Taxi ?
 ==============
@@ -32,7 +32,7 @@ Installation
 ============
 
 Refer to the `"Installation" section
-<https://taxi-timesheets.readthedocs.io/en/master/userguide.html#installation>`_
+<https://taxi-timesheets.readthedocs.io/en/main/userguide.html#installation>`_
 in the docs.
 
 .. _supported_backends:
