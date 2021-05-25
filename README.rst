@@ -28,8 +28,8 @@ You can then get a summary of your timesheet::
 Through the use of backends, Taxi allows you to push your timesheets to
 different systems.
 
-Installation
-============
+Getting started
+===============
 
 Refer to the `"Installation" section
 <https://taxi-timesheets.readthedocs.io/en/main/userguide.html#installation>`_

@@ -3,17 +3,12 @@ Welcome to Taxi's documentation!
 
 .. include:: ../README.rst
 
+Documentation index
+===================
+
 .. toctree::
    :maxdepth: 3
 
    userguide
    devguide
    api
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-
