@@ -367,9 +367,9 @@ Use ``taxi <command> --help`` to get help on any Taxi command.
 Upgrading Taxi
 --------------
 
-To upgrade Taxi, run `python3 -m pip install --upgrade taxi`. If you have any plugins,
-you'll also need to manually upgrade them, by running for example `python3 -m pip
-install --upgrade taxi-zebra`.
+To upgrade Taxi, run ``python3 -m pip install --upgrade taxi``. If you have any plugins,
+you'll also need to manually upgrade them, by running for example ``python3 -m pip
+install --upgrade taxi-zebra``.
 
 Timesheet syntax
 ----------------
