@@ -23,14 +23,14 @@ let
 
   package = python3Packages.buildPythonApplication rec {
     pname = "taxi";
-    version = "6.0.1";
+    version = "6.0.2";
 
     # Using GitHub instead of PyPI because tests are not distributed on the PyPI releases
     src = fetchFromGitHub {
       owner = "liip";
       repo = pname;
       rev = version;
-      sha256 = "13nj3w76dk7h64y6phapkwa6iwdwpsnwlf5l6mmfcalbplpyvcxc";
+      sha256 = "0yn931xyxwiad3irsbsglg3f3jw3acrvlc1w5gajnzpcg6aksfw3";
     };
 
     propagatedBuildInputs = [
@@ -72,11 +72,11 @@ let
 
   taxiClockify = python3Packages.buildPythonPackage rec {
     pname = "taxi_clockify";
-    version = "1.4";
+    version = "1.4.1";
 
     src = python3.pkgs.fetchPypi {
       inherit pname version;
-      sha256 = "1bxnn17x2hwn3hxrk27zxc1bqck2zlgxgxwqcq2s30384y8kb521";
+      sha256 = "18cfdih1pc097xw893sagmajfk52d3k63z6fq5hg4k71njaxrbdb";
     };
 
     buildInputs = [ package ];
