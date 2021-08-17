@@ -9,6 +9,7 @@ Changed
 -----
 
 * Write timesheet files atomically to prevent data loss
+* Allow empty description in timesheets
 
 6.0.1 (2020-11-03)
 ==================

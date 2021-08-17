@@ -36,8 +36,8 @@ class TimesheetParser(object):
         r"^(?:(?P<flags>[%(flags_repr)s]+?)(?P<spacing1>\s+))?"
         r"(?P<alias>[?\w_-]+)(?P<spacing2>\s+)"
         r"(?P<time>(?:(?P<start_time>(?:\d{1,2}):?(?:\d{1,2}))?-(?P<end_time>(?:(?:\d{1,2}):?(?:\d{1,2}))|\?))|"
-        r"(?P<duration>(\d+(?:\.\d+)?)|\.\d+))(?P<spacing3>\s+)"
-        r"(?P<description>.+)$"
+        r"(?P<duration>(\d+(?:\.\d+)?)|\.\d+))"
+        r"(?:(?P<spacing3>\s+)(?P<description>.+))?$"
     )
     # Regular expressions to match date lines
     DATE_LINE_REGEXP = re.compile(r'(\d{1,2})\D(\d{1,2})\D(\d{4}|\d{2})')
@@ -192,7 +192,7 @@ class TimesheetParser(object):
         split_line = re.match(self.entry_line_regexp, text)
 
         if not split_line:
-            raise ParseError("Line must have an alias, a duration and a description")
+            raise ParseError("Line must have an alias, a duration and optionally a description")
 
         alias = split_line.group('alias')
         start_time = end_time = None
@@ -222,7 +222,7 @@ class TimesheetParser(object):
         else:
             duration = (None, None)
 
-        description = split_line.group('description')
+        description = split_line.group('description') or ''
 
         # Parse and set line flags
         if split_line.group('flags'):
@@ -249,8 +249,8 @@ class TimesheetParser(object):
             split_line.group('alias'),
             split_line.group('spacing2'),
             split_line.group('time'),
-            split_line.group('spacing3'),
-            split_line.group('description'),
+            split_line.group('spacing3') or '',
+            split_line.group('description') or '',
         )
 
         entry_line = Entry(alias, duration, description, flags=flags, text=line)
