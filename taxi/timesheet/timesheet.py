@@ -3,6 +3,7 @@ import datetime
 import enum
 import os
 import re
+import tempfile
 from collections import defaultdict
 from functools import reduce
 
@@ -93,8 +94,22 @@ class Timesheet(object):
             except OSError:
                 pass
 
-        with codecs.open(file_path, 'w', 'utf-8') as timesheet_file:
-            timesheet_file.writelines([line + '\n' for line in self.entries.to_lines()])
+        file_dir = os.path.dirname(file_path)
+
+        # Writing to a temporary file and then replacing the current timesheet
+        # file with it allows us to do this operation atomically. The temporary
+        # file needs to be created in the same directory as the destination file
+        # because os.replace only works if src and dest use the same filesystem
+        # (/tmp could be mounted as tmpfs)
+        with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', dir=file_dir, prefix='taxi', delete=False) as temp_timesheet_file:
+            try:
+                temp_timesheet_file.writelines([line + '\n' for line in self.entries.to_lines()])
+                temp_timesheet_file.flush()
+            except Exception:
+                os.unlink(temp_timesheet_file)
+                raise
+
+            os.replace(temp_timesheet_file.name, file_path)
 
     def get_hours(self, **kwargs):
         """

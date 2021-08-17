@@ -2,6 +2,14 @@
 Changelog
 #########
 
+Unreleased
+==========
+
+Changed
+-----
+
+* Write timesheet files atomically to prevent data loss
+
 6.0.1 (2020-11-03)
 ==================
 
