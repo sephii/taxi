@@ -2,11 +2,11 @@
 Changelog
 #########
 
-Unreleased
-==========
+6.1.0 (2021-08-21)
+==================
 
 Changed
------
+-------
 
 * Write timesheet files atomically to prevent data loss
 * Allow empty description in timesheets
