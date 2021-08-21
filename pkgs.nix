@@ -23,14 +23,14 @@ let
 
   package = python3Packages.buildPythonApplication rec {
     pname = "taxi";
-    version = "6.0.2";
+    version = "6.1.0";
 
     # Using GitHub instead of PyPI because tests are not distributed on the PyPI releases
     src = fetchFromGitHub {
       owner = "liip";
       repo = pname;
       rev = version;
-      sha256 = "0yn931xyxwiad3irsbsglg3f3jw3acrvlc1w5gajnzpcg6aksfw3";
+      sha256 = "1ax95s0x30kr19szmfmmsffbck489raq15c04ldh19zsf6f0knkq";
     };
 
     propagatedBuildInputs = [
