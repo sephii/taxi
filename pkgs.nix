@@ -89,8 +89,32 @@ let
       license = lib.licenses.wtfpl;
     };
   };
+
+  taxiPetzi = python3Packages.buildPythonPackage rec {
+    pname = "taxi_petzi";
+    version = "1.0.0";
+
+    src = python3.pkgs.fetchPypi {
+      inherit pname version;
+      sha256 = "1zp6jpamrjgmaw2bpcdi8znxspn7v8f3hm3f8k9whjvc2q849ziq";
+    };
+
+    buildInputs = [ package ];
+    propagatedBuildInputs = [
+      python3Packages.google-auth-oauthlib
+      python3Packages.google_api_python_client
+    ];
+    doCheck = false;
+
+    meta = {
+      homepage = "https://github.com/sephii/taxi-petzi";
+      description = "Petzi backend for the Taxi timesheeting application";
+      license = lib.licenses.wtfpl;
+    };
+  };
 in {
   taxi = package.withPlugins [ taxiZebra ];
   taxi_zebra = taxiZebra;
   taxi_clockify = taxiClockify;
+  taxi_petzi = taxiPetzi;
 }
