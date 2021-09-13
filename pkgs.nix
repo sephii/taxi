@@ -1,6 +1,7 @@
-{ lib, pkgs, ... }:
+{ pkgs, ... }:
 
 let
+  lib = pkgs.lib;
   withPlugins = pluginsFunc:
     let plugins = pluginsFunc availablePlugins;
     in pkgs.python3Packages.buildPythonApplication {
@@ -96,11 +97,11 @@ let
 
   taxiPetzi = pkgs.python3Packages.buildPythonPackage rec {
     pname = "taxi_petzi";
-    version = "1.0.0";
+    version = "1.0.1";
 
     src = pkgs.python3.pkgs.fetchPypi {
       inherit pname version;
-      sha256 = "1zp6jpamrjgmaw2bpcdi8znxspn7v8f3hm3f8k9whjvc2q849ziq";
+      sha256 = "94KuiV9S4vblbLHOM6YGJij36dbuN6ThcfkAkoA2Ggo=";
     };
 
     buildInputs = [ taxi ];

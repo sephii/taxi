@@ -12,10 +12,7 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
-        taxi = (import ./pkgs.nix {
-          inherit pkgs;
-          lib = nixpkgs.lib;
-        });
+        taxi = (import ./pkgs.nix { inherit pkgs; });
       in {
         packages = { inherit taxi; };
         defaultPackage = taxi;
