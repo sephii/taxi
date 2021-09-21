@@ -25,14 +25,14 @@ let
 
   taxi = pkgs.python3Packages.buildPythonApplication rec {
     pname = "taxi";
-    version = "6.1.0";
+    version = "6.1.1";
 
     # Using GitHub instead of PyPI because tests are not distributed on the PyPI releases
     src = pkgs.fetchFromGitHub {
-      owner = "liip";
+      owner = "sephii";
       repo = pname;
       rev = version;
-      sha256 = "1ax95s0x30kr19szmfmmsffbck489raq15c04ldh19zsf6f0knkq";
+      sha256 = "1chwi2dililglx1kj9mq8hl1ih4v6ngic06d3gahrpfps2hvg348";
     };
 
     propagatedBuildInputs = [
@@ -47,7 +47,7 @@ let
     passthru = { inherit withPlugins; };
 
     meta = {
-      homepage = "https://github.com/liip/taxi";
+      homepage = "https://github.com/sephii/taxi";
       description = "Timesheeting made easy";
       license = lib.licenses.wtfpl;
     };
@@ -68,7 +68,7 @@ let
     doCheck = false;
 
     meta = {
-      homepage = "https://github.com/sephii/taxi-zebra";
+      homepage = "https://github.com/liip/taxi-zebra";
       description = "Zebra backend for the Taxi timesheeting application";
       license = lib.licenses.wtfpl;
     };
