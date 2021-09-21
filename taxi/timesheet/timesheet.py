@@ -101,15 +101,15 @@ class Timesheet(object):
         # file needs to be created in the same directory as the destination file
         # because os.replace only works if src and dest use the same filesystem
         # (/tmp could be mounted as tmpfs)
-        with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', dir=file_dir, prefix='taxi', delete=False) as temp_timesheet_file:
-            try:
+        try:
+            with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', dir=file_dir, prefix='taxi', delete=False) as temp_timesheet_file:
                 temp_timesheet_file.writelines([line + '\n' for line in self.entries.to_lines()])
                 temp_timesheet_file.flush()
-            except Exception:
-                os.unlink(temp_timesheet_file)
-                raise
+        except Exception:
+            os.unlink(temp_timesheet_file)
+            raise
 
-            os.replace(temp_timesheet_file.name, file_path)
+        os.replace(temp_timesheet_file.name, file_path)
 
     def get_hours(self, **kwargs):
         """

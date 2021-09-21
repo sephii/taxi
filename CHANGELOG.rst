@@ -2,6 +2,14 @@
 Changelog
 #########
 
+Unreleased
+==========
+
+Fixed
+-----
+
+* Fix timesheet edition on Windows (#141)
+
 6.1.0 (2021-08-21)
 ==================
 
