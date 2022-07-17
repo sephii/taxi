@@ -9,7 +9,7 @@ To install Taxi, follow the steps below specific to your system.
 OS X, Windows, generic Linux
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Make sure you have Python at least 3.5 installed (by running ``python3
+Make sure you have Python at least 3.7 installed (by running ``python3
 --version``), then use ``python3 -m pip`` to install taxi in your user directory
 (you should **not** use sudo or run this command as root)::
 
@@ -86,7 +86,7 @@ Run the following command::
     $ python --version
     Python 3.8.5
 
-Check that the version is at least 3.5. If that’s the case, replace ``python3``
+Check that the version is at least 3.7. If that’s the case, replace ``python3``
 by ``python`` when running commands. If that’s not the case, install Python 3.
 
 First steps with Taxi
