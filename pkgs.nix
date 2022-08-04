@@ -55,17 +55,18 @@ let
 
   taxiZebra = pkgs.python3Packages.buildPythonPackage rec {
     pname = "taxi_zebra";
-    version = "2.3.1";
+    version = "3.0.1";
 
-    src = pkgs.python3.pkgs.fetchPypi {
-      inherit pname version;
-      sha256 = "177fzasgchgbixrr4xikfbis8i427qlyb8c93d404rjjny9g7nny";
+    src = pkgs.fetchFromGitHub {
+      owner = "liip";
+      repo = "taxi-zebra";
+      rev = version;
+      sha256 = "sha256-5Sy/goElwLGt2Sg05Z8G04vsEZsTKCZKsI1/wQNifTI=";
     };
 
     buildInputs = [ taxi ];
     propagatedBuildInputs =
       [ pkgs.python3Packages.requests pkgs.python3Packages.click ];
-    doCheck = false;
 
     meta = {
       homepage = "https://github.com/liip/taxi-zebra";
@@ -119,7 +120,7 @@ let
   };
 
   availablePlugins = {
-    taxi = taxiZebra;
+    zebra = taxiZebra;
     petzi = taxiPetzi;
     clockify = taxiClockify;
   };

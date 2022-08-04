@@ -1,6 +1,6 @@
 { pkgs ? import <nixpkgs> { } }:
 
-with pkgs.python37Packages;
+with pkgs.python310Packages;
 
 buildPythonPackage rec {
   name = "taxi";
