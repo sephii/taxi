@@ -35,13 +35,8 @@ the Zebra backend::
     sudo apt update
     sudo apt install taxi taxi-backend-zebra
 
-Nix
-~~~
-
-The `Nix <https://nixos.org/>`_ channel allows you to keep your Taxi version
-up-to-date with the Nix package manager. To use it, run the following command::
-
-    nix-channel --add https://github.com/liip/taxi/archive/main.tar.gz taxi
+NixOS
+~~~~~
 
 If you're running NixOS, you can then install it declaratively by adding it to
 your ``/etc/nixos/configuration.nix`` file and then running ``nixos-rebuild
@@ -51,15 +46,79 @@ switch``::
       taxi = import <taxi>;
     in
     environment.systemPackages = [
-        # ...
-        taxi.taxi
+      # ...
+      taxi.taxi
     ]
 
-If you're not using NixOS, you can install it with ``nix-env``::
+Nix
+~~~
 
-    nix-env -iA taxi.taxi
+Create a ``flake.nix`` file in a directory with the following contents::
 
-To upgrade Taxi, run ``nix-env --upgrade taxi``.
+  {
+    inputs.taxi.url = "github:sephii/taxi";
+    inputs.flake-utils.url = "github:numtide/flake-utils";
+
+    outputs = { self, nixpkgs, taxi, flake-utils }:
+    flake-utils.lib.eachDefaultSystem (system: {
+      packages.taxi = taxi.defaultPackage.${system}.withPlugins
+        (plugins: [ plugins.clockify plugins.zebra ]);
+      });
+  }
+
+In this example, the clockify and zebra plugins are enabled. Feel free to adapt
+this file with the plugins you want to enable. You’ll find a list of available
+plugins in `the ``availablePlugins`` attribute of the ``pkgs.nix`` file <https://github.com/sephii/taxi/blob/main/pkgs.nix#L121>`_.
+
+Make sure your ``flake.nix`` and ``flake.lock`` files exist and are version controlled::
+
+  git init
+  git add flake.nix
+  nix flake lock
+  git add flake.lock
+  git commit -m "Init taxi"
+
+Add the flake to your registry::
+
+  nix registry add taxi /path/to/your/flake/dir
+
+Now you can finally install the package::
+
+  nix profile install taxi#taxi
+
+Running the ``taxi`` command should now work!
+
+To upgrade taxi, ``cd`` to the directory where you created the flake and run::
+
+  nix flake lock --update-input taxi
+  git add flake.nix flake.lock
+  git commit -m "Update taxi"
+  nix registry pin taxi
+  nix profile install taxi#taxi
+
+NixOS
+~~~~~
+
+Use the overlay in ``taxi.overlay``::
+
+  {
+    inputs.taxi.url = "github:sephii/taxi";
+
+    outputs = attrs@{ nixpkgs, taxi, ... }: let
+      pkgs = import nixpkgs {
+        overlays = [ taxi.overlay ];
+      };
+    in {
+      nixosConfigurations.myConfig = nixpkgs.lib.nixosSystem {
+        modules = [
+          ({ pkgs, ... }: { environment.systemPackages = [ pkgs.taxi-cli.withPlugins (plugins: [ plugins.clockify plugins.zebra ]) ]; })
+        ];
+      }
+    }
+  }
+
+Adapt the configuration depending on the plugins you need. You’ll find a list of
+available plugins in `the ``availablePlugins`` attribute of the ``pkgs.nix`` file <https://github.com/sephii/taxi/blob/main/pkgs.nix#L121>`_.
 
 Common installation issues
 --------------------------
