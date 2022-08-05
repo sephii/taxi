@@ -77,7 +77,7 @@ def ensure_inside_venv(ctx):
     Display an error and exit if the program is not run from inside a
     virtualenv.
     """
-    if not hasattr(sys, 'real_prefix'):
+    if sys.base_prefix == sys.exec_prefix:
         echo_error("You're not supposed to use the plugin commands with a "
                    "system-wide install of Taxi. Please install the specific "
                    "packages for your operating system instead.")

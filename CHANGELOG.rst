@@ -2,6 +2,14 @@
 Changelog
 #########
 
+Unreleased
+==========
+
+Fixed
+-----
+
+* Fix virtual environment detection (#144)
+
 6.1.1 (2021-09-21)
 ==================
 
