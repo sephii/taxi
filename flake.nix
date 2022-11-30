@@ -19,7 +19,7 @@
         (system:
           let
             pkgs = nixpkgs.legacyPackages.${system};
-            taxi = (import ./pkgs.nix { inherit pkgs; });
+            taxi = pkgs.callPackage ./pkgs.nix { };
           in
           {
             packages = { inherit taxi; };

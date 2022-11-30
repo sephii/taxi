@@ -1,34 +1,36 @@
-{ pkgs, ... }:
+{ lib, makeWrapper, python3, python3Packages, fetchFromGitHub, ... }:
 
 let
-  lib = pkgs.lib;
   withPlugins = pluginsFunc:
     let plugins = pluginsFunc availablePlugins;
-    in pkgs.python3Packages.buildPythonApplication {
+    in python3.pkgs.buildPythonPackage {
       name = "${taxi.name}-with-plugins";
       inherit (taxi) version meta;
+      format = "other";
 
-      phases = [ "installPhase" "fixupPhase" ];
-      buildInputs = [ pkgs.makeWrapper ];
+      nativeBuildInputs = [ makeWrapper ];
       propagatedBuildInputs = plugins ++ taxi.propagatedBuildInputs;
 
       installPhase = ''
         makeWrapper ${taxi}/bin/taxi $out/bin/taxi \
-          --prefix PYTHONPATH : "${taxi}/${pkgs.python3.sitePackages}:$PYTHONPATH"
+          --prefix PYTHONPATH : "${taxi}/${python3.sitePackages}:$PYTHONPATH"
       '';
+
       doCheck = false;
+      dontUnpack = true;
+      dontBuild = true;
 
       passthru = taxi.passthru // {
         withPlugins = morePlugins: withPlugins (morePlugins ++ plugins);
       };
     };
 
-  taxi = pkgs.python3Packages.buildPythonApplication rec {
+  taxi = python3.pkgs.buildPythonPackage rec {
     pname = "taxi";
     version = "6.1.1";
 
     # Using GitHub instead of PyPI because tests are not distributed on the PyPI releases
-    src = pkgs.fetchFromGitHub {
+    src = fetchFromGitHub {
       owner = "sephii";
       repo = pname;
       rev = version;
@@ -36,12 +38,11 @@ let
     };
 
     propagatedBuildInputs = [
-      pkgs.python3Packages.click
-      pkgs.python3Packages.appdirs
-      pkgs.python3Packages.setuptools
+      python3Packages.click
+      python3Packages.appdirs
+      python3Packages.setuptools
     ];
-    checkInputs =
-      [ pkgs.python3Packages.pytest pkgs.python3Packages.freezegun ];
+    checkInputs = [ python3Packages.pytest python3Packages.freezegun ];
     checkPhase = "pytest";
 
     passthru = { inherit withPlugins; };
@@ -53,11 +54,11 @@ let
     };
   };
 
-  taxiZebra = pkgs.python3Packages.buildPythonPackage rec {
+  taxiZebra = python3.pkgs.buildPythonPackage rec {
     pname = "taxi_zebra";
     version = "3.0.1";
 
-    src = pkgs.fetchFromGitHub {
+    src = fetchFromGitHub {
       owner = "liip";
       repo = "taxi-zebra";
       rev = version;
@@ -65,8 +66,7 @@ let
     };
 
     buildInputs = [ taxi ];
-    propagatedBuildInputs =
-      [ pkgs.python3Packages.requests pkgs.python3Packages.click ];
+    propagatedBuildInputs = [ python3Packages.requests python3Packages.click ];
 
     meta = {
       homepage = "https://github.com/liip/taxi-zebra";
@@ -75,19 +75,17 @@ let
     };
   };
 
-  taxiClockify = pkgs.python3Packages.buildPythonPackage rec {
+  taxiClockify = python3.pkgs.buildPythonPackage rec {
     pname = "taxi_clockify";
     version = "1.4.1";
 
-    src = pkgs.python3.pkgs.fetchPypi {
+    src = python3.pkgs.fetchPypi {
       inherit pname version;
       sha256 = "18cfdih1pc097xw893sagmajfk52d3k63z6fq5hg4k71njaxrbdb";
     };
 
     buildInputs = [ taxi ];
-    propagatedBuildInputs =
-      [ pkgs.python3Packages.requests pkgs.python3Packages.arrow ];
-    doCheck = false;
+    propagatedBuildInputs = [ python3Packages.requests python3Packages.arrow ];
 
     meta = {
       homepage = "https://github.com/sephii/taxi-clockify";
@@ -96,21 +94,20 @@ let
     };
   };
 
-  taxiPetzi = pkgs.python3Packages.buildPythonPackage rec {
+  taxiPetzi = python3.pkgs.buildPythonPackage rec {
     pname = "taxi_petzi";
     version = "1.0.1";
 
-    src = pkgs.python3.pkgs.fetchPypi {
+    src = python3.pkgs.fetchPypi {
       inherit pname version;
       sha256 = "94KuiV9S4vblbLHOM6YGJij36dbuN6ThcfkAkoA2Ggo=";
     };
 
     buildInputs = [ taxi ];
     propagatedBuildInputs = [
-      pkgs.python3Packages.google-auth-oauthlib
-      pkgs.python3Packages.google_api_python_client
+      python3Packages.google-auth-oauthlib
+      python3Packages.google_api_python_client
     ];
-    doCheck = false;
 
     meta = {
       homepage = "https://github.com/sephii/taxi-petzi";
