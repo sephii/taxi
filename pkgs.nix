@@ -1,4 +1,4 @@
-{ lib, makeWrapper, python3, python3Packages, fetchFromGitHub, ... }:
+{ lib, makeWrapper, python3, fetchFromGitHub, ... }:
 
 let
   withPlugins = pluginsFunc:
@@ -37,12 +37,9 @@ let
       sha256 = "1chwi2dililglx1kj9mq8hl1ih4v6ngic06d3gahrpfps2hvg348";
     };
 
-    propagatedBuildInputs = [
-      python3Packages.click
-      python3Packages.appdirs
-      python3Packages.setuptools
-    ];
-    checkInputs = [ python3Packages.pytest python3Packages.freezegun ];
+    propagatedBuildInputs =
+      [ python3.pkgs.click python3.pkgs.appdirs python3.pkgs.setuptools ];
+    checkInputs = [ python3.pkgs.pytest python3.pkgs.freezegun ];
     checkPhase = "pytest";
 
     passthru = { inherit withPlugins; };
@@ -66,7 +63,7 @@ let
     };
 
     buildInputs = [ taxi ];
-    propagatedBuildInputs = [ python3Packages.requests python3Packages.click ];
+    propagatedBuildInputs = [ python3.pkgs.requests python3.pkgs.click ];
 
     meta = {
       homepage = "https://github.com/liip/taxi-zebra";
@@ -85,7 +82,7 @@ let
     };
 
     buildInputs = [ taxi ];
-    propagatedBuildInputs = [ python3Packages.requests python3Packages.arrow ];
+    propagatedBuildInputs = [ python3.pkgs.requests python3.pkgs.arrow ];
 
     meta = {
       homepage = "https://github.com/sephii/taxi-clockify";
@@ -105,8 +102,8 @@ let
 
     buildInputs = [ taxi ];
     propagatedBuildInputs = [
-      python3Packages.google-auth-oauthlib
-      python3Packages.google_api_python_client
+      python3.pkgs.google-auth-oauthlib
+      python3.pkgs.google_api_python_client
     ];
 
     meta = {

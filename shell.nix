@@ -1,9 +1,5 @@
-{ pkgs ? import <nixpkgs> { } }:
-
-with pkgs.python310Packages;
-
-buildPythonPackage rec {
-  name = "taxi";
+{ callPackage, python3, ... }:
+(callPackage ./pkgs.nix { inherit python3; }).overrideAttrs (old: {
   src = ./.;
-  propagatedBuildInputs = [ click requests ];
-}
+  propagatedBuildInputs = old.propagatedBuildInputs ++ [ python3.pkgs.pytest ];
+})
