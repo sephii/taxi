@@ -1,3 +1,9 @@
+taxi (6.1.1-1) unstable-ci; urgency=medium
+
+  * New 6.1.1 release
+
+ -- Didier Raboud <didier.raboud@liip.ch>  Tue, 07 Mar 2023 14:03:40 +0100
+
 taxi (6.0.1-1) unstable-ci; urgency=medium
 
   * New 6.0.1 release
