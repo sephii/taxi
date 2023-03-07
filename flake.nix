@@ -21,8 +21,6 @@
         in {
           packages = { inherit taxi; };
           defaultPackage = taxi;
-          # You might need to use `PIP_DISABLE_PIP_VERSION_CHECK=1 nix develop`
-          # until https://github.com/NixOS/nixpkgs/pull/198024 gets merged
           devShell = pkgs.callPackage ./shell.nix { };
           checks = let
             testWithPython = (pythonPackage:
