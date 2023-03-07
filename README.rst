@@ -1,4 +1,4 @@
-.. image:: https://raw.githubusercontent.com/sephii/taxi/master/doc/images/taxi.png
+.. image:: https://raw.githubusercontent.com/sephii/taxi/main/doc/images/taxi.png
 
 What is Taxi ?
 ==============
@@ -28,11 +28,11 @@ You can then get a summary of your timesheet::
 Through the use of backends, Taxi allows you to push your timesheets to
 different systems.
 
-Installation
-============
+Getting started
+===============
 
 Refer to the `"Installation" section
-<https://taxi-timesheets.readthedocs.io/en/master/userguide.html#installation>`_
+<https://taxi-timesheets.readthedocs.io/en/main/userguide.html#installation>`_
 in the docs.
 
 .. _supported_backends:
@@ -45,6 +45,7 @@ Supported backends
 * `tipee <https://github.com/alexandreblin/taxi-tipee>`__ : Gammadia's `tipee <https://tipee.ch>`__ backend
 * `bexio <https://github.com/alexandreblin/taxi-bexio>`__ : Bexio `Timesheets <https://bexio.com>`__ backend
 * `multi <https://github.com/alexandreblin/taxi-multi>`__ : a special backend to push entries over multiple other backends
+* `clockify <https://github.com/sephii/taxi-clockify>`__ : backend for the free timesheeting tool `clockify.me <https://clockify.me/>`_
 
 Contrib packages
 ================

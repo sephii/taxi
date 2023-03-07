@@ -10,18 +10,18 @@ OS X, Windows, generic Linux
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Make sure you have Python at least 3.5 installed (by running ``python3
---version``), then use ``pip3`` to install taxi in your user directory (you
-should **not** use sudo or run this command as root)::
+--version``), then use ``python3 -m pip`` to install taxi in your user directory
+(you should **not** use sudo or run this command as root)::
 
-    $ pip3 install --user taxi
+    $ python3 -m pip install --user taxi
 
 You'll probably want to install a backend too, that will allow you to push your
 timesheets. To install the Zebra backend for example (again, **no** sudo or root
 user needed)::
 
-    $ pip3 install --user taxi-zebra
+    $ python3 -m pip install --user taxi-zebra
 
-To upgrade Taxi and the Zebra plugin, run ``pip3 install --user --upgrade taxi taxi-zebra``
+To upgrade Taxi and the Zebra plugin, run ``python3 -m pip install --user --upgrade taxi taxi-zebra``
 
 Debian & Ubuntu
 ~~~~~~~~~~~~~~~
@@ -41,7 +41,7 @@ Nix
 The `Nix <https://nixos.org/>`_ channel allows you to keep your Taxi version
 up-to-date with the Nix package manager. To use it, run the following command::
 
-    nix-channel --add https://github.com/liip/taxi/archive/master.tar.gz taxi
+    nix-channel --add https://github.com/liip/taxi/archive/main.tar.gz taxi
 
 If you're running NixOS, you can then install it declaratively by adding it to
 your ``/etc/nixos/configuration.nix`` file and then running ``nixos-rebuild
@@ -77,6 +77,17 @@ Run the following command to identify the Python user binary path::
 
 Add this directory to your ``PATH`` environment variable, for example by
 following `this guide <https://stackoverflow.com/a/14638025>`_.
+
+python3: command not found
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Run the following command::
+
+    $ python --version
+    Python 3.8.5
+
+Check that the version is at least 3.5. If that’s the case, replace ``python3``
+by ``python`` when running commands. If that’s not the case, install Python 3.
 
 First steps with Taxi
 ---------------------
@@ -356,9 +367,9 @@ Use ``taxi <command> --help`` to get help on any Taxi command.
 Upgrading Taxi
 --------------
 
-To upgrade Taxi, run `pip install --upgrade taxi`. If you have any plugins,
-you'll also need to manually upgrade them, by running for example `pip
-install --upgrade taxi-zebra`.
+To upgrade Taxi, run ``python3 -m pip install --upgrade taxi``. If you have any plugins,
+you'll also need to manually upgrade them, by running for example ``python3 -m pip
+install --upgrade taxi-zebra``.
 
 Timesheet syntax
 ----------------

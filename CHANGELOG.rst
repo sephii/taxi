@@ -2,6 +2,23 @@
 Changelog
 #########
 
+6.1.1 (2021-09-21)
+==================
+
+Fixed
+-----
+
+* Fix timesheet edition on Windows (#141)
+
+6.1.0 (2021-08-21)
+==================
+
+Changed
+-------
+
+* Write timesheet files atomically to prevent data loss
+* Allow empty description in timesheets
+
 6.0.1 (2020-11-03)
 ==================
 
