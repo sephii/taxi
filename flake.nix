@@ -30,7 +30,6 @@
               });
           in {
             # TODO generate this dynamically
-            taxiPython37 = testWithPython pkgs.python37;
             taxiPython38 = testWithPython pkgs.python38;
             taxiPython39 = testWithPython pkgs.python39;
             taxiPython310 = testWithPython pkgs.python310;

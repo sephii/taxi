@@ -25,7 +25,7 @@ setup(
     package_data={
         'taxi': ['etc/*']
     },
-    python_requires='>=3.7',
+    python_requires='>=3.8',
     entry_points={
         'taxi.backends': 'dummy = taxi.backends.dummy:DummyBackend',
         'console_scripts': 'taxi = taxi.commands.base:cli'
@@ -33,7 +33,6 @@ setup(
     classifiers=[
         'Environment :: Console',
         'Development Status :: 5 - Production/Stable',
-        'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
