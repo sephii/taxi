@@ -26,6 +26,12 @@ def projects_db(data_dir):
     project.activities.append(Activity(1, 'activity 1'))
     projects_list.append(project)
 
+    project = Project(45, '3rd active project with one inactive activity', Project.STATUS_ACTIVE)
+    project.backend = 'test'
+    project.activities.append(Activity(3, 'activity 3'))
+    project.activities.append(Activity(4, 'activity 4', False))
+    projects_list.append(project)
+
     projects_db.update(projects_list)
 
     return projects_db
@@ -36,7 +42,7 @@ def alias_config(config, projects_db):
     config.clear_section('test_aliases')
 
     aliases = [
-        ('inactive1', '42/1'), ('inactive2', '42/2'), ('active1', '43/1'), ('active2', '43/2'), ('p2_active', '44/1')
+        ('inactive1', '42/1'), ('inactive2', '42/2'), ('active1', '43/1'), ('active2', '43/2'), ('p2_active', '44/1'), ('p3_active_activity', '45/3'), ('p3_inactive_activity', '45/4')
     ]
 
     for alias, activity in aliases:
@@ -55,6 +61,8 @@ def test_alias_without_parameter_forwards_to_list(cli, alias_config):
         "[test] inactive1 -> 42/1 (not started project, activity 1)",
         "[test] inactive2 -> 42/2 (not started project, activity 2)",
         "[test] p2_active -> 44/1 (2nd active project, activity 1)",
+        "[test] p3_active_activity -> 45/3 (3rd active project with one inactive activity, activity 3)",
+        "[test] p3_inactive_activity -> 45/4 (3rd active project with one inactive activity, activity 4)",
     ]
 
 
@@ -71,6 +79,7 @@ def test_alias_search_mapping_partial(cli, alias_config):
         "[test] active1 -> 43/1 (active project, activity 1)",
         "[test] active2 -> 43/2 (active project, activity 2)",
         "[test] p2_active -> 44/1 (2nd active project, activity 1)",
+        "[test] p3_active_activity -> 45/3 (3rd active project with one inactive activity, activity 3)",
     ]
 
 

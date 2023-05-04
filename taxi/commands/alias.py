@@ -120,7 +120,7 @@ def list_aliases(ctx, search, backend, used, inactive):
         else:
             project = None
 
-        if not inactive and (not project or not project.is_active()):
+        if not inactive and ((not project or not project.is_active()) or (activity and not activity.is_active())):
             continue
 
         ctx.obj['view'].alias_detail((alias, m), project)
