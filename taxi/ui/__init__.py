@@ -159,10 +159,12 @@ class BaseUi(object):
             return
 
         mapping_name = Project.tuple_to_str(mapping.mapping)
+        mapping_is_active = True
 
         if not project:
             project_name = ''
         else:
+            mapping_is_active = project.is_active()
             if mapping.mapping[1] is None:
                 project_name = project.name
                 mapping_name = mapping.mapping[0]
@@ -172,6 +174,8 @@ class BaseUi(object):
                 if activity is None:
                     project_name = '%s, ?' % (project.name)
                 else:
+                    if mapping_is_active:
+                        mapping_is_active = activity.is_active()
                     project_name = '%s, %s' % (project.name, activity.name)
 
         if alias_first:
@@ -182,7 +186,7 @@ class BaseUi(object):
         args.append(' (%s)' % project_name if project_name else '')
         text = "[%s] %s -> %s%s" % tuple(args)
 
-        if project and project.is_active():
+        if project and mapping_is_active:
             self.msg(text)
         else:
             self.msg(click.style(text, fg='red'))
