@@ -164,7 +164,7 @@ class BaseUi(object):
         if not project:
             project_name = ''
         else:
-            mapping_is_active = project.is_active()
+            mapping_is_active &= project.is_active()
             if mapping.mapping[1] is None:
                 project_name = project.name
                 mapping_name = mapping.mapping[0]
@@ -174,8 +174,7 @@ class BaseUi(object):
                 if activity is None:
                     project_name = '%s, ?' % (project.name)
                 else:
-                    if mapping_is_active:
-                        mapping_is_active = activity.is_active()
+                    mapping_is_active &= activity.is_active()
                     project_name = '%s, %s' % (project.name, activity.name)
 
         if alias_first:
