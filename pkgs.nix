@@ -27,7 +27,7 @@ let
 
   taxi = python3.pkgs.buildPythonPackage rec {
     pname = "taxi";
-    version = "6.1.1";
+    version = "6.2.0";
 
     # Using GitHub instead of PyPI because tests are not distributed on the PyPI releases
     src = fetchFromGitHub {
