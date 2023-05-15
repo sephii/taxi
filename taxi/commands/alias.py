@@ -35,7 +35,7 @@ def list_(ctx, search_string, reverse, backend, used, inactive):
     will probably result in an error.
     """
     if not reverse:
-        list_aliases(ctx, search_string, backend, used, inactive=inactive)
+        list_aliases(ctx, search_string, backend, used, include_inactive=inactive)
     else:
         show_mapping(ctx, search_string, backend)
 
@@ -102,7 +102,7 @@ def show_mapping(ctx, mapping_str, backend):
         )
 
 
-def list_aliases(ctx, search, backend, used, inactive):
+def list_aliases(ctx, search, backend, used, include_inactive: bool):
     aliases_mappings = aliases_database.filter_from_alias(search, backend)
 
     if used:
@@ -119,8 +119,10 @@ def list_aliases(ctx, search, backend, used, inactive):
             project, activity = ctx.obj['projects_db'].mapping_to_project(m)
         else:
             project = None
+            activity = None
 
-        if not inactive and (not project or not project.is_active()):
-            continue
+        project_is_active = project and project.is_active()
+        activity_is_active = activity and activity.is_active()
 
-        ctx.obj['view'].alias_detail((alias, m), project)
+        if include_inactive or (project_is_active and activity_is_active):
+            ctx.obj['view'].alias_detail((alias, m), project)

@@ -2,6 +2,19 @@
 Changelog
 #########
 
+6.2.0 (2023-05-15)
+==================
+
+Added
+-----
+
+* Add Activity.is_active attribute. Thanks @OdyX.
+
+Fixed
+-----
+
+* Fix virtual environment detection (#144)
+
 6.1.1 (2021-09-21)
 ==================
 

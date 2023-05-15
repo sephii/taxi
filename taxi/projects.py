@@ -118,9 +118,13 @@ Description: %s""" % (self.id, self.name, status, start_date, end_date,
 
 
 class Activity:
-    def __init__(self, id, name):
+    def __init__(self, id: str, name: str, active: bool = True):
         self.id = id
         self.name = name
+        self._active = active
+
+    def is_active(self) -> bool:
+        return self._active
 
 
 class ProjectsDb:
@@ -268,7 +272,7 @@ class LocalProjectsDbDecoder(json.JSONDecoder):
         projects_copy = []
         for project in projects:
             project['activities'] = [
-                Activity(str(activity['id']), activity['name'])
+                Activity(str(activity['id']), activity['name'], activity.get('_active', True))
                 for activity in project['activities']
             ]
             project['id'] = str(project['id'])
