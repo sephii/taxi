@@ -2,8 +2,13 @@
 Changelog
 #########
 
-Unreleased
-==========
+6.2.0 (2023-05-15)
+==================
+
+Added
+-----
+
+* Add Activity.is_active attribute. Thanks @OdyX.
 
 Fixed
 -----
