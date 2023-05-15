@@ -1,4 +1,5 @@
 import pytest
+from click import style
 from freezegun import freeze_time
 
 from taxi.projects import Activity, Project, ProjectsDb
@@ -80,6 +81,17 @@ def test_alias_search_mapping_partial(cli, alias_config):
         "[test] active2 -> 43/2 (active project, activity 2)",
         "[test] p2_active -> 44/1 (2nd active project, activity 1)",
         "[test] p3_active_activity -> 45/3 (3rd active project with one inactive activity, activity 3)",
+    ]
+
+
+def test_alias_search_inactive_listed_in_red(cli, alias_config):
+    output = cli("alias", ["list", "inactive"], color=True)
+    lines = output.splitlines()
+
+    assert lines == [
+        style("[test] inactive1 -> 42/1 (not started project, activity 1)", fg="red"),
+        style("[test] inactive2 -> 42/2 (not started project, activity 2)", fg="red"),
+        style("[test] p3_inactive_activity -> 45/4 (3rd active project with one inactive activity, activity 4)", fg="red",),
     ]
 
 
