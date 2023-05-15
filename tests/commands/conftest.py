@@ -135,7 +135,7 @@ def entries_file(tmpdir, config):
 
 @pytest.fixture
 def cli(config, data_dir):
-    def inner(cmd, args=None, input=None, return_stdout=True):
+    def inner(cmd, args=None, input=None, return_stdout=True, color=False):
         if not args:
             args = []
 
@@ -145,7 +145,7 @@ def cli(config, data_dir):
 
         runner = CliRunner()
         result = runner.invoke(
-            taxi_cli, args, input=input, standalone_mode=False, catch_exceptions=False
+            taxi_cli, args, input=input, standalone_mode=False, catch_exceptions=False, color=color
         )
 
         return result.output if return_stdout else result
