@@ -34,7 +34,7 @@ let
       owner = "sephii";
       repo = pname;
       rev = version;
-      sha256 = "1chwi2dililglx1kj9mq8hl1ih4v6ngic06d3gahrpfps2hvg348";
+      sha256 = "sha256-wtLlO/W+39kTPjb2U6c54bxWxAQB7CxGxBh8gur+RCQ=";
     };
 
     propagatedBuildInputs =
@@ -53,13 +53,13 @@ let
 
   taxiZebra = python3.pkgs.buildPythonPackage rec {
     pname = "taxi_zebra";
-    version = "3.0.1";
+    version = "4.0.0";
 
     src = fetchFromGitHub {
       owner = "liip";
       repo = "taxi-zebra";
       rev = version;
-      sha256 = "sha256-5Sy/goElwLGt2Sg05Z8G04vsEZsTKCZKsI1/wQNifTI=";
+      sha256 = "sha256-syEGpv8CZOD+TLQskylTnwqCKJRPVVImRfyEwP+9Nuc=";
     };
 
     buildInputs = [ taxi ];
