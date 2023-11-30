@@ -1,5 +1,4 @@
 { lib, makeWrapper, python3, fetchFromGitHub, ... }:
-
 let
   withPlugins = pluginsFunc:
     let plugins = pluginsFunc availablePlugins;
@@ -27,20 +26,24 @@ let
 
   taxi = python3.pkgs.buildPythonPackage rec {
     pname = "taxi";
-    version = "6.2.0";
+    version = "6.3.0";
 
     # Using GitHub instead of PyPI because tests are not distributed on the PyPI releases
     src = fetchFromGitHub {
       owner = "sephii";
       repo = pname;
       rev = version;
-      sha256 = "sha256-wtLlO/W+39kTPjb2U6c54bxWxAQB7CxGxBh8gur+RCQ=";
+      hash = "sha256-kkoVP3bQ/c29VAs35OmSIMp8il1aa2R9srYKV7PzswQ=";
     };
 
+    format = "pyproject";
+
     propagatedBuildInputs =
-      [ python3.pkgs.click python3.pkgs.appdirs python3.pkgs.setuptools ];
-    nativeCheckInputs = [ python3.pkgs.pytest python3.pkgs.freezegun ];
-    checkPhase = "pytest";
+      [ python3.pkgs.click python3.pkgs.appdirs ];
+
+    nativeBuildInputs = [ python3.pkgs.flit-core ];
+
+    nativeCheckInputs = [ python3.pkgs.pytestCheckHook python3.pkgs.freezegun ];
 
     passthru = { inherit withPlugins; };
 
@@ -74,14 +77,19 @@ let
 
   taxiClockify = python3.pkgs.buildPythonPackage rec {
     pname = "taxi_clockify";
-    version = "1.4.1";
+    version = "1.5.0";
 
     src = python3.pkgs.fetchPypi {
       inherit pname version;
-      sha256 = "18cfdih1pc097xw893sagmajfk52d3k63z6fq5hg4k71njaxrbdb";
+      hash = "sha256-ujdacSOw7R0fNAk8ekiERNf90vg1Sk3ti8gbx4YqZFU=";
     };
 
+    format = "pyproject";
+
     buildInputs = [ taxi ];
+
+    nativeBuildInputs = [ python3.pkgs.flit-core ];
+
     propagatedBuildInputs = [ python3.pkgs.requests python3.pkgs.arrow ];
 
     meta = {
@@ -93,16 +101,24 @@ let
 
   taxiPetzi = python3.pkgs.buildPythonPackage rec {
     pname = "taxi_petzi";
-    version = "1.0.1";
+    version = "1.1.0";
 
     src = python3.pkgs.fetchPypi {
       inherit pname version;
-      sha256 = "94KuiV9S4vblbLHOM6YGJij36dbuN6ThcfkAkoA2Ggo=";
+      hash = "sha256-m76pDp6/noJ05MgNJf+yFxD+TAqoFnTwhFTHSclcLxo=";
     };
 
+    format = "pyproject";
+
     buildInputs = [ taxi ];
+
+    nativeBuildInputs = [ python3.pkgs.flit-core ];
+
+    nativeCheckInputs = [ python3.pkgs.pytestCheckHook ];
+
     propagatedBuildInputs = [
       python3.pkgs.google-auth-oauthlib
+      python3.pkgs.google-auth-httplib2
       python3.pkgs.google_api_python_client
     ];
 
@@ -118,4 +134,5 @@ let
     petzi = taxiPetzi;
     clockify = taxiClockify;
   };
-in taxi
+in
+taxi
