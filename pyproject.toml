@@ -1,0 +1,28 @@
+[project]
+name = "taxi"
+description = "Taxi: timesheeting made easy"
+authors = [
+    {name = "Sylvain Fankhauser", email = "sephi@fhtagn.top"},
+]
+readme = "README.rst"
+requires-python = ">=3.8"
+dynamic = ["version"]
+dependencies = [
+    "click>=3.3",
+    "appdirs>=1.4.0",
+]
+
+[project.urls]
+Source = "https://github.com/sephii/taxi"
+Documentation = "https://taxi-timesheets.readthedocs.io/"
+
+[project.scripts]
+taxi = "taxi.commands.base:cli"
+
+[project.entry-points."taxi.backends"]
+dummy = "taxi.backends.dummy:DummyBackend"
+
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+

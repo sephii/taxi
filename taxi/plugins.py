@@ -1,4 +1,4 @@
-import pkg_resources
+import importlib.metadata
 from urllib import parse
 
 from .exceptions import TaxiException
@@ -35,7 +35,7 @@ class PluginsRegistry(object):
         for entry_point_type in self.ENTRY_POINTS:
             self._entry_points[entry_point_type] = {}
 
-            for entry_point in pkg_resources.iter_entry_points(entry_point_type):
+            for entry_point in importlib.metadata.entry_points(group=entry_point_type):
                 self._entry_points[entry_point_type][entry_point.name] = entry_point
 
     def get_plugins(self):
@@ -43,7 +43,7 @@ class PluginsRegistry(object):
 
         for entry_point_type, entry_points in self._entry_points.items():
             for entry_point in entry_points.values():
-                plugin_name = entry_point.dist.project_name[5:]
+                plugin_name = entry_point.dist.name
                 plugin_version = entry_point.dist.version
 
                 if plugin_name:
