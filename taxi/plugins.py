@@ -1,4 +1,5 @@
 import importlib.metadata
+import sys
 from urllib import parse
 
 from .exceptions import TaxiException
@@ -35,7 +36,12 @@ class PluginsRegistry(object):
         for entry_point_type in self.ENTRY_POINTS:
             self._entry_points[entry_point_type] = {}
 
-            for entry_point in importlib.metadata.entry_points(group=entry_point_type):
+            if sys.version_info < (3, 10):
+                entry_points = importlib.metadata.entry_points().get(entry_point_type, [])
+            else:
+                entry_points = importlib.metadata.entry_points(group=entry_point_type)
+
+            for entry_point in entry_points:
                 self._entry_points[entry_point_type][entry_point.name] = entry_point
 
     def get_plugins(self):
