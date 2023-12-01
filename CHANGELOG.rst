@@ -1,6 +1,22 @@
-########
+#########
 Changelog
 #########
+
+6.3.1 (2023-12-01)
+==================
+
+Fixed
+-----
+
+* Fix plugins on Python < 3.10 (regression from 6.3.0).
+
+6.3.0 (2023-11-30)
+==================
+
+Changed
+-------
+
+* Use flit instead of setuptools for packaging.
 
 6.2.0 (2023-05-15)
 ==================
