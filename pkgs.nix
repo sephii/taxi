@@ -26,14 +26,14 @@ let
 
   taxi = python3.pkgs.buildPythonPackage rec {
     pname = "taxi";
-    version = "6.3.0";
+    version = "6.3.1";
 
     # Using GitHub instead of PyPI because tests are not distributed on the PyPI releases
     src = fetchFromGitHub {
       owner = "sephii";
       repo = pname;
       rev = version;
-      hash = "sha256-kkoVP3bQ/c29VAs35OmSIMp8il1aa2R9srYKV7PzswQ=";
+      hash = "sha256-QB88RpgzrQy7DGeRdMHC2SV5Esp/r5LZtlaY5C8vJxw=";
     };
 
     format = "pyproject";
