@@ -5,6 +5,7 @@ Priority: optional
 Build-Depends: debhelper-compat (= 13),
                bash-completion,
                dh-python,
+               dh-vim-addon,
                python3,
                python3-appdirs (>= 1.4.0),
                python3-click,
@@ -26,7 +27,8 @@ Depends: python3-appdirs (>= 1.4.0),
          python3-six (>= 1.9.0),
          taxi-backend-zebra | taxi-backend,
          ${misc:Depends},
-         ${python3:Depends}
+         ${python3:Depends},
+         ${vim-addon:Depends}
 Description: Timesheeting tool
  Taxi is a timesheeting tool that focuses on simplicity to help you
  write your timesheets without wasting time.

@@ -1,0 +1,3 @@
+debian/schtibe/taxi.vim/ftdetect/ usr/share/vim-taxi/
+debian/schtibe/taxi.vim/ftplugin/ usr/share/vim-taxi/
+debian/schtibe/taxi.vim/syntax/   usr/share/vim-taxi/
