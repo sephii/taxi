@@ -1,3 +1,9 @@
+taxi (6.3.1-2) unstable-ci; urgency=medium
+
+  * Also install the syntax automatically for neovim
+
+ -- Didier Raboud <odyx@liip.ch>  Tue, 20 Feb 2024 17:58:12 +0100
+
 taxi (6.3.1-1) unstable-ci; urgency=medium
 
   * New 6.3.1 release
