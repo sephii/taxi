@@ -2,10 +2,10 @@ import datetime
 import functools
 import logging
 import os
+import pkgutil
 import sys
 
 import click
-import pkg_resources
 from appdirs import AppDirs
 from click._termui_impl import Editor
 
@@ -104,7 +104,7 @@ def create_config_file(filename, run_conversions=True):
             )
         ) + '\n')
 
-        config = pkg_resources.resource_string('taxi', 'etc/taxirc.sample').decode('utf-8')
+        config = pkgutil.get_data("taxi", "etc/taxirc.sample").decode()
         context = {}
         available_backends = plugins_registry.get_available_backends()
 

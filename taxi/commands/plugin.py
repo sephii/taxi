@@ -1,5 +1,4 @@
 import json
-import pkg_resources
 import subprocess
 import sys
 
@@ -124,8 +123,8 @@ def install(ctx, plugin):
         sys.exit(1)
 
     try:
-        installed_version = pkg_resources.get_distribution(plugin_name).version
-    except pkg_resources.DistributionNotFound:
+        installed_version = importlib.metadata.version(plugin_name)
+    except importlib.metadata.PackageNotFoundError:
         installed_version = None
 
     if installed_version is not None and info['version'] == installed_version:
