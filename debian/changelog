@@ -1,3 +1,11 @@
+taxi (6.3.1-1) unstable-ci; urgency=medium
+
+  * New 6.3.1 release
+    - Add pybuild-plugin-pyproject and flit as B-D
+  * Install the vim syntax as Debian patch
+
+ -- Didier Raboud <odyx@liip.ch>  Tue, 20 Feb 2024 17:50:07 +0100
+
 taxi (6.2.0-1) unstable-ci; urgency=medium
 
   * New 6.2.0 release
