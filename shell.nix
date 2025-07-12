@@ -1,5 +1,12 @@
-{ callPackage, python3, ... }:
-(callPackage ./pkgs.nix { inherit python3; }).overrideAttrs (old: {
-  src = ./.;
-  propagatedBuildInputs = old.propagatedBuildInputs ++ [ python3.pkgs.pytest ];
-})
+{ pkgs ? import <nixpkgs> {} }:
+let
+  taxi = pkgs.callPackage ./pkgs.nix { inherit (pkgs) python3; };
+in
+pkgs.mkShell {
+  name = "taxi-dev-shell";
+
+  buildInputs = [
+    taxi
+    pkgs.python3.pkgs.pytest
+  ];
+}

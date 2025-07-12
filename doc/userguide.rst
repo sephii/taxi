@@ -143,9 +143,9 @@ python3: command not found
 Run the following command::
 
     $ python --version
-    Python 3.8.5
+    Python 3.13.4
 
-Check that the version is at least 3.7. If that’s the case, replace ``python3``
+Check that the version is at least 3.10. If that’s the case, replace ``python3``
 by ``python`` when running commands. If that’s not the case, install Python 3.
 
 First steps with Taxi

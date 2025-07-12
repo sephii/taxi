@@ -45,7 +45,7 @@ let
 
     nativeCheckInputs = [ python3.pkgs.pytestCheckHook python3.pkgs.freezegun ];
 
-    passthru = { inherit withPlugins; };
+    passthru = { inherit withPlugins availablePlugins; };
 
     meta = {
       homepage = "https://github.com/sephii/taxi";
@@ -56,16 +56,18 @@ let
 
   taxiZebra = python3.pkgs.buildPythonPackage rec {
     pname = "taxi_zebra";
-    version = "4.0.0";
+    version = "5.0.0";
 
     src = fetchFromGitHub {
       owner = "liip";
       repo = "taxi-zebra";
       rev = version;
-      sha256 = "sha256-syEGpv8CZOD+TLQskylTnwqCKJRPVVImRfyEwP+9Nuc=";
+      sha256 = "sha256-vwlCdeWvbmoKYdEwKVmBkQTokOY4MGaxnOU3t0CRDS4=";
     };
 
+    format = "pyproject";
     buildInputs = [ taxi ];
+    nativeBuildInputs = [ python3.pkgs.setuptools python3.pkgs.wheel ];
     propagatedBuildInputs = [ python3.pkgs.requests python3.pkgs.click ];
 
     meta = {
@@ -135,4 +137,4 @@ let
     clockify = taxiClockify;
   };
 in
-taxi
+  taxi

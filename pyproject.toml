@@ -5,7 +5,7 @@ authors = [
     {name = "Sylvain Fankhauser", email = "sephi@fhtagn.top"},
 ]
 readme = "README.rst"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 dynamic = ["version"]
 dependencies = [
     "click>=3.3",
