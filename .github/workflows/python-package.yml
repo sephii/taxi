@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["38", "39", "310", "311"]
+        python-version: ["310", "311", "312", "313"]
 
     steps:
       - uses: actions/checkout@v3
@@ -31,8 +31,11 @@ jobs:
         if: "steps.nix-cache.outputs.cache-hit == 'true'"
         run: "nix-store --import < /tmp/nixcache"
 
-      - name: Run tests
-        run: nix build -L .#checks.x86_64-linux.taxiPython${{ matrix.python-version }}
+      - name: Run taxi tests
+        run: nix build -L .#checks.x86_64-linux.taxi-python${{ matrix.python-version }}
+
+      - name: Build taxi with all plugins
+        run: nix build -L .#taxi-with-all-plugins
 
       - name: "Export Nix store cache"
         if: "steps.nix-cache.outputs.cache-hit != 'true'"
