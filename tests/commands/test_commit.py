@@ -28,7 +28,7 @@ def test_ignore_date_error_week_day(cli, entries_file):
     entries_file.write("""19/01/2014
 alias_1 2 foobar
 """)
-    stdout = cli('commit')
+    stdout = cli('commit', input="n\n")
     assert 'Are you sure' in stdout
 
 
@@ -37,7 +37,7 @@ def test_ignore_date_error_previous_day(cli, entries_file):
     entries_file.write("""17/01/2014
 alias_1 2 foobar
 """)
-    stdout = cli('commit')
+    stdout = cli('commit', input="n\n")
     assert 'Are you sure' in stdout
 
 
