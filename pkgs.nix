@@ -121,7 +121,7 @@ let
     propagatedBuildInputs = [
       python3.pkgs.google-auth-oauthlib
       python3.pkgs.google-auth-httplib2
-      python3.pkgs.google_api_python_client
+      python3.pkgs.google-api-python-client
     ];
 
     meta = {
