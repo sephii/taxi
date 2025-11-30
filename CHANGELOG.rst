@@ -2,6 +2,14 @@
 Changelog
 #########
 
+6.3.2 (2025-11-30)
+==================
+
+Fixed
+-----
+
+* Fix failing tests with newer versions of click.
+
 6.3.1 (2023-12-01)
 ==================
 
