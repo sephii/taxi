@@ -55,3 +55,4 @@ These resources, not part of Taxi core, provide an enhanced experience for certa
 * `Cabdriver <https://github.com/metaodi/cabdriver>`_ (generate taxi entries based on Google Calendar, Slack, etc)
 * `Syntax highlighting for VSCode <https://marketplace.visualstudio.com/items?itemName=LeBen.taxi-syntax-highlighting>`_
 * `Vim plugin <https://github.com/schtibe/taxi.vim>`_ (features syntax highlighting, auto completion)
+* `Neovim plugin <https://github.com/jocelynthode/taxi.nvim>`_ (syntax highlighting, auto completion, async commands and more)
