@@ -54,6 +54,9 @@ def get_mapping_matches(search, matches, projects_db):
     project = projects_db.get(mapping[0])
     project_activity = None
 
+    if project is None:
+        return matches
+
     for activity in project.activities:
         if activity.id == mapping[1]:
             project_activity = activity
