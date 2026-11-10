@@ -47,6 +47,11 @@ def test_show_activity_id_mapped(cli, projects_db):
                       "aliased by alias_1 on the test backend.\n")
 
 
+def test_show_unknown_mapping(cli, projects_db):
+    output = cli('show', ['999/888'])
+    assert output == "Your search string 999/888 is nothing.\n"
+
+
 def test_show_alias(cli, projects_db):
     output = cli('show', ['alias_1'])
     assert output == ("Your search string alias_1 is an alias to "
